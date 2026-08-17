@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Execution Tools MCP Server
+  execution-tools:
+    build:
+      context: ./execution-tools
+      dockerfile: Dockerfile
+    container_name: mcp-execution-tools
+    volumes:
+      # Mount workspace for code execution
+      - execution-workspace:/workspace
+      # Mount local directory for development (optional)
+      - ./execution-tools:/app:ro
+    environment:
+      - WORKSPACE_DIR=/workspace
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AUTO_VERIFY_CODE=true
+      - AUTO_SUMMARIZE_COMPLEX_OUTPUT=true
+      - REQUIRE_APPROVAL_FOR_DANGEROUS_OPS=true
+    restart: unless-stopped
+    # MCP servers use stdio, not network ports
+    stdin_open: true
+    tty: true
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Perception Tools MCP Server
+  perception-tools:
+    build:
+      context: ./perception-tools
+      dockerfile: Dockerfile
+    container_name: mcp-perception-tools
+    volumes:
+      # Mount data directory for processed documents
+      - perception-data:/data
+      # Mount local directory for development (optional)
+      - ./perception-tools:/app:ro
+    environment:
+      - DATA_DIR=/data
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_CSE_ID=${GOOGLE_CSE_ID}
+      - ARXIV_API_KEY=${ARXIV_API_KEY}
+      - YAHOO_FINANCE_API_KEY=${YAHOO_FINANCE_API_KEY}
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Collaboration Tools MCP Server
+  collaboration-tools:
+    build:
+      context: ./collaboration-tools
+      dockerfile: Dockerfile
+    container_name: mcp-collaboration-tools
+    volumes:
+      # Mount workspace for file operations
+      - collaboration-workspace:/workspace
+      # Mount local directory for development (optional)
+      - ./collaboration-tools:/app:ro
+    environment:
+      - WORKSPACE_DIR=/workspace
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DISPLAY=:99
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    # Needed for browser automation
+    shm_size: 2gb
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  execution-workspace:
+    driver: local
+  perception-data:
+    driver: local
+  collaboration-workspace:
+    driver: local
+
+networks:
+  default:
+    name: mcp-network

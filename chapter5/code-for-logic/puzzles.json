@@ -1,0 +1,505 @@
+[
+  {
+    "id": "kk01",
+    "num_people": 2,
+    "names": [
+      "A",
+      "B"
+    ],
+    "statements": {
+      "A": "B 是无赖。",
+      "B": "我们两人都不是骑士。"
+    },
+    "statements_struct": {
+      "A": [
+        "is",
+        "B",
+        "knave"
+      ],
+      "B": [
+        "and",
+        [
+          "is",
+          "A",
+          "knave"
+        ],
+        [
+          "is",
+          "B",
+          "knave"
+        ]
+      ]
+    },
+    "description": "这座岛上有 2 位居民：A, B。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「B 是无赖。」\nB: 「我们两人都不是骑士。」",
+    "solution": {
+      "A": "knight",
+      "B": "knave"
+    }
+  },
+  {
+    "id": "kk02",
+    "num_people": 2,
+    "names": [
+      "A",
+      "B"
+    ],
+    "statements": {
+      "A": "我和 B 是同一类人（要么都是骑士，要么都是无赖）。",
+      "B": "我和 A 是不同类人。"
+    },
+    "statements_struct": {
+      "A": [
+        "same",
+        "A",
+        "B"
+      ],
+      "B": [
+        "diff",
+        "A",
+        "B"
+      ]
+    },
+    "description": "这座岛上有 2 位居民：A, B。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「我和 B 是同一类人（要么都是骑士，要么都是无赖）。」\nB: 「我和 A 是不同类人。」",
+    "solution": {
+      "A": "knave",
+      "B": "knight"
+    }
+  },
+  {
+    "id": "kk03",
+    "num_people": 2,
+    "names": [
+      "A",
+      "B"
+    ],
+    "statements": {
+      "A": "我们当中至少有一个骑士。",
+      "B": "A 是无赖。"
+    },
+    "statements_struct": {
+      "A": [
+        "count",
+        "knight",
+        ">=",
+        1
+      ],
+      "B": [
+        "is",
+        "A",
+        "knave"
+      ]
+    },
+    "description": "这座岛上有 2 位居民：A, B。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「我们当中至少有一个骑士。」\nB: 「A 是无赖。」",
+    "solution": {
+      "A": "knight",
+      "B": "knave"
+    }
+  },
+  {
+    "id": "kk04",
+    "num_people": 3,
+    "names": [
+      "A",
+      "B",
+      "C"
+    ],
+    "statements": {
+      "A": "B 是无赖。",
+      "B": "C 是无赖。",
+      "C": "A 和 B 都是无赖。"
+    },
+    "statements_struct": {
+      "A": [
+        "is",
+        "B",
+        "knave"
+      ],
+      "B": [
+        "is",
+        "C",
+        "knave"
+      ],
+      "C": [
+        "and",
+        [
+          "is",
+          "A",
+          "knave"
+        ],
+        [
+          "is",
+          "B",
+          "knave"
+        ]
+      ]
+    },
+    "description": "这座岛上有 3 位居民：A, B, C。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「B 是无赖。」\nB: 「C 是无赖。」\nC: 「A 和 B 都是无赖。」",
+    "solution": {
+      "A": "knave",
+      "B": "knight",
+      "C": "knave"
+    }
+  },
+  {
+    "id": "kk05",
+    "num_people": 3,
+    "names": [
+      "A",
+      "B",
+      "C"
+    ],
+    "statements": {
+      "A": "B 是骑士。",
+      "B": "C 是无赖。",
+      "C": "A 和 B 是同一类人。"
+    },
+    "statements_struct": {
+      "A": [
+        "is",
+        "B",
+        "knight"
+      ],
+      "B": [
+        "is",
+        "C",
+        "knave"
+      ],
+      "C": [
+        "same",
+        "A",
+        "B"
+      ]
+    },
+    "description": "这座岛上有 3 位居民：A, B, C。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「B 是骑士。」\nB: 「C 是无赖。」\nC: 「A 和 B 是同一类人。」",
+    "solution": {
+      "A": "knave",
+      "B": "knave",
+      "C": "knight"
+    }
+  },
+  {
+    "id": "kk06",
+    "num_people": 3,
+    "names": [
+      "A",
+      "B",
+      "C"
+    ],
+    "statements": {
+      "A": "B 和 C 是同一类人。",
+      "B": "A 是无赖。",
+      "C": "我和 A 是同一类人。"
+    },
+    "statements_struct": {
+      "A": [
+        "same",
+        "B",
+        "C"
+      ],
+      "B": [
+        "is",
+        "A",
+        "knave"
+      ],
+      "C": [
+        "same",
+        "C",
+        "A"
+      ]
+    },
+    "description": "这座岛上有 3 位居民：A, B, C。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「B 和 C 是同一类人。」\nB: 「A 是无赖。」\nC: 「我和 A 是同一类人。」",
+    "solution": {
+      "A": "knight",
+      "B": "knave",
+      "C": "knave"
+    }
+  },
+  {
+    "id": "kk07",
+    "num_people": 3,
+    "names": [
+      "A",
+      "B",
+      "C"
+    ],
+    "statements": {
+      "A": "我是无赖，或者 B 是骑士。",
+      "B": "A 是骑士。",
+      "C": "B 是无赖。"
+    },
+    "statements_struct": {
+      "A": [
+        "or",
+        [
+          "is",
+          "A",
+          "knave"
+        ],
+        [
+          "is",
+          "B",
+          "knight"
+        ]
+      ],
+      "B": [
+        "is",
+        "A",
+        "knight"
+      ],
+      "C": [
+        "is",
+        "B",
+        "knave"
+      ]
+    },
+    "description": "这座岛上有 3 位居民：A, B, C。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「我是无赖，或者 B 是骑士。」\nB: 「A 是骑士。」\nC: 「B 是无赖。」",
+    "solution": {
+      "A": "knight",
+      "B": "knight",
+      "C": "knave"
+    }
+  },
+  {
+    "id": "kk08",
+    "num_people": 4,
+    "names": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "statements": {
+      "A": "B 和 D 是同一类人。",
+      "B": "C 是无赖。",
+      "C": "D 是骑士。",
+      "D": "B 和 C 是不同类人。"
+    },
+    "statements_struct": {
+      "A": [
+        "same",
+        "B",
+        "D"
+      ],
+      "B": [
+        "is",
+        "C",
+        "knave"
+      ],
+      "C": [
+        "is",
+        "D",
+        "knight"
+      ],
+      "D": [
+        "diff",
+        "B",
+        "C"
+      ]
+    },
+    "description": "这座岛上有 4 位居民：A, B, C, D。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「B 和 D 是同一类人。」\nB: 「C 是无赖。」\nC: 「D 是骑士。」\nD: 「B 和 C 是不同类人。」",
+    "solution": {
+      "A": "knave",
+      "B": "knave",
+      "C": "knight",
+      "D": "knight"
+    }
+  },
+  {
+    "id": "kk09",
+    "num_people": 4,
+    "names": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "statements": {
+      "A": "B 是骑士。",
+      "B": "C 是无赖。",
+      "C": "D 是骑士。",
+      "D": "A 和 B 不是同一类人。"
+    },
+    "statements_struct": {
+      "A": [
+        "is",
+        "B",
+        "knight"
+      ],
+      "B": [
+        "is",
+        "C",
+        "knave"
+      ],
+      "C": [
+        "is",
+        "D",
+        "knight"
+      ],
+      "D": [
+        "diff",
+        "A",
+        "B"
+      ]
+    },
+    "description": "这座岛上有 4 位居民：A, B, C, D。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「B 是骑士。」\nB: 「C 是无赖。」\nC: 「D 是骑士。」\nD: 「A 和 B 不是同一类人。」",
+    "solution": {
+      "A": "knight",
+      "B": "knight",
+      "C": "knave",
+      "D": "knave"
+    }
+  },
+  {
+    "id": "kk10",
+    "num_people": 4,
+    "names": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "statements": {
+      "A": "我们四人当中至少有三个无赖。",
+      "B": "A 是无赖。",
+      "C": "B 是骑士。",
+      "D": "C 是无赖。"
+    },
+    "statements_struct": {
+      "A": [
+        "count",
+        "knave",
+        ">=",
+        3
+      ],
+      "B": [
+        "is",
+        "A",
+        "knave"
+      ],
+      "C": [
+        "is",
+        "B",
+        "knight"
+      ],
+      "D": [
+        "is",
+        "C",
+        "knave"
+      ]
+    },
+    "description": "这座岛上有 4 位居民：A, B, C, D。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「我们四人当中至少有三个无赖。」\nB: 「A 是无赖。」\nC: 「B 是骑士。」\nD: 「C 是无赖。」",
+    "solution": {
+      "A": "knave",
+      "B": "knight",
+      "C": "knight",
+      "D": "knave"
+    }
+  },
+  {
+    "id": "kk11",
+    "num_people": 5,
+    "names": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "statements": {
+      "A": "B 是骑士。",
+      "B": "C 是无赖。",
+      "C": "D 是骑士。",
+      "D": "E 是无赖。",
+      "E": "我们五人当中至少有两个骑士。"
+    },
+    "statements_struct": {
+      "A": [
+        "is",
+        "B",
+        "knight"
+      ],
+      "B": [
+        "is",
+        "C",
+        "knave"
+      ],
+      "C": [
+        "is",
+        "D",
+        "knight"
+      ],
+      "D": [
+        "is",
+        "E",
+        "knave"
+      ],
+      "E": [
+        "count",
+        "knight",
+        ">=",
+        2
+      ]
+    },
+    "description": "这座岛上有 5 位居民：A, B, C, D, E。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「B 是骑士。」\nB: 「C 是无赖。」\nC: 「D 是骑士。」\nD: 「E 是无赖。」\nE: 「我们五人当中至少有两个骑士。」",
+    "solution": {
+      "A": "knight",
+      "B": "knight",
+      "C": "knave",
+      "D": "knave",
+      "E": "knight"
+    }
+  },
+  {
+    "id": "kk12",
+    "num_people": 5,
+    "names": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "statements": {
+      "A": "B 是骑士。",
+      "B": "C 是无赖。",
+      "C": "D 是无赖。",
+      "D": "E 是骑士。",
+      "E": "A 和 C 是同一类人。"
+    },
+    "statements_struct": {
+      "A": [
+        "is",
+        "B",
+        "knight"
+      ],
+      "B": [
+        "is",
+        "C",
+        "knave"
+      ],
+      "C": [
+        "is",
+        "D",
+        "knave"
+      ],
+      "D": [
+        "is",
+        "E",
+        "knight"
+      ],
+      "E": [
+        "same",
+        "A",
+        "C"
+      ]
+    },
+    "description": "这座岛上有 5 位居民：A, B, C, D, E。每位居民要么是永远说真话的骑士(knight)，要么是永远说假话的无赖(knave)。他们各自说了如下的话：\nA: 「B 是骑士。」\nB: 「C 是无赖。」\nC: 「D 是无赖。」\nD: 「E 是骑士。」\nE: 「A 和 C 是同一类人。」",
+    "solution": {
+      "A": "knave",
+      "B": "knave",
+      "C": "knight",
+      "D": "knave",
+      "E": "knave"
+    }
+  }
+]

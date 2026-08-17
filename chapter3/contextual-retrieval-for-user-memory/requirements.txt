@@ -1,0 +1,24 @@
+# Contextual Retrieval for User Memory Requirements
+
+# Core dependencies
+openai>=1.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+requests>=2.31.0
+
+# Data processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# CLI and display
+rich>=13.0.0
+click>=8.1.0
+
+# Development tools
+pytest>=7.4.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Optional for enhanced features
+tiktoken>=0.5.0  # For accurate token counting
+tenacity>=8.2.0  # For retry logic

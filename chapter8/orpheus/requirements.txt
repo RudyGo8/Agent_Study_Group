@@ -1,0 +1,28 @@
+# Core dependencies
+torch
+transformers==4.55.4
+unsloth
+accelerate
+bitsandbytes
+peft
+trl==0.22.2
+triton
+cut_cross_entropy
+unsloth_zoo
+
+# Audio processing
+snac
+soundfile
+librosa
+torchaudio
+
+# Data and utilities
+sentencepiece
+protobuf
+datasets>=3.4.1,<4.0.0
+huggingface_hub>=0.34.0
+hf_transfer
+
+# Additional dependencies
+xformers
+

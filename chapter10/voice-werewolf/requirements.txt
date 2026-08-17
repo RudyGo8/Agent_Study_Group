@@ -1,0 +1,6 @@
+# 实验 10-6 依赖
+openai>=1.40.0
+python-dotenv>=1.0.0
+sounddevice>=0.4.6
+numpy>=1.26.0
+pytest>=8.0.0

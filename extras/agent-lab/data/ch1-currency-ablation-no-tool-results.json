@@ -1,0 +1,89 @@
+{
+  "experiment": "ch1/context",
+  "title": "消融实验：缺「工具结果」时陷入循环",
+  "model": "doubao-seed-1-6-thinking",
+  "task": "Q1 2.5M USD、Q2 2.1M EUR、Q3 1.8M GBP、Q4 380M JPY，算年度总收入和季度平均。",
+  "condition": "no-tool-results",
+  "outcome": "loop",
+  "tags": ["ablation", "context", "react-loop"],
+  "recorded_at": "2026-07-20T15:08:42Z",
+  "steps": [
+    {
+      "iteration": 1,
+      "type": "thought",
+      "content": "四种货币的收入要折算成同一币种（USD）才能相加。先并行调三次 convert_currency。"
+    },
+    {
+      "iteration": 1,
+      "type": "action",
+      "tool": "convert_currency",
+      "args": { "amount": 2100000, "from": "EUR", "to": "USD" }
+    },
+    {
+      "iteration": 1,
+      "type": "action",
+      "tool": "convert_currency",
+      "args": { "amount": 1800000, "from": "GBP", "to": "USD" }
+    },
+    {
+      "iteration": 1,
+      "type": "action",
+      "tool": "convert_currency",
+      "args": { "amount": 380000000, "from": "JPY", "to": "USD" }
+    },
+    {
+      "iteration": 2,
+      "type": "thought",
+      "content": "（ablation：工具结果被剥离，模型看不到上一步的返回值）需要 EUR、GBP、JPY → USD 的汇率。再调一次 convert_currency 试试。"
+    },
+    {
+      "iteration": 2,
+      "type": "action",
+      "tool": "convert_currency",
+      "args": { "amount": 2100000, "from": "EUR", "to": "USD" }
+    },
+    {
+      "iteration": 3,
+      "type": "thought",
+      "content": "还是没有结果？可能上次调用没成功。再调 GBP 这次。"
+    },
+    {
+      "iteration": 3,
+      "type": "action",
+      "tool": "convert_currency",
+      "args": { "amount": 1800000, "from": "GBP", "to": "USD" }
+    },
+    {
+      "iteration": 4,
+      "type": "thought",
+      "content": "工具似乎没响应。换个方式：用 code_interpreter 自己查汇率表算。"
+    },
+    {
+      "iteration": 4,
+      "type": "action",
+      "tool": "convert_currency",
+      "args": { "amount": 380000000, "from": "JPY", "to": "USD" }
+    },
+    {
+      "iteration": 5,
+      "type": "thought",
+      "content": "继续重试 convert_currency，可能服务侧暂时不可用……"
+    },
+    {
+      "iteration": 5,
+      "type": "action",
+      "tool": "convert_currency",
+      "args": { "amount": 2100000, "from": "EUR", "to": "USD" }
+    },
+    {
+      "iteration": 6,
+      "type": "thought",
+      "content": "已达最大迭代次数 5，仍未拿到任何工具结果，无法汇总。任务失败。"
+    },
+    {
+      "iteration": 6,
+      "type": "answer",
+      "content": "抱歉，由于无法获取汇率转换结果，无法计算总收入。请稍后重试。"
+    }
+  ]
+}

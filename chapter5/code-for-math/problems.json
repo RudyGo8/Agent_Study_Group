@@ -1,0 +1,79 @@
+[
+  {
+    "id": 1,
+    "question": "How many positive integers less than or equal to 2024 are divisible by none of 3, 5, and 7?",
+    "answer": 925,
+    "topic": "number theory (inclusion-exclusion)",
+    "solution": "print(sum(1 for n in range(1, 2025) if n % 3 and n % 5 and n % 7))"
+  },
+  {
+    "id": 2,
+    "question": "Find the remainder when 2^2024 is divided by 1000.",
+    "answer": 216,
+    "topic": "modular exponentiation",
+    "solution": "print(pow(2, 2024, 1000))"
+  },
+  {
+    "id": 3,
+    "question": "Find the number of ordered pairs (a, b) of positive integers with a <= b that satisfy 1/a + 1/b = 1/12.",
+    "answer": 8,
+    "topic": "diophantine equation",
+    "solution": "c = 0\nfor a in range(1, 1000):\n    for b in range(a, 1000):\n        if 12 * (a + b) == a * b:\n            c += 1\nprint(c)"
+  },
+  {
+    "id": 4,
+    "question": "Find the sum of all positive integers n for which n^2 + 12n - 2007 is a perfect square.",
+    "answer": 1464,
+    "topic": "perfect squares",
+    "solution": "from math import isqrt\nS = 0\nfor n in range(1, 100000):\n    v = n * n + 12 * n - 2007\n    if v >= 0 and isqrt(v) ** 2 == v:\n        S += n\nprint(S)"
+  },
+  {
+    "id": 5,
+    "question": "Find the greatest integer that divides n^5 - 5n^3 + 4n for every integer n.",
+    "answer": 120,
+    "topic": "polynomial divisibility",
+    "solution": "from math import gcd\nfrom functools import reduce\nvals = [abs(n**5 - 5*n**3 + 4*n) for n in range(-50, 51)]\nvals = [v for v in vals if v != 0]\nprint(reduce(gcd, vals))"
+  },
+  {
+    "id": 6,
+    "question": "How many integers from 1 to 1000 inclusive can be written as a^2 + b^2 for some non-negative integers a and b?",
+    "answer": 330,
+    "topic": "sum of two squares",
+    "solution": "S = set()\nfor a in range(0, 32):\n    for b in range(0, 32):\n        s = a * a + b * b\n        if 1 <= s <= 1000:\n            S.add(s)\nprint(len(S))"
+  },
+  {
+    "id": 7,
+    "question": "Find the largest three-digit prime factor of the binomial coefficient C(2000, 1000).",
+    "answer": 661,
+    "topic": "prime factorization",
+    "solution": "from sympy import binomial, factorint\nn = binomial(2000, 1000)\nprint(max(p for p in factorint(n) if p < 1000))"
+  },
+  {
+    "id": 8,
+    "question": "How many integers from 1 to 1000 inclusive have exactly 6 positive divisors?",
+    "answer": 110,
+    "topic": "divisor counting",
+    "solution": "from sympy import divisor_count\nprint(sum(1 for k in range(1, 1001) if divisor_count(k) == 6))"
+  },
+  {
+    "id": 9,
+    "question": "Find the coefficient of x^10 in the expansion of (1 + x + x^2 + x^3 + x^4 + x^5 + x^6)^5.",
+    "answer": 826,
+    "topic": "generating functions",
+    "solution": "from sympy import symbols, Poly\nx = symbols('x')\np = Poly((1 + x + x**2 + x**3 + x**4 + x**5 + x**6) ** 5, x)\nprint(p.coeff_monomial(x**10))"
+  },
+  {
+    "id": 10,
+    "question": "Find the remainder when the sum 1! + 2! + 3! + ... + 100! is divided by 1000.",
+    "answer": 313,
+    "topic": "factorials and modular arithmetic",
+    "solution": "from math import factorial\nprint(sum(factorial(k) for k in range(1, 101)) % 1000)"
+  },
+  {
+    "id": 11,
+    "question": "How many ordered pairs of integers (x, y) satisfy x^2 + y^2 < 400?",
+    "answer": 1245,
+    "topic": "lattice points",
+    "solution": "c = 0\nfor x in range(-20, 21):\n    for y in range(-20, 21):\n        if x * x + y * y < 400:\n            c += 1\nprint(c)"
+  }
+]

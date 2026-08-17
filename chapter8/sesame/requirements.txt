@@ -1,0 +1,30 @@
+# Core dependencies
+torch>=2.0.0
+transformers==4.52.3
+datasets>=3.4.1,<4.0.0
+huggingface_hub>=0.34.0
+
+# Unsloth and related
+unsloth
+peft
+trl==0.22.2
+bitsandbytes
+accelerate
+triton
+cut_cross_entropy
+unsloth_zoo
+
+# Audio processing
+soundfile
+torchcodec
+
+# Utilities
+sentencepiece
+protobuf
+hf_transfer
+tqdm
+
+# Note: For xformers, install based on your PyTorch version:
+# PyTorch 2.8.0: xformers==0.0.32.post2
+# PyTorch 2.5.x: xformers==0.0.29.post3
+

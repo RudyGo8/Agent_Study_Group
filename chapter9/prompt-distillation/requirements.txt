@@ -1,0 +1,25 @@
+# Prompt Distillation Requirements
+# 
+# Core dependencies for reproducing the tinker prompt distillation experiment
+
+# vLLM for efficient inference (data generation with teacher model)
+vllm>=0.6.0
+
+# Progress bars and utilities
+tqdm>=4.65.0
+numpy>=1.24.0
+
+# Training framework - Hugging Face TRL (Transformers Reinforcement Learning)
+trl>=0.9.0
+peft>=0.11.0
+accelerate>=0.28.0
+transformers>=4.36.0
+datasets>=2.14.0
+torch>=2.0.0
+
+# Logging and monitoring
+wandb>=0.15.0
+
+# Note: TRL provides a simple, well-documented API for supervised fine-tuning
+# with LoRA and works directly with JSONL data format
+

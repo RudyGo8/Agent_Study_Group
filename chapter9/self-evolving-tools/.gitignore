@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+.sandbox_packages/
+# 运行时由 Agent 自动生成的工具（演示产物），不纳入版本库
+tool_library/*.json

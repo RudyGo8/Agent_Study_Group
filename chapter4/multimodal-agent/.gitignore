@@ -1,0 +1,7 @@
+# 由 create_sample.py 离线生成的样例文件
+test_files/
+
+# Python 缓存与环境
+__pycache__/
+*.pyc
+.env

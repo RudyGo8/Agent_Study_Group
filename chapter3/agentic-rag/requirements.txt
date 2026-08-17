@@ -1,0 +1,6 @@
+openai>=1.0.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+# 可选：离线 BM25 后端（offline_retriever.py / compare_offline.py）的中文分词。
+# 未安装时会自动回退到字符 n-gram 分词，功能不受影响，仅召回略降。
+jieba>=0.42.1

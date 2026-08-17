@@ -1,0 +1,46 @@
+# MCP Server Core
+mcp>=0.9.0
+fastmcp>=0.2.0
+
+# Core dependencies with version constraints
+anyio>=4.5.0
+pydantic>=2.8.0,<3.0.0
+pydantic-settings>=2.4.0
+
+# Browser Automation
+browser-use>=0.1.0
+playwright>=1.40.0
+
+# LLM Integration (for browser AI tasks)
+langchain-openai>=0.1.0
+openai>=1.0.0
+
+# Email & Notifications
+aiosmtplib>=3.0.0
+sendgrid>=6.11.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# HTTP Client
+httpx>=0.24.0
+requests>=2.31.0
+
+# Timer & Scheduling
+apscheduler>=3.10.0
+
+# Chess Game
+python-chess>=1.999
+
+# Excel Operations
+openpyxl>=3.0.0
+pandas>=2.0.0
+
+# Intelligence Tools (requires OpenAI API)
+openai>=1.0.0
+
+# Sub-Agent Tools: token counting for context-strategy comparison (optional; code falls back if absent)
+tiktoken>=0.5.0
+
+# Logging
+loguru>=0.7.0

@@ -1,0 +1,29 @@
+[
+    {
+        "text": "We just finished fine tuning a text to speech model... and it's pretty good!",
+        "speaker_id": 0,
+        "output": "example_without_context_1.wav",
+        "comment": "Example without context - generates speech without voice reference"
+    },
+    {
+        "text": "Sesame is a super cool TTS model which can be fine tuned with Unsloth.",
+        "speaker_id": 0,
+        "output": "example_without_context_2.wav",
+        "comment": "Example without context - generates speech without voice reference"
+    },
+    {
+        "text": "Sesame is a super cool TTS model which can be fine tuned with Unsloth.",
+        "speaker_id": 0,
+        "dataset_context_idx": 3,
+        "output": "example_with_context_1.wav",
+        "comment": "Example with context - uses dataset index 3 for voice consistency (same as training script)"
+    },
+    {
+        "text": "We just finished fine tuning a text to speech model... and it's pretty good!",
+        "speaker_id": 0,
+        "dataset_context_idx": 4,
+        "output": "example_with_context_2.wav",
+        "comment": "Example with context - uses dataset index 4 for voice consistency (same as training script)"
+    }
+]
+

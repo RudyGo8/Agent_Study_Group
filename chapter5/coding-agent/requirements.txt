@@ -1,0 +1,11 @@
+anthropic>=0.40.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+PyPDF2>=3.0.0  # For PDF reading support
+requests>=2.31.0  # For WebFetch tool
+beautifulsoup4>=4.12.0  # For WebFetch HTML parsing
+html2text>=2020.1.16  # For WebFetch markdown conversion
+
+# Testing dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0

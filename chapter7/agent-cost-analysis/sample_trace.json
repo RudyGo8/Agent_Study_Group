@@ -1,0 +1,426 @@
+{
+  "model": "gpt-4o-mini",
+  "pricing": {
+    "input": 0.15,
+    "cached": 0.075,
+    "output": 0.6
+  },
+  "scenarios": [
+    {
+      "key": "naive",
+      "name": "A 朴素(无缓存/无压缩)",
+      "total_cost": 0.0037758,
+      "component_costs": {
+        "uncached_input_cost": 0.0031049999999999997,
+        "cached_input_cost": 0.0,
+        "output_cost": 0.0006708,
+        "uncached_input_tokens": 20700,
+        "cached_input_tokens": 0,
+        "output_tokens": 1118,
+        "tool_ctx_tokens": 9544
+      },
+      "cost_distribution": {
+        "n": 8,
+        "mean": 0.000471975,
+        "p50": 0.00048059999999999997,
+        "p95": 0.0006462,
+        "p99": 0.0006462,
+        "max": 0.0006462
+      },
+      "spans": [
+        {
+          "step": "turn-1",
+          "tool": "query_order",
+          "kind": "llm",
+          "prompt_tokens": 1113,
+          "cached_tokens": 0,
+          "completion_tokens": 104,
+          "tool_ctx_tokens": 276,
+          "latency_s": 3.1535720825195312
+        },
+        {
+          "step": "turn-2",
+          "tool": "query_logistics",
+          "kind": "llm",
+          "prompt_tokens": 1807,
+          "cached_tokens": 0,
+          "completion_tokens": 99,
+          "tool_ctx_tokens": 829,
+          "latency_s": 2.0884652137756348
+        },
+        {
+          "step": "turn-3",
+          "tool": "check_refund_policy",
+          "kind": "llm",
+          "prompt_tokens": 2154,
+          "cached_tokens": 0,
+          "completion_tokens": 139,
+          "tool_ctx_tokens": 1046,
+          "latency_s": 2.685513973236084
+        },
+        {
+          "step": "turn-4",
+          "tool": "query_knowledge_base",
+          "kind": "llm",
+          "prompt_tokens": 2564,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1287,
+          "latency_s": 2.922238826751709
+        },
+        {
+          "step": "turn-5",
+          "tool": "query_user_history",
+          "kind": "llm",
+          "prompt_tokens": 2863,
+          "cached_tokens": 0,
+          "completion_tokens": 136,
+          "tool_ctx_tokens": 1389,
+          "latency_s": 2.6890718936920166
+        },
+        {
+          "step": "turn-6",
+          "tool": "issue_refund",
+          "kind": "llm",
+          "prompt_tokens": 3123,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1490,
+          "latency_s": 3.073489189147949
+        },
+        {
+          "step": "turn-7",
+          "tool": "send_notification",
+          "kind": "llm",
+          "prompt_tokens": 3408,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1579,
+          "latency_s": 3.0861823558807373
+        },
+        {
+          "step": "turn-8",
+          "tool": "close_ticket",
+          "kind": "llm",
+          "prompt_tokens": 3668,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1648,
+          "latency_s": 2.504854917526245
+        }
+      ]
+    },
+    {
+      "key": "kv",
+      "name": "KV 仅缓存(稳定前缀/不压缩)",
+      "total_cost": 0.0027075,
+      "component_costs": {
+        "uncached_input_cost": 0.0010227,
+        "cached_input_cost": 0.0010176,
+        "output_cost": 0.0006672,
+        "uncached_input_tokens": 6818,
+        "cached_input_tokens": 13568,
+        "output_tokens": 1112,
+        "tool_ctx_tokens": 9544
+      },
+      "cost_distribution": {
+        "n": 8,
+        "mean": 0.0003384375,
+        "p50": 0.00033465000000000003,
+        "p95": 0.00040815,
+        "p99": 0.00040815,
+        "max": 0.00040815
+      },
+      "spans": [
+        {
+          "step": "turn-1",
+          "tool": "query_order",
+          "kind": "llm",
+          "prompt_tokens": 1056,
+          "cached_tokens": 1024,
+          "completion_tokens": 121,
+          "tool_ctx_tokens": 276,
+          "latency_s": 2.1304330825805664
+        },
+        {
+          "step": "turn-2",
+          "tool": "query_logistics",
+          "kind": "llm",
+          "prompt_tokens": 1763,
+          "cached_tokens": 0,
+          "completion_tokens": 117,
+          "tool_ctx_tokens": 829,
+          "latency_s": 2.102344036102295
+        },
+        {
+          "step": "turn-3",
+          "tool": "check_refund_policy",
+          "kind": "llm",
+          "prompt_tokens": 2130,
+          "cached_tokens": 1024,
+          "completion_tokens": 136,
+          "tool_ctx_tokens": 1046,
+          "latency_s": 3.537381172180176
+        },
+        {
+          "step": "turn-4",
+          "tool": "query_knowledge_base",
+          "kind": "llm",
+          "prompt_tokens": 2540,
+          "cached_tokens": 1024,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1287,
+          "latency_s": 3.393212080001831
+        },
+        {
+          "step": "turn-5",
+          "tool": "query_user_history",
+          "kind": "llm",
+          "prompt_tokens": 2834,
+          "cached_tokens": 2176,
+          "completion_tokens": 114,
+          "tool_ctx_tokens": 1389,
+          "latency_s": 1.906968116760254
+        },
+        {
+          "step": "turn-6",
+          "tool": "issue_refund",
+          "kind": "llm",
+          "prompt_tokens": 3081,
+          "cached_tokens": 2560,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1490,
+          "latency_s": 2.7878849506378174
+        },
+        {
+          "step": "turn-7",
+          "tool": "send_notification",
+          "kind": "llm",
+          "prompt_tokens": 3361,
+          "cached_tokens": 2560,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1579,
+          "latency_s": 2.825930118560791
+        },
+        {
+          "step": "turn-8",
+          "tool": "close_ticket",
+          "kind": "llm",
+          "prompt_tokens": 3621,
+          "cached_tokens": 3200,
+          "completion_tokens": 144,
+          "tool_ctx_tokens": 1648,
+          "latency_s": 2.7222893238067627
+        }
+      ]
+    },
+    {
+      "key": "compress",
+      "name": "仅压缩(前缀不稳定/摘要)",
+      "total_cost": 0.00311475,
+      "component_costs": {
+        "uncached_input_cost": 0.00242655,
+        "cached_input_cost": 0.0,
+        "output_cost": 0.0006882,
+        "uncached_input_tokens": 16177,
+        "cached_input_tokens": 0,
+        "output_tokens": 1147,
+        "tool_ctx_tokens": 5248
+      },
+      "cost_distribution": {
+        "n": 8,
+        "mean": 0.00038934375,
+        "p50": 0.0004059,
+        "p95": 0.0004497,
+        "p99": 0.0004497,
+        "max": 0.0004497
+      },
+      "spans": [
+        {
+          "step": "turn-1",
+          "tool": "query_order",
+          "kind": "llm",
+          "prompt_tokens": 1112,
+          "cached_tokens": 0,
+          "completion_tokens": 127,
+          "tool_ctx_tokens": 276,
+          "latency_s": 2.223604917526245
+        },
+        {
+          "step": "turn-2",
+          "tool": "query_logistics",
+          "kind": "llm",
+          "prompt_tokens": 1829,
+          "cached_tokens": 0,
+          "completion_tokens": 91,
+          "tool_ctx_tokens": 829,
+          "latency_s": 2.916440963745117
+        },
+        {
+          "step": "turn-3",
+          "tool": "check_refund_policy",
+          "kind": "llm",
+          "prompt_tokens": 2164,
+          "cached_tokens": 0,
+          "completion_tokens": 129,
+          "tool_ctx_tokens": 1046,
+          "latency_s": 2.543590784072876
+        },
+        {
+          "step": "turn-4",
+          "tool": "query_knowledge_base",
+          "kind": "llm",
+          "prompt_tokens": 2310,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1052,
+          "latency_s": 2.999290943145752
+        },
+        {
+          "step": "turn-5",
+          "tool": "query_user_history",
+          "kind": "llm",
+          "prompt_tokens": 2066,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 635,
+          "latency_s": 5.8334801197052
+        },
+        {
+          "step": "turn-6",
+          "tool": "issue_refund",
+          "kind": "llm",
+          "prompt_tokens": 2146,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 551,
+          "latency_s": 2.787147045135498
+        },
+        {
+          "step": "turn-7",
+          "tool": "send_notification",
+          "kind": "llm",
+          "prompt_tokens": 2192,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 430,
+          "latency_s": 3.470608949661255
+        },
+        {
+          "step": "turn-8",
+          "tool": "close_ticket",
+          "kind": "llm",
+          "prompt_tokens": 2358,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 429,
+          "latency_s": 2.5834107398986816
+        }
+      ]
+    },
+    {
+      "key": "both",
+      "name": "B 优化(KV缓存+压缩)",
+      "total_cost": 0.00264285,
+      "component_costs": {
+        "uncached_input_cost": 0.00148365,
+        "cached_input_cost": 0.0004608,
+        "output_cost": 0.0006984000000000001,
+        "uncached_input_tokens": 9891,
+        "cached_input_tokens": 6144,
+        "output_tokens": 1164,
+        "tool_ctx_tokens": 5248
+      },
+      "cost_distribution": {
+        "n": 8,
+        "mean": 0.00033035625,
+        "p50": 0.00033525000000000004,
+        "p95": 0.00044249999999999997,
+        "p99": 0.00044249999999999997,
+        "max": 0.00044249999999999997
+      },
+      "spans": [
+        {
+          "step": "turn-1",
+          "tool": "query_order",
+          "kind": "llm",
+          "prompt_tokens": 1056,
+          "cached_tokens": 1024,
+          "completion_tokens": 139,
+          "tool_ctx_tokens": 276,
+          "latency_s": 2.405411958694458
+        },
+        {
+          "step": "turn-2",
+          "tool": "query_logistics",
+          "kind": "llm",
+          "prompt_tokens": 1781,
+          "cached_tokens": 0,
+          "completion_tokens": 112,
+          "tool_ctx_tokens": 829,
+          "latency_s": 2.1826939582824707
+        },
+        {
+          "step": "turn-3",
+          "tool": "check_refund_policy",
+          "kind": "llm",
+          "prompt_tokens": 2143,
+          "cached_tokens": 1024,
+          "completion_tokens": 151,
+          "tool_ctx_tokens": 1046,
+          "latency_s": 2.5647878646850586
+        },
+        {
+          "step": "turn-4",
+          "tool": "query_knowledge_base",
+          "kind": "llm",
+          "prompt_tokens": 2310,
+          "cached_tokens": 0,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 1052,
+          "latency_s": 3.0318493843078613
+        },
+        {
+          "step": "turn-5",
+          "tool": "query_user_history",
+          "kind": "llm",
+          "prompt_tokens": 2060,
+          "cached_tokens": 1024,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 635,
+          "latency_s": 2.475983142852783
+        },
+        {
+          "step": "turn-6",
+          "tool": "issue_refund",
+          "kind": "llm",
+          "prompt_tokens": 2143,
+          "cached_tokens": 1024,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 551,
+          "latency_s": 2.7105050086975098
+        },
+        {
+          "step": "turn-7",
+          "tool": "send_notification",
+          "kind": "llm",
+          "prompt_tokens": 2188,
+          "cached_tokens": 1024,
+          "completion_tokens": 160,
+          "tool_ctx_tokens": 430,
+          "latency_s": 2.7884562015533447
+        },
+        {
+          "step": "turn-8",
+          "tool": "close_ticket",
+          "kind": "llm",
+          "prompt_tokens": 2354,
+          "cached_tokens": 1024,
+          "completion_tokens": 122,
+          "tool_ctx_tokens": 429,
+          "latency_s": 2.3781700134277344
+        }
+      ]
+    }
+  ]
+}

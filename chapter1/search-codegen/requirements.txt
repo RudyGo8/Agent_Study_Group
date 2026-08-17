@@ -1,0 +1,24 @@
+# GPT-5 Native Tools Agent Requirements
+
+# Core dependencies
+openai>=1.35.0        # OpenAI client library (works with OpenRouter)
+python-dotenv>=1.0.0  # Environment variable management
+requests>=2.31.0      # HTTP requests for OpenRouter API calls
+pydantic>=2.5.0      # Data validation and settings management
+
+# Development and testing
+pytest>=7.4.0        # Testing framework
+pytest-asyncio>=0.21.0  # Async test support
+black>=23.0.0        # Code formatting
+flake8>=6.1.0        # Linting
+mypy>=1.7.0          # Type checking
+
+# Data processing (used by code_interpreter examples)
+numpy>=1.24.0        # Numerical computing
+pandas>=2.0.0        # Data analysis
+matplotlib>=3.7.0    # Plotting (for code interpreter visualizations)
+
+# Utilities
+rich>=13.5.0         # Rich terminal output
+tqdm>=4.66.0         # Progress bars
+colorama>=0.4.6      # Cross-platform colored terminal text

@@ -1,0 +1,66 @@
+{
+  "description": "离线检索对比数据集：用于在无需 LLM / 无需外部检索服务的情况下，量化对比『非智能体化 RAG（单次检索）』与『智能体化 RAG（多轮/分解检索）』的证据召回能力。每条问题标注了回答所必需的金标准法条（gold_articles，以法条编号精确匹配）。naive_query 为用户原始提问（单次检索直接使用）；subqueries 为智能体经过思考后分解/改写出的检索式（多次检索后取并集）。金标准法条均已确认存在于 laws/ 语料中。",
+  "metric": "证据召回率 = 命中的金标准法条数 / 金标准法条总数（某法条被命中当且仅当检索结果中存在以该法条编号开头的分块）",
+  "cases": [
+    {
+      "id": "easy_1",
+      "question": "故意伤害致人重伤的，如何处罚？",
+      "difficulty": "easy",
+      "naive_query": "故意伤害致人重伤的，如何处罚？",
+      "subqueries": ["故意伤害 致人重伤 有期徒刑"],
+      "gold_articles": ["第二百三十四条"]
+    },
+    {
+      "id": "easy_2",
+      "question": "正当防卫是怎么规定的？",
+      "difficulty": "easy",
+      "naive_query": "正当防卫是怎么规定的？",
+      "subqueries": ["正当防卫 不负刑事责任"],
+      "gold_articles": ["第二十条"]
+    },
+    {
+      "id": "easy_3",
+      "question": "醉酒驾驶机动车如何处罚？",
+      "difficulty": "easy",
+      "naive_query": "醉酒驾驶机动车如何处罚？",
+      "subqueries": ["危险驾驶罪 醉酒 驾驶机动车 拘役"],
+      "gold_articles": ["第一百三十三条之一"]
+    },
+    {
+      "id": "hard_1",
+      "question": "故意杀人罪判几年？",
+      "difficulty": "hard",
+      "naive_query": "故意杀人罪判几年？",
+      "subqueries": ["故意杀人 死刑 无期徒刑"],
+      "gold_articles": ["第二百三十二条"]
+    },
+    {
+      "id": "hard_2",
+      "question": "盗窃罪的立案标准是什么？",
+      "difficulty": "hard",
+      "naive_query": "盗窃罪的立案标准是什么？",
+      "subqueries": ["盗窃 公私财物 数额较大 有期徒刑"],
+      "gold_articles": ["第二百六十四条"]
+    },
+    {
+      "id": "hard_3",
+      "question": "诈骗罪的量刑标准是什么？",
+      "difficulty": "hard",
+      "naive_query": "诈骗罪的量刑标准是什么？",
+      "subqueries": ["诈骗 公私财物 数额较大 有期徒刑 罚金"],
+      "gold_articles": ["第二百六十六条"]
+    },
+    {
+      "id": "hard_4",
+      "question": "醉酒过失致人重伤且有盗窃前科，应如何量刑？",
+      "difficulty": "hard",
+      "naive_query": "醉酒过失致人重伤且有盗窃前科，应如何量刑？",
+      "subqueries": [
+        "过失伤害他人致人重伤 有期徒刑",
+        "危险驾驶罪 醉酒 驾驶机动车",
+        "累犯 从重处罚 过失犯罪"
+      ],
+      "gold_articles": ["第二百三十五条", "第一百三十三条之一", "第六十五条"]
+    }
+  ]
+}

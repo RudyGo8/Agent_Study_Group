@@ -1,0 +1,20 @@
+# Korean Mistral Continued Pretraining Requirements
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+torch>=2.0.0
+transformers>=4.36.0
+datasets>=2.14.0
+accelerate>=0.25.0
+
+# Unsloth for efficient training
+unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
+
+# Optional but recommended
+wandb>=0.16.0  # For experiment tracking
+bitsandbytes>=0.41.0  # For 4-bit quantization
+scipy>=1.11.0  # For certain optimizations
+
+# Note: For Google Colab, use this installation instead:
+# !pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+

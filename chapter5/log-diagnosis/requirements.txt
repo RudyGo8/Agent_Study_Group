@@ -1,0 +1,4 @@
+openai>=1.30.0
+python-dotenv>=1.0.0
+# 仅 --create-issue（真实经 MCP 创建 GitHub Issue）时需要；mock/自检不需要
+mcp>=1.0.0

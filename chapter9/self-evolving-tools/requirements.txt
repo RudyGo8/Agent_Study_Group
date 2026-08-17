@@ -1,0 +1,6 @@
+openai>=1.40.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+python-dotenv>=1.0.0
+# 注意：yfinance 等「领域库」故意不列在这里。
+# 本实验的核心就是让 Agent 自己上网发现并在沙箱中按需 pip 安装它需要的库。
