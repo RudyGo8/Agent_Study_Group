@@ -33,9 +33,6 @@ extras/agent-lab/demo.html
 book*/AI-Agents-in-Depth-*.pdf
 book*/深入理解-AI-Agent-*.pdf
 
-# Official PDF downloaded for local reading; keep it out of Git
-/*.pdf
-
 # Python packaging build artifacts (editable installs).
 # Anchored to the repository root: unanchored build/ and dist/ patterns would
 # also match vendored web bundles such as
