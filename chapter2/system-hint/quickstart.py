@@ -1,6 +1,6 @@
 """
-Quick Start for System-Hint Enhanced Agent
-Simple demonstration using the sample task
+System-Hint 增强 Agent 快速上手
+用示例任务做一次简单演示
 """
 
 import os
@@ -12,9 +12,9 @@ from agentbook.providers import PROVIDERS
 
 
 def main():
-    """Quick start demonstration"""
+    """快速上手演示"""
 
-    # Check for API key. 接受哪些环境变量由 agentbook 的 provider 注册表定义；
+    # 检查 API Key。接受哪些环境变量由 agentbook 的 provider 注册表定义；
     # Kimi 官方 key 缺失时用 OPENROUTER_API_KEY 兜底。
     api_key = PROVIDERS["kimi"].api_key() or os.getenv("OPENROUTER_API_KEY")
     if not api_key:
@@ -29,7 +29,7 @@ def main():
     print("  🚀 System-Hint Agent Quick Start")
     print("="*60)
     
-    # Sample task for analyzing projects
+    # 用于项目分析的示例任务
     task = """Analyze and summarize the AI Agent projects in week1 and week2 directories:
 
 1. Navigate to the parent directory to access both week1 and week2 folders
@@ -50,7 +50,7 @@ Use the TODO list to organize and track your analysis steps."""
     print(task)
     print("-"*60)
     
-    # Create agent with all features enabled
+    # 创建启用全部功能的 Agent
     print("\n🔧 Initializing agent with full system hints...")
     config = SystemHintConfig(
         enable_timestamps=True,
@@ -64,20 +64,20 @@ Use the TODO list to organize and track your analysis steps."""
         api_key=api_key,
         provider="kimi",
         config=config,
-        verbose=False  # Set to True to see full API interactions
+        verbose=False  # 设为 True 可查看完整 API 交互
     )
     
-    # Set working directory to parent to access week1/week2
+    # 把工作目录设为上级目录，以便访问 week1/week2
     agent.current_directory = str(Path(__file__).parent.parent)
     print(f"📁 Working directory: {agent.current_directory}")
     
     print("\n🚀 Executing task (this may take a moment)...")
     print("-"*60)
     
-    # Execute the task
+    # 执行任务
     result = agent.execute_task(task, max_iterations=25)
     
-    # Display results
+    # 展示结果
     print("\n" + "="*60)
     print("  📊 Results")
     print("="*60)
@@ -89,7 +89,7 @@ Use the TODO list to organize and track your analysis steps."""
             print("\n📝 Summary:")
             print("-"*40)
             answer = result['final_answer']
-            # Display first 800 chars for readability
+            # 只显示前 800 字符，便于阅读
             if len(answer) > 800:
                 print(answer[:800] + "...\n[Output truncated for display]")
             else:
@@ -99,12 +99,12 @@ Use the TODO list to organize and track your analysis steps."""
         if result.get('error'):
             print(f"Error: {result['error']}")
     
-    # Statistics
+    # 统计信息
     print("\n📈 Execution Statistics:")
     print(f"  • Iterations: {result.get('iterations', 0)}")
     print(f"  • Tool calls: {len(result.get('tool_calls', []))}")
     
-    # Tool usage breakdown
+    # 工具使用分布
     if result.get('tool_calls'):
         tool_counts = {}
         for call in result['tool_calls']:
@@ -114,13 +114,13 @@ Use the TODO list to organize and track your analysis steps."""
         for tool, count in sorted(tool_counts.items(), key=lambda x: x[1], reverse=True):
             print(f"  • {tool}: {count} call{'s' if count > 1 else ''}")
     
-    # TODO list summary
+    # TODO 列表摘要
     if result.get('todo_list'):
         completed = sum(1 for item in result['todo_list'] if item['status'] == 'completed')
         total = len(result['todo_list'])
         print(f"\n📋 TODO Progress: {completed}/{total} tasks completed")
         
-        # Show first few TODO items
+        # 展示前几条 TODO
         print("\nTODO Items:")
         for item in result['todo_list'][:5]:
             status_symbol = {
@@ -129,7 +129,7 @@ Use the TODO list to organize and track your analysis steps."""
                 'completed': '✅',
                 'cancelled': '❌'
             }.get(item['status'], '❓')
-            # Truncate long content
+            # 截断过长内容
             content = item['content']
             if len(content) > 60:
                 content = content[:57] + "..."

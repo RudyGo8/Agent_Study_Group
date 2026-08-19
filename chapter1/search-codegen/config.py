@@ -1,4 +1,4 @@
-"""Configuration for the exact GPT-5.6 Responses API companion."""
+"""GPT-5.6 Responses API 精确实现的配置。"""
 
 import os
 from typing import Optional, Tuple
@@ -9,7 +9,7 @@ load_dotenv()
 
 
 def _optional_int_env(name: str) -> Optional[int]:
-    """Read an optional integer without making module import configuration-fatal."""
+    """读取可选的整数环境变量，避免配置错误导致模块导入直接失败。"""
     raw_value = os.getenv(name)
     if raw_value is None:
         return None
@@ -37,7 +37,7 @@ class Config:
     DASHSCOPE_MODEL = os.getenv("DASHSCOPE_MODEL", "qwen3.7-plus")
     BACKEND = os.getenv("BACKEND", "openai")
     MODEL_NAME = os.getenv("MODEL_NAME", "gpt-5.6-sol")
-    DEFAULT_TEMPERATURE = 0.3  # legacy CLI compatibility; intentionally omitted
+    DEFAULT_TEMPERATURE = 0.3  # 仅为兼容旧 CLI 保留；实际不发送
     DEFAULT_MAX_TOKENS: Optional[int] = _optional_int_env("DEFAULT_MAX_TOKENS")
     DEFAULT_TOOL_CHOICE = os.getenv("DEFAULT_TOOL_CHOICE", "auto")
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

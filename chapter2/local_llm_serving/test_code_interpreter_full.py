@@ -1,18 +1,18 @@
 """
-Test the full Python environment code interpreter with error handling
+测试完整 Python 环境代码解释器及其错误处理
 """
 import json
 from tools import ToolRegistry
 
 def test_successful_execution():
-    """Test that code executes successfully with full Python environment"""
+    """测试代码能在完整 Python 环境中成功执行"""
     print("=" * 60)
     print("Test 1: Successful execution with full Python environment")
     print("=" * 60)
     
     registry = ToolRegistry()
     
-    # Test with various Python features that would fail in a sandbox
+    # 测试各种在沙箱中会失败的 Python 特性
     test_cases = [
         {
             "name": "Complex calculation",
@@ -45,7 +45,7 @@ def test_successful_execution():
             print(f"  ✗ Exception: {e}")
 
 def test_error_handling():
-    """Test that errors are properly captured and formatted"""
+    """测试错误能被正确捕获和格式化"""
     print("\n" + "=" * 60)
     print("Test 2: Error handling and reporting")
     print("=" * 60)
@@ -90,14 +90,14 @@ def test_error_handling():
             print(f"  ✗ Error not caught - this shouldn't happen")
 
 def test_full_environment_access():
-    """Test that the code interpreter has access to full Python environment"""
+    """测试代码解释器可访问完整 Python 环境"""
     print("\n" + "=" * 60)
     print("Test 3: Full Python environment access")
     print("=" * 60)
     
     registry = ToolRegistry()
     
-    # Test access to various Python features that would be blocked in a sandbox
+    # 测试访问各种在沙箱中会被禁用的 Python 特性
     full_env_tests = [
         {
             "name": "Access to all builtins",
@@ -130,26 +130,26 @@ def test_full_environment_access():
             print(f"  ✗ Failed: {result_dict.get('error')}")
 
 def test_agent_error_propagation():
-    """Test that errors are properly formatted for the agent"""
+    """测试面向 Agent 的错误信息格式化"""
     print("\n" + "=" * 60)
     print("Test 4: Agent error message formatting")
     print("=" * 60)
     
     from agent import VLLMToolAgent
     
-    # This test would require a running vLLM server, so we'll just show
-    # how errors would be formatted
+    # 该测试需要运行中的 vLLM 服务端，这里只演示
+    # 错误信息的格式化方式
     
     registry = ToolRegistry()
     
-    # Simulate an error
+    # 模拟一个错误
     result = registry.execute_tool("code_interpreter", {
         "code": "result = 1 / 0"
     })
     
     result_dict = json.loads(result)
     
-    # Format as the agent would
+    # 按 Agent 的方式格式化
     if not result_dict.get("success"):
         error_msg = f"❌ Tool 'code_interpreter' execution failed:\n"
         if "error" in result_dict:

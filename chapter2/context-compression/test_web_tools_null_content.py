@@ -1,6 +1,6 @@
 """
-Test suite locking out TypeError in WebTools.search_web
-when fetch_webpage returns a dictionary containing 'content': None.
+测试套件：防止 WebTools.search_web 在 fetch_webpage 返回的字典
+包含 'content': None 时抛出 TypeError。
 """
 
 import os
@@ -16,7 +16,7 @@ from web_tools import WebTools
 
 def test_search_web_handles_null_page_content():
     """
-    Ensure search_web calculates content_length correctly when page_content['content'] is None.
+    确保 page_content['content'] 为 None 时 search_web 仍能正确计算 content_length。
     """
     tool = WebTools.__new__(WebTools)
     tool.serper_api_key = "dummy"
@@ -39,7 +39,7 @@ def test_search_web_handles_null_page_content():
 
 def test_fetch_webpage_title_with_nested_elements():
     """
-    Ensure fetch_webpage extracts title text correctly when title tag has nested HTML elements.
+    确保 title 标签内含嵌套 HTML 元素时 fetch_webpage 仍能正确提取标题文本。
     """
     html_content = "<html><head><title>Report <span>2026</span></title></head><body><p>Test content</p></body></html>"
     mock_resp = MagicMock()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Check system compatibility for running vLLM tool calling demo
+检查运行 vLLM 工具调用演示的系统兼容性
 """
 
 import sys
@@ -10,12 +10,12 @@ import shutil
 
 
 def check_system():
-    """Check system compatibility"""
+    """检查系统兼容性"""
     print("="*60)
     print("🔍 System Compatibility Check")
     print("="*60)
     
-    # Get system info
+    # 获取系统信息
     system = platform.system()
     machine = platform.machine()
     python_version = sys.version_info
@@ -25,7 +25,7 @@ def check_system():
     print(f"  Architecture: {machine}")
     print(f"  Python: {python_version.major}.{python_version.minor}.{python_version.micro}")
     
-    # Check for CUDA
+    # 检查 CUDA
     cuda_available = False
     gpu_info = None
     
@@ -36,7 +36,7 @@ def check_system():
         print("  ℹ️  Macs use Metal (Apple Silicon) or AMD/Intel GPUs")
         return False, "darwin"
     
-    # Check for NVIDIA GPU
+    # 检查 NVIDIA GPU
     if shutil.which("nvidia-smi"):
         try:
             result = subprocess.run(
@@ -55,7 +55,7 @@ def check_system():
     else:
         print("  ❌ No NVIDIA GPU detected (nvidia-smi not found)")
     
-    # Check PyTorch CUDA
+    # 检查 PyTorch CUDA
     print(f"\n🔥 PyTorch CUDA Check:")
     try:
         import torch
@@ -75,14 +75,14 @@ def check_system():
 
 
 def provide_recommendations(cuda_available, system):
-    """Provide recommendations based on system"""
+    """根据系统情况给出建议"""
     
     print("\n" + "="*60)
     print("💡 Recommendations")
     print("="*60)
     
-    # Official vLLM GPU execution requires Linux. WSL2 reports "linux", but
-    # native Windows is unsupported even when PyTorch detects CUDA.
+    # 官方 vLLM 的 GPU 执行要求 Linux。WSL2 会报告为 "linux"，
+    # 而原生 Windows 即使 PyTorch 检测到 CUDA 也不受支持。
     if system.lower() == "windows":
         print("\n🪟 You're on native Windows - will use Ollama")
         if cuda_available:
@@ -123,7 +123,7 @@ def provide_recommendations(cuda_available, system):
         print("   python main.py")
         print("   # Will automatically use Ollama")
         
-    else:  # Linux without CUDA
+    else:  # 无 CUDA 的 Linux
         print("\n🐧 You're on Linux without CUDA - will use Ollama")
         print("\n📋 Setup steps:\n")
         
@@ -140,7 +140,7 @@ def provide_recommendations(cuda_available, system):
 
 
 def main():
-    """Main compatibility check"""
+    """主兼容性检查流程"""
     cuda_available, system = check_system()
     provide_recommendations(cuda_available, system)
     

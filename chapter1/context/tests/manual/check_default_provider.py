@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test that Doubao is the default provider
+测试 Doubao 是默认提供商
 """
 
 import os
@@ -10,10 +10,10 @@ from _bootstrap import add_project_root
 
 add_project_root()
 
-# Test without any arguments - should use Doubao
+# 不带任何参数测试 —— 应使用 Doubao
 print("Testing default provider...")
 
-# Check if ARK_API_KEY is available
+# 检查 ARK_API_KEY 是否可用
 ark_key = os.getenv("ARK_API_KEY")
 sf_key = os.getenv("SILICONFLOW_API_KEY")
 
@@ -24,10 +24,10 @@ if ark_key:
     from agent import ContextAwareAgent, ContextMode
     from config import Config
     
-    # Check config default
+    # 检查配置中的默认值
     print(f"\nConfig default provider: {Config.LLM_PROVIDER}")
-    
-    # Create agent with default provider from config
+
+    # 用配置的默认提供商创建 Agent
     agent = ContextAwareAgent(ark_key, ContextMode.FULL, provider=Config.LLM_PROVIDER)
     
     print(f"\n✅ Default agent created successfully!")

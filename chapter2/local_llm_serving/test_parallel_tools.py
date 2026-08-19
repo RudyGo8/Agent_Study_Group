@@ -1,17 +1,17 @@
 """
-End-to-end test for parallel tool calling with a real LLM (Ollama).
+用真实 LLM（Ollama）做并行工具调用的端到端测试。
 
-Covers:
-1. Deterministic proof of parallel execution: two 2s-sleep tools must finish
-   in ~2s (not ~4s) through each agent's tool-execution path.
-2. Real-model runs of the book's "Vancouver time + weather" example through:
-   - OllamaNativeAgent.chat / chat_stream (native tool calling)
-   - OllamaOpenAICompatible.chat (OpenAI-compatible endpoint, native tools)
-   - VLLMToolAgent.chat / chat_stream (structured OpenAI-compatible tool calls;
-     Ollama's OpenAI-compatible endpoint stands in for the vLLM server)
+覆盖：
+1. 并行执行的确定性验证：两个各睡 2s 的工具必须经每个 Agent 的工具执行
+   路径在约 2s（而非约 4s）内完成。
+2. 用真实模型跑书中「温哥华时间 + 天气」示例，覆盖：
+   - OllamaNativeAgent.chat / chat_stream（原生工具调用）
+   - OllamaOpenAICompatible.chat（OpenAI 兼容端点，原生工具）
+   - VLLMToolAgent.chat / chat_stream（OpenAI 兼容的结构化工具调用；
+     用 Ollama 的 OpenAI 兼容端点顶替 vLLM 服务端）
 
-Run from this directory:  python3 test_parallel_tools.py
-Requires: ollama serve + ollama pull qwen2.5:7b-instruct-q8_0
+在本目录运行:  python3 test_parallel_tools.py
+依赖: ollama serve + ollama pull qwen2.5:7b-instruct-q8_0
 """
 import json
 import logging
@@ -25,13 +25,13 @@ logging.basicConfig(level=logging.WARNING)
 
 SLEEP = 2
 QUERY = "What time is it in Vancouver and what's the current weather in Vancouver?"
-# qwen3:0.6b is the project default but flaky at native tool calling;
-# qwen2.5:7b-instruct-q8_0 (also pulled locally) calls tools reliably.
+# qwen3:0.6b 是项目默认模型，但原生工具调用不稳定；
+# qwen2.5:7b-instruct-q8_0（本地也已拉取）调用工具更可靠。
 REAL_MODEL = "qwen2.5:7b-instruct-q8_0"
-MAX_ATTEMPTS = 4  # small models occasionally skip tool calling; retry
+MAX_ATTEMPTS = 4  # 小模型偶尔会跳过工具调用；需重试
 
 
-# ---------------------------------------------------------------- helpers
+# ---------------------------------------------------------------- 辅助函数
 
 def _sleep_tool(name):
     def fn(tag: str = "") -> dict:
@@ -58,7 +58,7 @@ def _check_parallel(label, elapsed, n=2):
     assert elapsed < SLEEP * 1.8, f"{label}: tool calls were not executed in parallel"
 
 
-# ------------------------------------- 1. deterministic parallel checks
+# ------------------------------------- 1. 确定性并行验证
 
 def test_native_execute_parallel():
     print("\n== OllamaNativeAgent._execute_tool_calls (sleep tools) ==")
@@ -98,7 +98,7 @@ def test_vllm_stream_parallel():
     def fake_create(**kwargs):
         state["n"] += 1
         if state["n"] == 1:
-            # Split arguments across chunks and interleave two call indexes.
+            # 把参数拆到多个分片，并交错两个调用的 index。
             return iter([
                 _make_chunk(tool_calls=[
                     _tool_fragment(
@@ -130,7 +130,7 @@ def test_vllm_stream_parallel():
     _check_parallel("vllm chat_stream", elapsed)
 
 
-# ------------------------------------- 2. real-model end-to-end runs
+# ------------------------------------- 2. 真实模型端到端运行
 
 def test_native_real_model():
     print(f"\n== OllamaNativeAgent.chat (real {REAL_MODEL}) ==")
@@ -189,8 +189,8 @@ def test_vllm_agent_real_model():
     print(f"\n== VLLMToolAgent.chat (real {REAL_MODEL} via OpenAI endpoint) ==")
     agent = VLLMToolAgent(api_base="http://localhost:11434/v1", api_key="ollama")
 
-    # Ollama's OpenAI endpoint stands in for the vLLM server. Keep the native
-    # tools payload so both chat paths receive structured tool_calls.
+    # 用 Ollama 的 OpenAI 端点顶替 vLLM 服务端。保留原生
+    # tools 负载，让两条 chat 路径都收到结构化 tool_calls。
     real_create = agent.client.chat.completions.create
 
     def create_structured_mode(**kwargs):
@@ -204,8 +204,8 @@ def test_vllm_agent_real_model():
     response, tool_msgs, batch = "", [], 0
     for attempt in range(1, MAX_ATTEMPTS + 1):
         agent.reset_conversation()
-        # temperature 0.7 sampling can degenerate into a tool-call loop with
-        # this handcrafted XML format; 0.3 is stable
+        # 手工拼接的 XML 格式下，temperature 0.7 采样可能退化成
+        # 工具调用死循环；0.3 比较稳定
         response = agent.chat(QUERY, temperature=0.3)
         tool_msgs = [m for m in agent.conversation_history if m.get("name")]
         assistant_tc = [m for m in agent.conversation_history if m.get("tool_calls")]
@@ -223,8 +223,8 @@ def test_vllm_agent_real_model():
     events = []
     for attempt in range(1, MAX_ATTEMPTS + 1):
         agent.reset_conversation()
-        # temperature 0.7 sampling can degenerate into a tool-call loop with
-        # this handcrafted XML format; 0.3 is stable
+        # 手工拼接的 XML 格式下，temperature 0.7 采样可能退化成
+        # 工具调用死循环；0.3 比较稳定
         events = list(agent.chat_stream(QUERY, temperature=0.3))
         n_calls = sum(1 for e in events if e["type"] == "tool_call")
         if any(e["type"] == "tool_result" for e in events) and n_calls <= 10:

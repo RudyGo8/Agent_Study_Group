@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the local LLM serving benchmark."""
+"""本地 LLM 服务基准的回归测试。"""
 
 from types import SimpleNamespace
 from unittest.mock import patch

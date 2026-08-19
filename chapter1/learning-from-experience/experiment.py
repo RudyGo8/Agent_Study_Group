@@ -1,6 +1,6 @@
 """
-Experiment runner to compare traditional RL vs LLM-based in-context learning.
-This replicates the key insights from "The Second Half" blog post.
+对比传统 RL 与基于 LLM 的上下文学习的实验运行器。
+复现 "The Second Half" 博文中的核心观点。
 """
 
 import os
@@ -16,7 +16,7 @@ import seaborn as sns
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# 从 .env 文件加载环境变量
 load_dotenv()
 
 from game_environment import TreasureHuntGame
@@ -26,15 +26,15 @@ from llm_agent import LLMAgent
 
 class ExperimentRunner:
     """
-    Runs experiments comparing different learning approaches.
+    运行对比不同学习方法的实验。
     """
-    
+
     def __init__(self, results_dir: str = "results"):
-        """Initialize experiment runner."""
+        """初始化实验运行器。"""
         self.results_dir = Path(results_dir)
         self.results_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Create timestamp for this experiment run
+
+        # 为本次实验运行创建时间戳
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.experiment_dir = self.results_dir / self.timestamp
         self.experiment_dir.mkdir(exist_ok=True)
@@ -52,24 +52,24 @@ class ExperimentRunner:
                          epsilon_min: float = 0.1,
                          checkpoint_interval: int = 1000) -> Dict[str, Any]:
         """
-        Run experiment with traditional Q-learning agent.
+        用传统 Q-learning 智能体跑实验。
 
         Args:
-            num_training_episodes: Number of episodes to train
-            num_eval_episodes: Number of episodes to evaluate
-            verbose: Whether to print details
-            stochastic: Whether to use stochastic environment
-            learning_rate: Q-learning learning rate (alpha)
-            discount_factor: Discount factor (gamma)
-            epsilon_decay: Per-episode epsilon decay
-            epsilon_min: Minimum exploration rate
-            checkpoint_interval: Record/print a learning-curve row every N episodes
+            num_training_episodes: 训练局数
+            num_eval_episodes: 评估局数
+            verbose: 是否打印细节
+            stochastic: 是否使用随机环境
+            learning_rate: Q-learning 学习率（alpha）
+            discount_factor: 折扣因子（gamma）
+            epsilon_decay: 每局的 epsilon 衰减系数
+            epsilon_min: 最小探索率
+            checkpoint_interval: 每 N 局记录/打印一行学习曲线
         """
         print("\n" + "="*60)
         print("TRADITIONAL RL EXPERIMENT (Q-Learning)")
         print("="*60)
 
-        # Initialize agent with the given hyperparameters
+        # 用给定超参数初始化智能体
         agent = QLearningAgent(
             learning_rate=learning_rate,
             discount_factor=discount_factor,
@@ -78,7 +78,7 @@ class ExperimentRunner:
             epsilon_min=epsilon_min
         )
 
-        # Training phase
+        # 训练阶段
         print(f"\nTraining for {num_training_episodes} episodes...")
         start_time = time.time()
 
@@ -91,20 +91,20 @@ class ExperimentRunner:
 
         training_time = time.time() - start_time
 
-        # Show the learning curve (success rate over episodes) -- this is the
-        # core point of experiment 7-1: the agent slowly LEARNS from experience.
+        # 展示学习曲线（胜率随局数的变化）——这是实验 7-1 的核心：
+        # 智能体在经验中缓慢地"学习"。
         self._print_learning_curve(train_results.get("learning_curve", []),
                                     checkpoint_interval)
-        
-        # Evaluation phase
+
+        # 评估阶段
         print(f"\nEvaluating on {num_eval_episodes} episodes...")
         eval_results = agent.evaluate(
             num_episodes=num_eval_episodes,
             verbose=False,
             stochastic=stochastic
         )
-        
-        # Compile results
+
+        # 汇总结果
         results = {
             "method": "Q-Learning",
             "training_episodes": num_training_episodes,
@@ -121,7 +121,7 @@ class ExperimentRunner:
             "learning_curve": train_results.get("learning_curve", [])
         }
 
-        # Save agent
+        # 保存智能体
         agent.save(self.experiment_dir / "rl_agent.pkl")
         
         print(f"\nRL Training Summary:")
@@ -134,10 +134,10 @@ class ExperimentRunner:
     
     def _print_learning_curve(self, learning_curve: List[Dict[str, Any]],
                               checkpoint_interval: int):
-        """Print the Q-learning success-rate-over-episodes table.
+        """打印 Q-learning 胜率随局数变化的表格。
 
-        This is the whole point of experiment 7-1: watch the victory rate climb
-        from 0% (blind exploration) to ~100% only after thousands of episodes.
+        这正是实验 7-1 的意义所在：观察胜率从 0%（盲目探索）
+        经数千局之后才爬升到约 100%。
         """
         if not learning_curve:
             return
@@ -161,19 +161,19 @@ class ExperimentRunner:
                           stochastic: bool = False,
                           model: str = "kimi-k3") -> Dict[str, Any]:
         """
-        Run experiment with LLM-based in-context learning agent.
-        
+        用基于 LLM 上下文学习的智能体跑实验。
+
         Args:
-            num_training_episodes: Number of episodes to train
-            num_eval_episodes: Number of episodes to evaluate
-            verbose: Whether to print details
-            stochastic: Whether to use stochastic environment
+            num_training_episodes: 训练局数
+            num_eval_episodes: 评估局数
+            verbose: 是否打印细节
+            stochastic: 是否使用随机环境
         """
         print("\n" + "="*70)
         print(f"LLM-BASED IN-CONTEXT LEARNING EXPERIMENT ({model})")
         print("="*70)
 
-        # Check for API key
+        # 检查 API key
         provider = os.getenv("LLM_PROVIDER", "moonshot").lower()
         api_key = os.getenv("DASHSCOPE_API_KEY") if provider in {"dashscope", "qwen", "bailian"} else os.getenv("MOONSHOT_API_KEY")
         if not api_key and not os.getenv("OPENROUTER_API_KEY"):
@@ -187,7 +187,7 @@ class ExperimentRunner:
         print(f"🧠 Using {model} model for reasoning and in-context learning")
         print("📖 The LLM will show its complete thought process for each decision")
 
-        # Initialize agent
+        # 初始化智能体
         agent = LLMAgent(
             api_key=api_key,
             model=model,
@@ -196,7 +196,7 @@ class ExperimentRunner:
             max_experiences=50
         )
         
-        # Training phase (experience collection)
+        # 训练阶段（收集经验）
         print(f"\n🎓 Training Phase: Playing {num_training_episodes} episodes")
         print("💡 Watch how the LLM learns from experience without any parameter updates!")
         print("-"*70)
@@ -210,16 +210,16 @@ class ExperimentRunner:
         )
         
         training_time = time.time() - start_time
-        
-        # Evaluation phase
+
+        # 评估阶段
         print(f"\nEvaluating on {num_eval_episodes} episodes...")
         eval_results = agent.evaluate(
             num_episodes=num_eval_episodes,
             verbose=False,
             stochastic=stochastic
         )
-        
-        # Compile results
+
+        # 汇总结果
         results = {
             "method": "LLM In-Context Learning",
             "provider": agent.provider,
@@ -251,7 +251,7 @@ class ExperimentRunner:
             ],
         }
         
-        # Save experiences
+        # 保存经验
         agent.save_experiences(self.experiment_dir / "llm_experiences.json")
         
         print(f"\nLLM Training Summary:")
@@ -265,14 +265,14 @@ class ExperimentRunner:
     
     def compare_learning_curves(self, rl_results: Dict, llm_results: Dict):
         """
-        Create visualization comparing learning curves of both methods.
+        生成对比两种方法学习曲线的可视化图。
         """
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
-        
-        # Plot 1: Victory rate over episodes
+
+        # 图 1：胜率随局数的变化
         ax = axes[0, 0]
-        
-        # RL victory rate (computed over windows)
+
+        # RL 胜率（按窗口计算）
         rl_rewards = rl_results["episode_rewards"]
         window_size = 100
         rl_victories = []
@@ -284,7 +284,7 @@ class ExperimentRunner:
         ax.plot(range(0, len(rl_rewards), window_size), rl_victories, 
                 label=f"Q-Learning ({len(rl_rewards)} episodes)", linewidth=2)
         
-        # LLM victory rate (per episode)
+        # LLM 胜率（逐局）
         if llm_results:
             llm_rewards = llm_results["episode_rewards"]
             llm_victories = [1 if r > 50 else 0 for r in llm_rewards]
@@ -298,10 +298,10 @@ class ExperimentRunner:
         ax.legend()
         ax.grid(True, alpha=0.3)
         
-        # Plot 2: Average reward over episodes
+        # 图 2：平均奖励随局数的变化
         ax = axes[0, 1]
-        
-        # RL rewards (smoothed)
+
+        # RL 奖励（平滑后）
         rl_smooth = []
         for i in range(0, len(rl_rewards), window_size):
             window = rl_rewards[i:i+window_size]
@@ -310,7 +310,7 @@ class ExperimentRunner:
         ax.plot(range(0, len(rl_rewards), window_size), rl_smooth,
                 label="Q-Learning", linewidth=2)
         
-        # LLM rewards
+        # LLM 奖励
         if llm_results:
             llm_rewards = llm_results["episode_rewards"]
             ax.plot(range(len(llm_rewards)), llm_rewards,
@@ -322,7 +322,7 @@ class ExperimentRunner:
         ax.legend()
         ax.grid(True, alpha=0.3)
         
-        # Plot 3: Sample efficiency comparison
+        # 图 3：样本效率对比
         ax = axes[1, 0]
         
         categories = ["Training\nEpisodes", "Evaluation\nVictory Rate", "Training\nTime (s)"]
@@ -353,7 +353,7 @@ class ExperimentRunner:
         ax.set_xticklabels(categories)
         ax.legend()
         
-        # Add value labels on bars
+        # 在柱子上标注数值
         for bars in [bars1, bars2]:
             for bar in bars:
                 height = bar.get_height()
@@ -363,7 +363,7 @@ class ExperimentRunner:
                            textcoords="offset points",
                            ha='center', va='bottom')
         
-        # Plot 4: Key insights text
+        # 图 4：关键结论文字
         ax = axes[1, 1]
         ax.axis('off')
         
@@ -417,30 +417,30 @@ class ExperimentRunner:
                            checkpoint_interval: int = 1000,
                            rl_hyperparams: Dict[str, float] = None):
         """
-        Run full comparison experiment.
+        运行完整的对比实验。
 
         Args:
-            rl_episodes: Number of episodes for RL training
-            llm_episodes: Number of episodes for LLM training
-            eval_episodes: Number of episodes for RL evaluation
-            verbose: Whether to print details
-            stochastic: Whether to use stochastic environment
-            model: LLM model name (Moonshot/Kimi)
-            checkpoint_interval: Learning-curve sampling interval (RL)
-            rl_hyperparams: Optional dict overriding Q-learning hyperparameters
+            rl_episodes: RL 训练局数
+            llm_episodes: LLM 训练局数
+            eval_episodes: RL 评估局数
+            verbose: 是否打印细节
+            stochastic: 是否使用随机环境
+            model: LLM 模型名（Moonshot/Kimi）
+            checkpoint_interval: 学习曲线采样间隔（RL）
+            rl_hyperparams: 可选字典，用于覆盖 Q-learning 超参数
         """
         print("\n" + "="*70)
         print("EXPERIMENT: Traditional RL vs LLM In-Context Learning")
         print("Replicating insights from 'The Second Half' by Shunyu Yao")
         print("="*70)
 
-        # Show game rules for reference
+        # 展示游戏规则供参考
         game = TreasureHuntGame(stochastic=stochastic)
         print("\n" + game.get_hidden_rules())
 
         rl_hyperparams = rl_hyperparams or {}
 
-        # Run RL experiment
+        # 跑 RL 实验
         rl_results = self.run_rl_experiment(
             num_training_episodes=rl_episodes,
             num_eval_episodes=eval_episodes,
@@ -451,7 +451,7 @@ class ExperimentRunner:
         )
         self.results["rl"] = rl_results
 
-        # Run LLM experiment
+        # 跑 LLM 实验
         llm_results = self.run_llm_experiment(
             num_training_episodes=llm_episodes,
             num_eval_episodes=10,
@@ -460,16 +460,16 @@ class ExperimentRunner:
             model=model
         )
         self.results["llm"] = llm_results
-        
-        # Save combined results
+
+        # 保存合并结果
         with open(self.experiment_dir / "experiment_results.json", 'w') as f:
             json.dump(self.results, f, indent=2)
-        
-        # Generate comparison plots
+
+        # 生成对比图
         if llm_results:
             self.compare_learning_curves(rl_results, llm_results)
-        
-        # Print final comparison
+
+        # 打印最终对比
         print("\n" + "="*70)
         print("EXPERIMENT RESULTS SUMMARY")
         print("="*70)
@@ -496,7 +496,7 @@ class ExperimentRunner:
 
 
 def main():
-    """Main entry point for the experiment."""
+    """实验入口。"""
     parser = argparse.ArgumentParser(
         description="实验 7-1 / 7-2：在寻宝游戏中对比 Q-learning 与 LLM 的\"从经验中学习\"。"
                     "Q-learning 完全离线运行（无需 API），LLM 模式需要 Moonshot/Kimi API Key。",
@@ -568,27 +568,26 @@ def main():
 
     args = parser.parse_args()
 
-    # Handle environment mode
+    # 处理环境模式
     if args.deterministic and args.stochastic:
         print("Error: Cannot specify both --deterministic and --stochastic")
         return
 
-    # Episode counts must be positive; 0 would divide by zero in the
-    # train/evaluate victory-rate and average calculations.
+    # 局数必须为正；若为 0，train/evaluate 计算胜率和均值时会除零。
     if args.rl_episodes < 1 or args.llm_episodes < 1 or args.eval_episodes < 1:
         print("Error: --rl-episodes, --llm-episodes and --eval-episodes must all be >= 1")
         return
 
-    # Resolve run mode (--skip-llm kept as a backwards-compatible alias)
+    # 解析运行模式（--skip-llm 保留为向后兼容的别名）
     mode = "qlearning" if args.skip_llm else args.mode
 
-    # Seed for reproducible Q-learning learning curves
+    # 固定种子以复现 Q-learning 学习曲线
     if args.seed is not None:
         random.seed(args.seed)
         np.random.seed(args.seed)
         print(f"\n🎲 Random seed set to {args.seed} for reproducibility")
 
-    stochastic = args.stochastic  # Default is False (deterministic)
+    stochastic = args.stochastic  # 默认为 False（确定性）
 
     if stochastic:
         print("\n🎲 Running experiment with STOCHASTIC environment")
@@ -605,11 +604,11 @@ def main():
         "epsilon_min": args.epsilon_min,
     }
 
-    # Run experiment
+    # 运行实验
     runner = ExperimentRunner(results_dir=args.output)
 
     if mode in ("qlearning", "rl"):
-        # Run only the Q-learning experiment (fully offline, no API needed)
+        # 只跑 Q-learning 实验（完全离线，无需 API）
         rl_results = runner.run_rl_experiment(
             num_training_episodes=args.rl_episodes,
             num_eval_episodes=args.eval_episodes,
@@ -624,7 +623,7 @@ def main():
         print(f"\nResults saved to: {runner.experiment_dir}")
         print("\nSkipped LLM experiment. Use --mode both with an API key to compare.")
     elif mode == "llm":
-        # Run only the LLM experiment
+        # 只跑 LLM 实验
         llm_results = runner.run_llm_experiment(
             num_training_episodes=args.llm_episodes,
             verbose=args.verbose,
@@ -636,7 +635,7 @@ def main():
             json.dump(runner.results, f, indent=2)
         print(f"\nResults saved to: {runner.experiment_dir}")
     else:
-        # Run full comparison
+        # 跑完整对比
         results = runner.run_full_experiment(
             rl_episodes=args.rl_episodes,
             llm_episodes=args.llm_episodes,

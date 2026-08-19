@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Test script to verify message flow in correct vs incorrect modes
+验证正确与错误模式下消息流转的测试脚本
 """
 
 def test_message_flow_logic():
-    """Simulate how messages are handled in different modes"""
+    """模拟不同模式下消息的处理方式"""
     
     print("🔍 Testing Message Flow Logic")
     print("="*60)
     
-    # Simulate CORRECT mode
+    # 模拟 CORRECT 模式
     print("\n✅ CORRECT Mode:")
     print("-"*40)
     
@@ -20,18 +20,18 @@ def test_message_flow_logic():
         print(f"\nIteration {iteration}:")
         
         if iteration == 1:
-            # First iteration: create messages
+            # 第一次迭代：创建 messages
             messages_correct = ["system", "task"]
             print(f"  • Created messages: {messages_correct}")
         else:
             print(f"  • Using existing messages: {messages_correct}")
         
-        # Simulate tool call
+        # 模拟工具调用
         print(f"  • API returns tool call")
         messages_correct.append(f"assistant_iter{iteration}")
         history_correct.append(f"assistant_iter{iteration}")
         
-        # Simulate tool result
+        # 模拟工具结果
         print(f"  • Tool executed")
         messages_correct.append(f"tool_result_iter{iteration}")
         history_correct.append(f"tool_result_iter{iteration}")
@@ -39,7 +39,7 @@ def test_message_flow_logic():
         print(f"  • Messages now: {messages_correct}")
         print(f"  • History now: {history_correct}")
     
-    # Simulate INCORRECT mode
+    # 模拟错误模式
     print("\n\n❌ INCORRECT Mode (e.g., DYNAMIC_SYSTEM):")
     print("-"*40)
     
@@ -48,16 +48,16 @@ def test_message_flow_logic():
     for iteration in range(1, 4):
         print(f"\nIteration {iteration}:")
         
-        # Always recreate messages from history
+        # 每次都从历史重建 messages
         messages_incorrect = ["system_with_timestamp", "task"] + history_incorrect
         print(f"  • Recreated messages: {messages_incorrect}")
         
-        # Simulate tool call
+        # 模拟工具调用
         print(f"  • API returns tool call")
         messages_incorrect.append(f"assistant_iter{iteration}")
         history_incorrect.append(f"assistant_iter{iteration}")
         
-        # Simulate tool result
+        # 模拟工具结果
         print(f"  • Tool executed")
         messages_incorrect.append(f"tool_result_iter{iteration}")
         history_incorrect.append(f"tool_result_iter{iteration}")

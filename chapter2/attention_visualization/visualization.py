@@ -1,6 +1,6 @@
 """
-Attention Visualization Utilities
-Creates visual representations of attention patterns
+注意力可视化工具
+生成注意力模式的可视化呈现
 """
 
 import matplotlib.pyplot as plt
@@ -14,9 +14,8 @@ from pathlib import Path
 
 def _configure_cjk_font():
     """
-    Best-effort: pick a CJK-capable font so Chinese token labels (e.g. the
-    '北京 的 天气 怎么样' example from Chapter 2) render as glyphs instead of
-    tofu boxes. Silently no-ops if none is installed.
+    尽力而为：挑选一个支持 CJK 的字体，让中文 token 标签（如第 2 章的
+    '北京 的 天气 怎么样'示例）显示为字形而非"豆腐块"。未安装时静默跳过。
     """
     from matplotlib import font_manager
     candidates = [
@@ -49,75 +48,75 @@ def create_attention_heatmap(
     cmap: str = 'viridis'
 ) -> plt.Figure:
     """
-    Create a heatmap visualization of attention weights
-    
+    创建注意力权重的热力图可视化
+
     Args:
-        attention_weights: 2D list of attention weights [output_len x total_len]
-        input_tokens: List of input tokens
-        output_tokens: List of generated tokens
-        context_boundary: Position where input ends and output begins
-        title: Title for the plot
-        save_path: Optional path to save the figure
-        figsize: Figure size
-        cmap: Colormap to use
-        
+        attention_weights: 二维注意力权重列表 [output_len x total_len]
+        input_tokens: 输入 token 列表
+        output_tokens: 生成的 token 列表
+        context_boundary: 输入结束、输出开始的位置
+        title: 图表标题
+        save_path: 可选的图片保存路径
+        figsize: 图表尺寸
+        cmap: 使用的色图
+
     Returns:
-        matplotlib Figure object
+        matplotlib Figure 对象
     """
-    # Handle variable-length attention weights (triangular pattern)
-    # Each step i has context_boundary + i + 1 attention weights
+    # 处理变长注意力权重（三角模式）
+    # 第 i 步有 context_boundary + i + 1 个注意力权重
     max_len = context_boundary + len(output_tokens)
     attention_matrix = np.zeros((len(attention_weights), max_len))
     
     for i, weights in enumerate(attention_weights):
-        # Handle both list and nested list formats
+        # 兼容列表和嵌套列表两种格式
         if weights and isinstance(weights[0], list):
-            # Average across heads if multi-head attention
+            # 多头注意力时对各头取平均
             weights = np.array(weights).mean(axis=0).tolist()
-        # Fill in the weights we have
+        # 填入已有的权重
         attention_matrix[i, :len(weights)] = weights[:max_len]
     
-    # Create figure and axis
+    # 创建图和坐标轴
     fig, ax = plt.subplots(figsize=figsize)
-    
-    # Create the heatmap
+
+    # 绘制热力图
     im = ax.imshow(attention_matrix, cmap=cmap, aspect='auto', vmin=0, vmax=1)
-    
-    # Set ticks and labels
+
+    # 设置刻度和标签
     all_tokens = input_tokens + output_tokens
-    
-    # X-axis (what is being attended to)
+
+    # X 轴（被关注对象）
     ax.set_xticks(np.arange(len(all_tokens)))
     ax.set_xticklabels(all_tokens, rotation=45, ha='right', fontsize=8)
-    
-    # Y-axis (generated tokens)
+
+    # Y 轴（生成的 token）
     ax.set_yticks(np.arange(len(output_tokens)))
     ax.set_yticklabels(output_tokens, fontsize=10)
-    
-    # Add boundary line between input and output
+
+    # 添加输入/输出分界线
     ax.axvline(x=context_boundary - 0.5, color='red', linewidth=2, linestyle='--', label='Input/Output Boundary')
     
-    # Add colorbar
+    # 添加颜色条
     cbar = plt.colorbar(im, ax=ax)
     cbar.set_label('Attention Weight', rotation=270, labelpad=20)
-    
-    # Add grid
+
+    # 添加网格
     ax.set_xticks(np.arange(len(all_tokens) + 1) - 0.5, minor=True)
     ax.set_yticks(np.arange(len(output_tokens) + 1) - 0.5, minor=True)
     ax.grid(which='minor', color='gray', linestyle='-', linewidth=0.5, alpha=0.3)
-    
-    # Labels and title
+
+    # 标签与标题
     ax.set_xlabel('Token Position (Input → Output)', fontsize=12)
     ax.set_ylabel('Generated Tokens', fontsize=12)
     ax.set_title(title, fontsize=14, fontweight='bold')
-    
-    # Add legend
+
+    # 添加图例
     ax.legend(loc='upper right')
-    
-    # Adjust layout
+
+    # 调整布局
     plt.tight_layout()
-    
-    # Save if path provided
+
+    # 如提供路径则保存
     if save_path:
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         
@@ -133,23 +132,23 @@ def create_attention_flow_diagram(
     figsize: Tuple[int, int] = (16, 10)
 ) -> plt.Figure:
     """
-    Create a flow diagram showing attention evolution over generation steps
-    
+    创建展示注意力随生成步骤演变的流程图
+
     Args:
-        attention_steps: List of attention step dictionaries
-        input_tokens: List of input tokens
-        context_length: Length of input context
-        max_steps: Maximum number of steps to visualize
-        save_path: Optional path to save the figure
-        figsize: Figure size
-        
+        attention_steps: 注意力步骤字典列表
+        input_tokens: 输入 token 列表
+        context_length: 输入上下文长度
+        max_steps: 可视化的最大步数
+        save_path: 可选的图片保存路径
+        figsize: 图表尺寸
+
     Returns:
-        matplotlib Figure object
+        matplotlib Figure 对象
     """
-    # Limit steps if needed
+    # 必要时限制步数
     steps_to_show = min(len(attention_steps), max_steps)
-    
-    # Create subplots
+
+    # 创建子图
     fig, axes = plt.subplots(1, steps_to_show, figsize=figsize, sharey=True)
     
     if steps_to_show == 1:
@@ -158,25 +157,25 @@ def create_attention_flow_diagram(
     for idx, step in enumerate(attention_steps[:steps_to_show]):
         ax = axes[idx]
         
-        # Get attention weights for this step
+        # 获取该步骤的注意力权重
         attention = np.array(step['attention_weights'])
-        
-        # Handle both 1D and 2D attention
+
+        # 兼容一维和二维注意力
         if attention.ndim == 2:
-            # Average across heads if needed
+            # 必要时对各头取平均
             attention = attention.mean(axis=0)
-        
-        # Ensure attention is normalized
+
+        # 确保注意力归一化
         if attention.sum() > 0:
             attention = attention / attention.sum()
-        
-        # Create bar plot
+
+        # 绘制条形图
         positions = np.arange(len(attention))
         colors = ['blue' if i < context_length else 'red' for i in positions]
         
         bars = ax.bar(positions, attention, color=colors, alpha=0.7)
         
-        # Highlight top attention positions
+        # 高亮注意力最高的位置
         top_k = min(3, len(attention))
         top_indices = np.argsort(attention)[-top_k:]
         for i in top_indices:
@@ -184,22 +183,22 @@ def create_attention_flow_diagram(
             bars[i].set_edgecolor('black')
             bars[i].set_linewidth(2)
         
-        # Labels
+        # 标签
         ax.set_title(f"Step {step['step']}\nToken: '{step['token']}'", fontsize=10)
         ax.set_xlabel('Position', fontsize=8)
         if idx == 0:
             ax.set_ylabel('Attention Weight', fontsize=10)
         
-        # Add context boundary line
+        # 添加上下文分界线
         ax.axvline(x=context_length - 0.5, color='green', linestyle='--', alpha=0.5)
-        
-        # Limit y-axis for better visibility
+
+        # 限制 y 轴范围以便观察
         ax.set_ylim(0, min(1.0, attention.max() * 1.2))
         
-    # Overall title
+    # 总标题
     fig.suptitle('Attention Flow During Generation', fontsize=14, fontweight='bold')
-    
-    # Add legend
+
+    # 添加图例
     from matplotlib.patches import Patch
     legend_elements = [
         Patch(facecolor='blue', alpha=0.7, label='Input Context'),
@@ -222,40 +221,40 @@ def create_token_attention_summary(
     figsize: Tuple[int, int] = (14, 8)
 ) -> plt.Figure:
     """
-    Create a summary visualization showing tokens and their attention patterns
-    
+    创建汇总可视化，展示 token 及其注意力模式
+
     Args:
-        result: Generation result dictionary
-        save_path: Optional path to save the figure
-        figsize: Figure size
-        
+        result: 生成结果字典
+        save_path: 可选的图片保存路径
+        figsize: 图表尺寸
+
     Returns:
-        matplotlib Figure object
+        matplotlib Figure 对象
     """
     fig = plt.figure(figsize=figsize)
-    
-    # Create grid for subplots
+
+    # 创建子图网格
     gs = fig.add_gridspec(3, 2, height_ratios=[1, 2, 2], width_ratios=[1, 1])
-    
-    # 1. Token sequences display
+
+    # 1. token 序列展示
     ax_tokens = fig.add_subplot(gs[0, :])
     ax_tokens.axis('off')
-    
-    # Display input tokens
-    input_text = "Input: " + "".join(result['input_tokens'][:50])  # Limit display
-    ax_tokens.text(0.05, 0.7, input_text, fontsize=10, color='blue', 
+
+    # 展示输入 token
+    input_text = "Input: " + "".join(result['input_tokens'][:50])  # 限制显示数量
+    ax_tokens.text(0.05, 0.7, input_text, fontsize=10, color='blue',
                    wrap=True, transform=ax_tokens.transAxes)
-    
-    # Display output tokens
+
+    # 展示输出 token
     output_text = "Output: " + "".join(result['output_tokens'][:50])
     ax_tokens.text(0.05, 0.3, output_text, fontsize=10, color='red',
                    wrap=True, transform=ax_tokens.transAxes)
     
-    # 2. Attention statistics
+    # 2. 注意力统计
     ax_stats = fig.add_subplot(gs[1, 0])
-    
+
     if result['attention_steps']:
-        # Calculate statistics
+        # 计算统计量
         avg_attentions = []
         max_attentions = []
         
@@ -278,7 +277,7 @@ def create_token_attention_summary(
         ax_stats.legend()
         ax_stats.grid(True, alpha=0.3)
     
-    # 3. Attention distribution histogram
+    # 3. 注意力分布直方图
     ax_hist = fig.add_subplot(gs[1, 1])
     
     if result['attention_steps']:
@@ -297,11 +296,11 @@ def create_token_attention_summary(
                        label=f'Mean: {np.mean(all_weights):.3f}')
         ax_hist.legend()
     
-    # 4. Top attended positions
+    # 4. 被关注最多的位置
     ax_top = fig.add_subplot(gs[2, :])
-    
+
     if result['attention_steps']:
-        # Aggregate attention across all steps
+        # 聚合所有步骤的注意力
         context_len = result['context_length']
         total_len = context_len + len(result['output_tokens'])
         aggregated_attention = np.zeros(total_len)
@@ -312,10 +311,10 @@ def create_token_attention_summary(
                 weights = weights.mean(axis=0)
             aggregated_attention[:len(weights)] += weights
         
-        # Normalize
+        # 归一化
         aggregated_attention /= len(result['attention_steps'])
-        
-        # Create bar plot
+
+        # 绘制条形图
         positions = np.arange(len(aggregated_attention))
         colors = ['blue' if i < context_len else 'red' for i in positions]
         
@@ -323,7 +322,7 @@ def create_token_attention_summary(
         ax_top.axvline(x=context_len - 0.5, color='green', linestyle='--', 
                       label='Context Boundary')
         
-        # Highlight top positions
+        # 高亮 top 位置
         top_k = min(5, len(aggregated_attention))
         top_indices = np.argsort(aggregated_attention)[-top_k:]
         for idx in top_indices:
@@ -351,32 +350,32 @@ def visualize_results(
     formats: List[str] = ['heatmap', 'flow', 'summary']
 ):
     """
-    Generate visualizations from saved results
-    
+    根据已保存的结果生成可视化
+
     Args:
-        results_path: Path to JSON results file
-        output_dir: Directory to save visualizations
-        formats: Which visualization formats to generate
+        results_path: JSON 结果文件路径
+        output_dir: 可视化输出目录
+        formats: 要生成哪些可视化格式
     """
-    # Load results
+    # 加载结果
     with open(results_path, 'r') as f:
         results = json.load(f)
-    
-    # Create output directory
+
+    # 创建输出目录
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
-    
-    # Process each result
+
+    # 逐个处理结果
     for idx, result in enumerate(results):
         print(f"Generating visualizations for result {idx + 1}...")
-        
-        # Extract data
+
+        # 提取数据
         input_tokens = result['input_tokens']
         output_tokens = result['output_tokens']
         attention_steps = result['attention_steps']
         context_length = result['context_length']
         
-        # Create attention matrix for heatmap
+        # 为热力图构建注意力矩阵
         if 'heatmap' in formats and attention_steps:
             attention_matrix = []
             for step in attention_steps:
@@ -395,7 +394,7 @@ def visualize_results(
             )
             plt.close(fig)
         
-        # Create flow diagram
+        # 创建流程图
         if 'flow' in formats and attention_steps:
             fig = create_attention_flow_diagram(
                 attention_steps,
@@ -405,7 +404,7 @@ def visualize_results(
             )
             plt.close(fig)
         
-        # Create summary
+        # 创建汇总图
         if 'summary' in formats:
             fig = create_token_attention_summary(
                 result,
@@ -418,15 +417,15 @@ def visualize_results(
 
 def clean_token_labels(tokens: List[str], max_len: int = 14) -> List[str]:
     """
-    Make raw tokenizer tokens readable as axis labels.
+    把分词器输出的原始 token 整理成可读的坐标轴标签。
 
-    Replaces whitespace with visible glyphs and truncates very long
-    special tokens so the heatmap axes stay legible.
+    将空白替换为可见符号，并截断过长的特殊 token，
+    保证热力图坐标轴清晰可读。
     """
     cleaned = []
     for tok in tokens:
         label = tok.replace("\n", "\\n").replace("\t", "\\t")
-        # Qwen byte-level space marker and plain spaces -> visible middle dot
+        # Qwen 的字节级空格标记和普通空格 -> 可见的间隔符号
         label = label.replace("Ġ", " ").replace("▁", " ")
         if label.strip() == "":
             label = "␣"
@@ -438,14 +437,13 @@ def clean_token_labels(tokens: List[str], max_len: int = 14) -> List[str]:
 
 def attention_sink_stats(attention_matrix: np.ndarray, sink_index: int = 0) -> Dict[str, float]:
     """
-    Compute how much attention lands on a single "sink" column.
+    计算有多少注意力落在单个"sink"列上。
 
-    Averages, over every query row that can see the sink column, the
-    attention weight assigned to ``sink_index``. This quantifies the
-    "attention sink" phenomenon described in Chapter 2 without inventing
-    any numbers - it is measured directly from the model's own weights.
+    对所有能看到 sink 列的查询行取平均，得到分配给 ``sink_index`` 的
+    注意力权重。由此量化第 2 章描述的"注意力汇聚（attention sink）"
+    现象，不虚构任何数字——直接从模型自身权重测得。
 
-    Returns a dict with the mean and max sink share (0..1).
+    返回包含 sink 占比均值与最大值（0..1）的字典。
     """
     matrix = np.asarray(attention_matrix, dtype=float)
     if matrix.ndim != 2 or matrix.shape[0] == 0:
@@ -453,7 +451,7 @@ def attention_sink_stats(attention_matrix: np.ndarray, sink_index: int = 0) -> D
 
     shares = []
     for row_idx in range(matrix.shape[0]):
-        # A causal row only attends to positions <= row_idx.
+        # 因果关系下，一行只关注 <= row_idx 的位置。
         if row_idx < sink_index:
             continue
         row = matrix[row_idx, : row_idx + 1]
@@ -480,33 +478,30 @@ def create_layer_attention_heatmap(
     annotate_sink: bool = True,
 ) -> plt.Figure:
     """
-    Plot a full [seq x seq] self-attention matrix for one layer/head.
+    绘制某一层/某个头的完整 [seq x seq] 自注意力矩阵。
 
-    Rows are Query positions (the token doing the attending) and columns
-    are Key positions (the token being attended to). Because generation is
-    causal, the matrix is lower-triangular - each token only sees itself
-    and the tokens before it, producing the triangular pattern discussed
-    in Chapter 2.
+    行是 Query 位置（发起关注的 token），列是 Key 位置（被关注的
+    token）。由于生成是因果的，矩阵呈下三角——每个 token 只能看到
+    自己和之前的 token，形成第 2 章讨论的三角模式。
 
     Args:
-        attention_matrix: 2D array [seq, seq]. Upper triangle is masked out.
-        tokens: Token strings for both axes (length seq).
-        title: Plot title.
-        save_path: Optional path to save the PNG.
-        figsize: Figure size.
-        cmap: Matplotlib colormap.
-        context_boundary: If given, draws a line where the prompt ends and
-            generated tokens begin.
-        annotate_sink: If True, annotate the measured attention-sink share.
+        attention_matrix: 二维数组 [seq, seq]。上三角已被掩蔽。
+        tokens: 两个坐标轴共用的 token 字符串（长度为 seq）。
+        title: 图表标题。
+        save_path: 可选的 PNG 保存路径。
+        figsize: 图表尺寸。
+        cmap: Matplotlib 色图。
+        context_boundary: 若给定，在提示结束、生成 token 开始处画线。
+        annotate_sink: 若为 True，标注实测的注意力汇聚占比。
 
     Returns:
-        matplotlib Figure object.
+        matplotlib Figure 对象。
     """
     matrix = np.asarray(attention_matrix, dtype=float)
     seq_len = matrix.shape[0]
 
-    # Mask the (structurally zero) upper triangle so it renders blank
-    # instead of dark, making the causal triangle obvious.
+    # 把（结构上为零的）上三角掩蔽成空白而非深色，
+    # 让因果三角一目了然。
     masked = np.ma.array(matrix, mask=np.triu(np.ones_like(matrix, dtype=bool), k=1))
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -515,7 +510,7 @@ def create_layer_attention_heatmap(
     im = ax.imshow(masked, cmap=cmap_obj, aspect="auto")
 
     labels = clean_token_labels(tokens)
-    # Avoid an unreadable wall of labels for long sequences.
+    # 长序列时避免密密麻麻无法阅读的标签。
     if seq_len <= 80:
         ticks = np.arange(seq_len)
     else:
@@ -566,10 +561,10 @@ def create_attention_comparison(
     suptitle: str = "Attention Pattern Comparison",
 ) -> plt.Figure:
     """
-    Plot several [seq x seq] attention matrices side by side for comparison.
+    并排绘制多个 [seq x seq] 注意力矩阵以便对比。
 
-    Used to contrast attention patterns - e.g. two different layers, two
-    prompts, or with-tools vs without-tools - as described in Chapter 2.
+    用于对照不同的注意力模式——例如两个不同的层、两个提示、或有工具
+    vs 无工具——对应第 2 章的讨论。
     """
     n = len(matrices)
     if figsize is None:
@@ -615,7 +610,7 @@ def create_attention_comparison(
 
 
 if __name__ == "__main__":
-    # Example usage
+    # 用法示例
     import sys
     
     if len(sys.argv) > 1:

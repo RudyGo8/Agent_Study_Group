@@ -1,4 +1,4 @@
-"""Unit tests for model mapping and provider selection."""
+"""模型映射与提供商选择的单元测试。"""
 
 import pytest
 from config import map_model_to_openrouter, resolve_llm_backend
@@ -21,7 +21,7 @@ def test_map_model_to_openrouter(model, expected):
 
 
 def test_unknown_model_uses_configured_openrouter_default(monkeypatch):
-    """Substitution is opt-in, for callers that cannot send an unmapped id."""
+    """替换是可选行为，供无法发送未映射 id 的调用方使用。"""
     monkeypatch.setenv("OPENROUTER_MODEL", "vendor/fallback-model")
 
     mapped = map_model_to_openrouter("unknown-model", substitute_unknown=True)
@@ -29,7 +29,7 @@ def test_unknown_model_uses_configured_openrouter_default(monkeypatch):
 
 
 def test_unknown_model_is_kept_when_not_substituting(monkeypatch):
-    """Rerouting for credential reasons keeps the model the reader asked for."""
+    """因凭据原因改走路由时，仍保留读者指定的模型。"""
     monkeypatch.setenv("OPENROUTER_MODEL", "vendor/fallback-model")
 
     assert map_model_to_openrouter("unknown-model") == "unknown-model"

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Run and retain the exact real Experiment 7-2 comparison.
+"""运行并留档真实、精确的实验 7-2 对比。
 
-The manuscript compares 10,000 deterministic Q-learning episodes with Kimi K3's
-first attempt in the same treasure-hunt environment. A failed manuscript
-hypothesis is still a completed experiment; acceptance therefore verifies the
-protocol and evidence provenance separately from the observed outcome.
+书稿比较的是 1 万局确定性 Q-learning 与 Kimi K3 在同一寻宝环境下的
+首次尝试。书稿假设未被复现也算实验完成；因此验收只核验协议与证据
+溯源，与观测结果分开判断。
 """
 
 from __future__ import annotations

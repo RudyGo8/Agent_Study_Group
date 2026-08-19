@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""Run Experiment 2-6 with a real skills-capable agent runtime and Anthropic's pinned PPTX Skill.
+"""用真实支持 Skills 的 agent 运行时和 Anthropic 固定版本的官方 PPTX Skill 运行实验 2-6。
 
-Two runtimes are supported under the author-mandated runtime-agnostic
-acceptance policy (see experiment_protocol.json):
+按照作者规定的「运行时无关」验收标准（见 experiment_protocol.json），支持两种运行时：
 
-- ``--runtime claude`` (default): Claude Code, for readers with Anthropic
-  credentials.
-- ``--runtime kimi``: Kimi Code CLI (or an equivalent runtime), authenticated
-  with KIMI_API_KEY / MOONSHOT_API_KEY.
+- ``--runtime claude``（默认）：Claude Code，适合持有 Anthropic 凭据的读者。
+- ``--runtime kimi``：Kimi Code CLI（或同等运行时），使用 KIMI_API_KEY /
+  MOONSHOT_API_KEY 认证。
 """
 
 from __future__ import annotations
@@ -139,10 +137,9 @@ def run_claude(args, run_dir: Path, workspace: Path, official_skill: Path, proto
     prompt = CLAUDE_PROMPT
     (run_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
     command = [
-        # Put the positional prompt before --add-dir.  The current Claude Code
-        # CLI declares --add-dir as variadic, so a trailing prompt is otherwise
-        # consumed as another directory and --print reports that no input was
-        # provided.
+        # 位置参数形式的 prompt 必须放在 --add-dir 之前。当前 Claude Code CLI
+        # 把 --add-dir 声明为可变参数，若 prompt 放在末尾会被当成另一个目录，
+        # 导致 --print 报告没有提供输入。
         "claude", prompt, "--print", "--output-format", "stream-json", "--verbose",
         "--model", protocol["runtime"]["model_alias"], "--effort", "high",
         "--max-budget-usd", "8", "--no-session-persistence",
@@ -152,9 +149,8 @@ def run_claude(args, run_dir: Path, workspace: Path, official_skill: Path, proto
     env = os.environ.copy()
     env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
     if args.auth_source == "claude-login":
-        # An invalid environment key takes precedence over an otherwise valid
-        # Claude Code OAuth login.  Make this explicit and record it without
-        # ever serializing credential values.
+        # 无效的环境变量 key 会覆盖本来有效的 Claude Code OAuth 登录态。
+        # 这里显式移除并记录认证来源，凭据本身的值绝不写入任何序列化结果。
         env.pop("ANTHROPIC_API_KEY", None)
     (run_dir / "auth_source.json").write_text(
         json.dumps({"auth_source": args.auth_source}, indent=2), encoding="utf-8"
@@ -171,9 +167,8 @@ def run_claude(args, run_dir: Path, workspace: Path, official_skill: Path, proto
 def run_kimi(args, run_dir: Path, workspace: Path, official_skill: Path, protocol: dict) -> None:
     kimi = protocol["runtime"]["alternate_runtimes"]["kimi"]
     binary = resolve_kimi_binary()
-    # --skills-dir replaces the auto-discovered user/project skill directories
-    # for this launch, so the runtime genuinely starts with only the pinned
-    # official Skill's metadata in its catalog.
+    # --skills-dir 会替换本次启动自动发现的用户/项目 Skill 目录，
+    # 从而让运行时的 Skill 目录中真正只含固定版本官方 Skill 的元数据。
     skills_dir = workspace / "kimi-skills"
     skills_dir.mkdir(parents=True)
     (skills_dir / "pptx").symlink_to(official_skill, target_is_directory=True)

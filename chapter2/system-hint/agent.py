@@ -1,7 +1,7 @@
 """
-System-Hint Enhanced AI Agent
-An agent that demonstrates advanced trajectory management with system hints,
-including timestamps, tool call tracking, TODO lists, and detailed error messages.
+System-Hint 增强 AI Agent
+演示通过 system hint 实现的高级轨迹管理，
+包括时间戳、工具调用跟踪、TODO 列表和详细错误信息。
 """
 
 import codecs
@@ -26,19 +26,19 @@ except ImportError:
 
 
 def _reasoning_safe_temperature(model, requested=1.0):
-    """Reasoning models (Kimi K3, GPT-5, ...) only accept temperature=1.
-    Return 1 for those; otherwise the requested value so non-reasoning
-    providers (Doubao, DeepSeek, older Moonshot) are unchanged."""
+    """思考型模型（Kimi K3、GPT-5 等）只接受 temperature=1。
+    对这类模型返回 1；否则返回请求值，保持非思考型提供商
+    （Doubao、DeepSeek、旧版 Moonshot）行为不变。"""
     m = str(model or "").lower().replace("/", "-")
     return 1 if ("kimi-k3" in m or "gpt-5" in m) else requested
 
-# Configure logging
+# 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 class TodoStatus(Enum):
-    """Status of a TODO item"""
+    """TODO 项的状态"""
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -47,7 +47,7 @@ class TodoStatus(Enum):
 
 @dataclass
 class TodoItem:
-    """Represents a single TODO item"""
+    """表示单个 TODO 项"""
     id: int
     content: str
     status: TodoStatus = TodoStatus.PENDING
@@ -57,53 +57,53 @@ class TodoItem:
 
 @dataclass
 class ToolCall:
-    """Represents a single tool call with enhanced tracking"""
+    """表示一次工具调用（带增强跟踪）"""
     tool_name: str
     arguments: Dict[str, Any]
     result: Optional[Any] = None
     error: Optional[str] = None
-    call_number: int = 1  # Track how many times this tool has been called
+    call_number: int = 1  # 该工具累计被调用的次数
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     duration_ms: Optional[int] = None
 
 
 @dataclass
 class SystemHintConfig:
-    """Configuration for system hints"""
+    """System hint 的配置"""
     enable_timestamps: bool = True
     enable_tool_counter: bool = True
     enable_todo_list: bool = True
     enable_detailed_errors: bool = True
-    enable_system_state: bool = True  # Current dir, shell, etc.
+    enable_system_state: bool = True  # 当前目录、shell 等
     timestamp_format: str = "%Y-%m-%d %H:%M:%S"
-    simulate_time_delay: bool = False  # For demo purposes
-    save_trajectory: bool = True  # Save conversation history to file
-    trajectory_file: str = "trajectory.json"  # File to save trajectory to
+    simulate_time_delay: bool = False  # 演示用途
+    save_trajectory: bool = True  # 把对话历史保存到文件
+    trajectory_file: str = "trajectory.json"  # 轨迹保存的目标文件
 
 
 class SystemHintAgent:
     """
-    AI Agent with enhanced system hints for better trajectory management
+    借助增强 system hint 实现更优轨迹管理的 AI Agent
     """
     
     def __init__(self, api_key: str, provider: str = "kimi", 
                  model: Optional[str] = None, config: Optional[SystemHintConfig] = None,
                  verbose: bool = True):
         """
-        Initialize the agent
+        初始化 Agent
         
-        Args:
-            api_key: API key for the LLM provider
-            provider: LLM provider (including dashscope/qwen/bailian for Qwen)
-            model: Optional model override
-            config: System hint configuration
-            verbose: If True, log full details
+        参数:
+            api_key: LLM 提供商的 API Key
+            provider: LLM 提供商（Qwen 对应 dashscope/qwen/bailian）
+            model: 可选的模型覆盖
+            config: System hint 配置
+            verbose: 为 True 时记录完整细节
         """
         self.provider = provider.lower()
         self.verbose = verbose
         self.config = config or SystemHintConfig()
         
-        # Configure client based on provider
+        # 根据提供商配置客户端
         if self.provider in {"dashscope", "qwen", "bailian"}:
             from agentbook.providers import resolve_backend
 
@@ -129,27 +129,27 @@ class SystemHintAgent:
         else:
             raise ValueError(f"Unsupported provider: {provider}. Use dashscope/qwen/bailian, kimi, or openrouter")
         
-        # Initialize tracking
+        # 初始化跟踪状态
         self.tool_call_counts: Dict[str, int] = {}
         self.tool_calls: List[ToolCall] = []
         self.todo_list: List[TodoItem] = []
         self.next_todo_id = 1
         
-        # Initialize conversation history
+        # 初始化对话历史
         self.conversation_history = []
-        self.simulated_time = datetime.now()  # For demo time simulation
+        self.simulated_time = datetime.now()  # 演示用的时间模拟
         self._init_system_prompt()
         
-        # Track current working directory
+        # 跟踪当前工作目录
         self.current_directory = os.getcwd()
         
-        # Track last messages sent to LLM
+        # 记录最近一次发给 LLM 的消息
         self.last_llm_messages = None
         
         logger.info(f"System-Hint Agent initialized with provider: {self.provider}, model: {self.model}")
     
     def _init_system_prompt(self):
-        """Initialize the system prompt for the conversation"""
+        """初始化对话的系统提示词"""
         system_content = """You are an intelligent assistant with access to various tools for file operations, code execution, and system commands.
 
 Your task is to complete the given objectives efficiently using the available tools. Think step by step and use tools as needed.
@@ -188,11 +188,11 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         ]
     
     def _get_system_state(self) -> str:
-        """Get current system state information"""
+        """获取当前系统状态信息"""
         if not self.config.enable_system_state:
             return ""
         
-        # Detect OS
+        # 检测操作系统
         system = platform.system()
         if system == "Windows":
             shell_type = "Windows Command Prompt or PowerShell"
@@ -212,19 +212,19 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         return "\n".join(state_info)
     
     def _get_timestamp(self) -> str:
-        """Get formatted timestamp"""
+        """获取格式化的时间戳"""
         if self.config.simulate_time_delay:
-            # For demo: simulate time passing
+            # 演示用：模拟时间流逝
             return self.simulated_time.strftime(self.config.timestamp_format)
         return datetime.now().strftime(self.config.timestamp_format)
     
     def _advance_simulated_time(self, hours: int = 0, minutes: int = 0, seconds: int = 30):
-        """Advance simulated time for demo purposes"""
+        """推进演示用的模拟时间"""
         if self.config.simulate_time_delay:
             self.simulated_time += timedelta(hours=hours, minutes=minutes, seconds=seconds)
     
     def _save_trajectory(self, iteration: int, final_answer: Optional[str] = None):
-        """Save current trajectory to JSON file for debugging"""
+        """把当前轨迹保存为 JSON 文件，便于调试"""
         if not self.config.save_trajectory:
             return
         
@@ -271,7 +271,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         }
         
         try:
-            # Save to file, overwriting each time to capture latest state
+            # 写入文件；每次覆盖，保留最新状态
             with open(self.config.trajectory_file, 'w', encoding='utf-8') as f:
                 json.dump(trajectory_data, f, indent=2, ensure_ascii=False)
             
@@ -281,7 +281,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
             logger.warning(f"Failed to save trajectory: {e}")
     
     def _format_todo_list(self) -> str:
-        """Format TODO list for display"""
+        """格式化 TODO 列表用于展示"""
         if not self.todo_list:
             return "TODO List: Empty"
         
@@ -299,7 +299,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         return "\n".join(lines)
     
     def _get_system_hint(self) -> Optional[str]:
-        """Get system hint content with current state"""
+        """获取带当前状态的 system hint 内容"""
         if not any([self.config.enable_system_state, self.config.enable_todo_list]):
             return None
         
@@ -320,7 +320,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         return None
     
     def _get_tools_description(self) -> List[Dict[str, Any]]:
-        """Get tool descriptions for the model"""
+        """获取提供给模型的工具描述"""
         tools = [
             {
                 "type": "function",
@@ -408,7 +408,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
             }
         ]
         
-        # Add TODO management tools if enabled
+        # 启用 TODO 列表时加入 TODO 管理工具
         if self.config.enable_todo_list:
             tools.extend([
                 {
@@ -469,10 +469,10 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
     
     def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Tuple[Any, Optional[str], Optional[int]]:
         """
-        Execute a tool and return the result with detailed error information
+        执行一个工具，返回结果及详细错误信息
 
-        Returns:
-            Tuple of (result, error_detail, duration_ms)
+        返回:
+            (result, error_detail, duration_ms) 三元组
         """
         start_time = datetime.now()
         
@@ -499,7 +499,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         except Exception as e:
             duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
             
-            # Get detailed error information
+            # 获取详细错误信息
             error_detail = self._get_detailed_error(e, tool_name, arguments)
             
             if self.config.enable_detailed_errors:
@@ -508,18 +508,18 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                 return {"error": str(e)}, str(e), duration_ms
     
     def _get_detailed_error(self, exception: Exception, tool_name: str, arguments: Dict[str, Any]) -> str:
-        """Get detailed error information for debugging"""
+        """获取调试用的详细错误信息"""
         error_parts = [
             f"Tool '{tool_name}' failed with {type(exception).__name__}: {str(exception)}",
             f"Arguments: {json.dumps(arguments, indent=2)}",
         ]
         
-        # Add traceback for debugging
+        # 附上 traceback 便于调试
         if self.verbose:
             tb = traceback.format_exc()
             error_parts.append(f"Traceback:\n{tb}")
         
-        # Add suggestions based on error type
+        # 按错误类型附上修复建议
         suggestions = self._get_error_suggestions(exception, tool_name)
         if suggestions:
             error_parts.append(f"Suggestions: {suggestions}")
@@ -527,7 +527,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         return "\n".join(error_parts)
     
     def _get_error_suggestions(self, exception: Exception, tool_name: str) -> str:
-        """Get suggestions for fixing common errors"""
+        """获取常见错误的修复建议"""
         error_str = str(exception).lower()
         exception_type = type(exception).__name__
         
@@ -552,25 +552,25 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         
         return " | ".join(suggestions) if suggestions else ""
     
-    # Tool implementations
+    # 工具实现
     def _tool_read_file(self, file_path: str, begin_line: Optional[int] = None, 
                        number_lines: Optional[int] = None) -> Dict[str, Any]:
-        """Read file contents with optional line-based reading"""
+        """读取文件内容，支持按行读取"""
         try:
-            # Resolve path relative to current directory
+            # 把相对路径解析到当前目录下
             if not os.path.isabs(file_path):
                 file_path = os.path.join(self.current_directory, file_path)
             
-            # Check if file exists
+            # 检查文件是否存在
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
             
-            # Check if it's a binary file
+            # 检查是否为二进制文件
             try:
                 with open(file_path, 'rb') as f:
-                    # Read first 1024 bytes to check for binary content
+                    # 读取前 1024 字节，检查是否含二进制内容
                     chunk = f.read(1024)
-                    # Check for null bytes (common in binary files)
+                    # 检查空字节（二进制文件常见）
                     if b'\x00' in chunk:
                         return {
                             "success": False,
@@ -578,10 +578,9 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                             "file_path": file_path,
                             "is_binary": True
                         }
-                    # Also check if it's valid UTF-8. Decode incrementally with
-                    # final=False so a multi-byte character split by the
-                    # 1024-byte read boundary is not mistaken for binary content
-                    # (every CJK character is 3 bytes, so this is common).
+                    # 再检查是否为合法 UTF-8。用增量解码并传 final=False，
+                    # 避免被 1024 字节读取边界切断的多字节字符被误判为
+                    # 二进制内容（每个 CJK 字符 3 字节，这种情况很常见）。
                     try:
                         codecs.getincrementaldecoder('utf-8')().decode(chunk, False)
                     except UnicodeDecodeError:
@@ -592,17 +591,17 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                             "is_binary": True
                         }
             except Exception:
-                # If we can't read it as binary, probably permission issue
+                # 连二进制方式都读不了，多半是权限问题
                 raise
             
-            # Read the file content
+            # 读取文件内容
             with open(file_path, 'r', encoding='utf-8') as f:
                 if begin_line is not None or number_lines is not None:
-                    # Line-based reading
+                    # 按行读取
                     all_lines = f.readlines()
                     total_lines = len(all_lines)
                     
-                    # Calculate line range
+                    # 计算行范围
                     start_line = (begin_line - 1) if begin_line is not None else 0
                     if start_line < 0:
                         start_line = 0
@@ -631,11 +630,11 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                     else:
                         end_line = total_lines
                     
-                    # Get the requested lines
+                    # 取出请求的行
                     selected_lines = all_lines[start_line:end_line]
                     content = ''.join(selected_lines)
                     
-                    # Get file info
+                    # 获取文件信息
                     stat = os.stat(file_path)
                     
                     return {
@@ -644,16 +643,16 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                         "content": content,
                         "size_bytes": stat.st_size,
                         "total_lines": total_lines,
-                        "begin_line": start_line + 1,  # Convert back to 1-based
+                        "begin_line": start_line + 1,  # 换回 1-based 行号
                         "end_line": end_line,
                         "lines_read": len(selected_lines),
                         "partial_read": True
                     }
                 else:
-                    # Full file reading
+                    # 整文件读取
                     content = f.read()
                     
-                    # Get file info
+                    # 获取文件信息
                     stat = os.stat(file_path)
                     
                     return {
@@ -668,13 +667,13 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
             raise
     
     def _tool_write_file(self, file_path: str, content: str) -> Dict[str, Any]:
-        """Write content to file"""
+        """把内容写入文件"""
         try:
-            # Resolve path relative to current directory
+            # 把相对路径解析到当前目录下
             if not os.path.isabs(file_path):
                 file_path = os.path.join(self.current_directory, file_path)
             
-            # Create directory if needed
+            # 按需创建目录
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             
             with open(file_path, 'w', encoding='utf-8') as f:
@@ -690,24 +689,23 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
             raise
     
     def _tool_code_interpreter(self, code: str) -> Dict[str, Any]:
-        """Execute Python code in restricted environment"""
+        """在受限环境中执行 Python 代码"""
         try:
-            # Capture output
+            # 捕获输出
             import io
             import contextlib
             
             output_buffer = io.StringIO()
             error_buffer = io.StringIO()
             
-            # Run with an explicit namespace: with bare exec(code), top-level
-            # assignments land in this method's locals while functions defined
-            # in the snippet resolve free variables via module globals, so
-            # "x = 5; def f(): return x; f()" raises NameError.
+            # 用显式命名空间执行：若直接 exec(code)，顶层赋值会落在
+            # 本方法的 locals 里，而片段中定义的函数经模块 globals
+            # 解析自由变量，于是 "x = 5; def f(): return x; f()" 会抛 NameError。
             exec_ns = {}
             with contextlib.redirect_stdout(output_buffer), contextlib.redirect_stderr(error_buffer):
                 exec(code, exec_ns)
             
-            # Get output
+            # 获取输出
             stdout = output_buffer.getvalue()
             stderr = error_buffer.getvalue()
             
@@ -720,19 +718,18 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
             raise
     
     def _tool_execute_command(self, command: str, working_dir: Optional[str] = None) -> Dict[str, Any]:
-        """Execute shell command"""
+        """执行 shell 命令"""
         try:
-            # Use current directory if not specified
+            # 未指定时使用当前目录
             if working_dir is None:
                 working_dir = self.current_directory
             elif not os.path.isabs(working_dir):
                 working_dir = os.path.join(self.current_directory, working_dir)
             
-            # Update current directory if the command is a PURE 'cd'.
-            # Compound commands like `cd proj && make` must fall through to
-            # the subprocess below (which runs with cwd=working_dir) —
-            # intercepting them here would treat "proj && make" as the
-            # directory name and fail with "Directory not found".
+            # 命令是纯 'cd' 时更新当前目录。
+            # `cd proj && make` 这类复合命令必须放行给下面的
+            # subprocess（它以 cwd=working_dir 运行）——在此拦截会把
+            # "proj && make" 当作目录名，报 "Directory not found"。
             stripped = command.strip()
             if stripped.startswith('cd ') and not any(t in stripped for t in ('&&', ';', '|')):
                 new_dir = stripped[3:].strip()
@@ -750,7 +747,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                 else:
                     raise FileNotFoundError(f"Directory not found: {new_dir}")
             
-            # Execute command
+            # 执行命令
             result = subprocess.run(
                 command,
                 shell=True,
@@ -774,14 +771,14 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
             raise
     
     def _tool_rewrite_todo_list(self, items: List[str]) -> Dict[str, Any]:
-        """Rewrite TODO list with new pending items"""
-        # Keep completed and cancelled items
+        """用新的待办项重写 TODO 列表"""
+        # 保留已完成和已取消的项
         kept_items = [
             item for item in self.todo_list
             if item.status in [TodoStatus.COMPLETED, TodoStatus.CANCELLED]
         ]
         
-        # Create new pending items
+        # 创建新的待办项
         new_items = []
         for content in items:
             new_items.append(TodoItem(
@@ -791,7 +788,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
             ))
             self.next_todo_id += 1
         
-        # Update TODO list
+        # 更新 TODO 列表
         self.todo_list = kept_items + new_items
         
         return {
@@ -802,7 +799,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         }
     
     def _tool_update_todo_status(self, updates: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Update status of TODO items"""
+        """更新 TODO 项的状态"""
         updated_count = 0
         
         for update in updates:
@@ -824,21 +821,21 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
     
     def execute_task(self, task: str, max_iterations: int = 20) -> Dict[str, Any]:
         """
-        Execute a task using available tools with system hints
+        借助 system hint，用可用工具执行任务
         
-        Args:
-            task: The task to execute
-            max_iterations: Maximum number of tool calls
+        参数:
+            task: 要执行的任务
+            max_iterations: 最大工具调用轮数
             
-        Returns:
-            Task execution result
+        返回:
+            任务执行结果
         """
-        # Add timestamp to user message if enabled
+        # 启用时为用户消息加时间戳前缀
         if self.config.enable_timestamps:
             timestamp_prefix = f"[{self._get_timestamp()}] "
             task = timestamp_prefix + task
         
-        # Add user message
+        # 加入用户消息
         self.conversation_history.append({"role": "user", "content": task})
         
         iteration = 0
@@ -848,23 +845,23 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
             iteration += 1
             logger.info(f"Iteration {iteration}/{max_iterations}")
             
-            # Simulate time passing for demo
+            # 演示用：模拟时间流逝
             self._advance_simulated_time(seconds=5)
             
-            # Save trajectory at the start of each iteration
+            # 每轮迭代开始时保存轨迹
             self._save_trajectory(iteration)
             
             try:
-                # Prepare messages for the model - add system hint as last user message
+                # 准备发给模型的消息 —— 把 system hint 作为最后一条 user 消息追加
                 messages_to_send = self.conversation_history.copy()
                 system_hint = self._get_system_hint()
                 if system_hint:
                     messages_to_send.append({"role": "user", "content": system_hint})
                 
-                # Store the messages being sent to LLM for trajectory logging
+                # 记录本次发给 LLM 的消息，用于轨迹日志
                 self.last_llm_messages = messages_to_send
                 
-                # Call the model
+                # 调用模型
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=messages_to_send,
@@ -877,10 +874,10 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                 message = response.choices[0].message
                 has_tool_calls = bool(getattr(message, "tool_calls", None))
 
-                # Terminal path: a text reply with no tool calls ends the loop,
-                # even without the FINAL ANSWER: marker (e.g. a plain "hi"
-                # reply). Previously only "FINAL ANSWER:" broke the loop, so
-                # plain replies were re-sent for up to max_iterations.
+                # 终止路径：无工具调用的文本回复即结束循环，
+                # 即使没有 FINAL ANSWER: 标记（如一句普通的 "hi"）也一样。
+                # 此前只有 "FINAL ANSWER:" 才会跳出循环，导致普通回复
+                # 被反复重发至 max_iterations。
                 if not has_tool_calls:
                     self.conversation_history.append(message.model_dump())
                     content = (message.content or "").strip()
@@ -891,11 +888,11 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                     else:
                         logger.warning("Empty model response with no tool calls; "
                                        "stopping to avoid burning remaining iterations")
-                    # Save final trajectory
+                    # 保存最终轨迹
                     self._save_trajectory(iteration, final_answer)
                     break
 
-                # Handle tool calls
+                # 处理工具调用
                 if has_tool_calls:
                     self.conversation_history.append(message.model_dump())
                     
@@ -905,7 +902,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                         try:
                             function_args = json.loads(raw_args)
                         except json.JSONDecodeError as exc:
-                            # Keep the turn alive on bad tool-arg JSON.
+                            # 工具参数 JSON 非法时保住这一轮，不让任务中断。
                             err = (
                                 f"Invalid tool arguments (not valid JSON): {exc}. "
                                 f"Raw arguments: {raw_args[:500]}"
@@ -923,7 +920,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                             })
                             continue
                         
-                        # Track tool call count
+                        # 统计工具调用次数
                         if self.config.enable_tool_counter:
                             self.tool_call_counts[function_name] = self.tool_call_counts.get(function_name, 0) + 1
                             call_number = self.tool_call_counts[function_name]
@@ -932,29 +929,29 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                         
                         logger.info(f"Executing tool: {function_name} (call #{call_number})")
                         
-                        # Print tool arguments in a concise format
+                        # 以简洁格式打印工具参数
                         args_str = json.dumps(function_args)
                         if len(args_str) > 200:
                             logger.info(f"  📥 Args: {args_str[:200]}...")
                         else:
                             logger.info(f"  📥 Args: {args_str}")
                         
-                        # Execute the tool
+                        # 执行工具
                         result, error, duration_ms = self._execute_tool(function_name, function_args)
                         
-                        # Print tool result in a concise format
+                        # 以简洁格式打印工具结果
                         if error:
                             error_preview = str(error).replace('\n', ' ')[:150]
                             logger.info(f"  ❌ Error: {error_preview}")
                         else:
                             if isinstance(result, dict):
                                 if result.get('success'):
-                                    # Show key information for successful operations
+                                    # 成功时展示关键信息
                                     if 'output' in result and result['output']:
                                         output_preview = str(result['output']).replace('\n', ' ')[:100]
                                         logger.info(f"  ✅ Success: {output_preview}...")
                                     elif 'content' in result:
-                                        # Handle read_file results
+                                        # 处理 read_file 的结果
                                         if result.get('partial_read'):
                                             logger.info(f"  ✅ Success: Read lines {result.get('begin_line', 1)}-{result.get('end_line', 0)} "
                                                       f"({result.get('lines_read', 0)} lines) from {result.get('total_lines', 0)} total")
@@ -965,7 +962,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                                     else:
                                         logger.info("  ✅ Success: Operation completed")
                                 elif result.get('success') is False:
-                                    # Handle explicit failures (like binary file detection)
+                                    # 处理显式失败（如二进制文件检测）
                                     if result.get('is_binary'):
                                         logger.info(f"  ⚠️ Binary file detected: {result.get('file_path', 'unknown')}")
                                     else:
@@ -977,7 +974,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                                 result_preview = str(result).replace('\n', ' ')[:150]
                                 logger.info(f"  ✅ Result: {result_preview}")
                         
-                        # Record tool call
+                        # 记录工具调用
                         tool_call_record = ToolCall(
                             tool_name=function_name,
                             arguments=function_args,
@@ -988,10 +985,10 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                         )
                         self.tool_calls.append(tool_call_record)
                         
-                        # Prepare tool result message
+                        # 准备工具结果消息
                         tool_content = json.dumps(result)
                         
-                        # Add metadata to tool result if enabled
+                        # 启用时为工具结果附加元信息
                         metadata_parts = []
                         
                         if self.config.enable_timestamps:
@@ -1003,15 +1000,15 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                         if metadata_parts:
                             tool_content = " ".join(metadata_parts) + "\n" + tool_content
                         
-                        # Add tool result
+                        # 加入工具结果
                         self.conversation_history.append({
                             "role": "tool",
                             "tool_call_id": tool_call.id,
                             "content": tool_content
                         })
 
-                    # If the same turn also tagged FINAL ANSWER: (unusual with
-                    # tool calls), still stop after recording the tool results.
+                    # 若同一轮还标注了 FINAL ANSWER:（带工具调用时少见），
+                    # 仍先记录完工具结果再停止。
                     if message.content and "FINAL ANSWER:" in message.content:
                         final_answer = message.content.split("FINAL ANSWER:", 1)[1].strip()
                         logger.info(f"Final answer found alongside tool calls: {final_answer[:100]}...")
@@ -1020,7 +1017,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                     
             except Exception as e:
                 logger.error(f"Error during task execution: {str(e)}")
-                # Save trajectory even on error
+                # 出错时也保存轨迹
                 self._save_trajectory(iteration)
                 return {
                     "error": str(e),
@@ -1029,7 +1026,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
                     "trajectory_file": self.config.trajectory_file if self.config.save_trajectory else None
                 }
         
-        # Save final trajectory before returning
+        # 返回前保存最终轨迹
         self._save_trajectory(iteration, final_answer)
         
         return {
@@ -1049,7 +1046,7 @@ Important: When you have completed all tasks, clearly state "FINAL ANSWER:" foll
         }
     
     def reset(self):
-        """Reset the agent's state"""
+        """重置 Agent 状态"""
         self.tool_call_counts = {}
         self.tool_calls = []
         self.todo_list = []

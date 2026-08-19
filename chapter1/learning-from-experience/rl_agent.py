@@ -1,6 +1,6 @@
 """
-Traditional Reinforcement Learning Agent using Q-learning.
-This demonstrates the classical RL approach that requires extensive training.
+使用 Q-learning 的传统强化学习智能体。
+演示需要大量训练的经典 RL 方法。
 """
 
 import numpy as np
@@ -13,49 +13,49 @@ from game_environment import TreasureHuntGame
 
 class QLearningAgent:
     """
-    Q-learning agent for the treasure hunt game.
-    Uses tabular Q-learning with state-action pairs.
+    寻宝游戏专用的 Q-learning 智能体。
+    采用基于状态-动作对的表格型 Q-learning。
     """
-    
-    def __init__(self, 
+
+    def __init__(self,
                  learning_rate: float = 0.2,
                  discount_factor: float = 0.99,
                  epsilon: float = 1.0,
                  epsilon_decay: float = 0.9995,
                  epsilon_min: float = 0.1):
         """
-        Initialize Q-learning agent.
-        
+        初始化 Q-learning 智能体。
+
         Args:
-            learning_rate: Alpha parameter for Q-value updates
-            discount_factor: Gamma parameter for future rewards
-            epsilon: Initial exploration rate
-            epsilon_decay: Rate at which epsilon decreases
-            epsilon_min: Minimum exploration rate
+            learning_rate: Q 值更新的学习率（alpha）
+            discount_factor: 未来奖励的折扣因子（gamma）
+            epsilon: 初始探索率
+            epsilon_decay: epsilon 的衰减速率
+            epsilon_min: 最小探索率
         """
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
-        
-        # Q-table: state_hash -> action -> Q-value
+
+        # Q 表：state_hash -> action -> Q 值
         self.q_table = defaultdict(lambda: defaultdict(float))
-        
-        # Statistics
+
+        # 统计信息
         self.episode_rewards = []
         self.episode_lengths = []
-        self.episode_victories = []  # Per-episode victory flag (1/0), for learning curves
+        self.episode_victories = []  # 每局胜负标记（1/0），用于学习曲线
         self.victories = 0
         self.total_episodes = 0
-        self.learning_curve = []  # Snapshots recorded at checkpoints during train()
+        self.learning_curve = []  # train() 在检查点记录的快照
 
     def _get_state_hash(self, game: TreasureHuntGame) -> str:
         """
-        Create a hashable representation of the game state.
-        This is crucial for tabular Q-learning.
+        把游戏状态转成可哈希的表示。
+        这对表格型 Q-learning 至关重要。
         """
-        # Include relevant state information
+        # 纳入相关的状态信息
         state_parts = [
             game.current_room.name,
             tuple(sorted([item.name for item in game.inventory])),
@@ -68,99 +68,99 @@ class QLearningAgent:
     
     def choose_action(self, game: TreasureHuntGame, training: bool = True) -> str:
         """
-        Choose an action using epsilon-greedy strategy.
+        使用 epsilon-greedy 策略选择动作。
         """
         available_actions = game.get_available_actions()
-        
+
         if not available_actions:
             return "look around"
-        
-        # Exploration vs exploitation
+
+        # 探索与利用的权衡
         if training and random.random() < self.epsilon:
-            # Explore: choose random action
+            # 探索：随机选动作
             return random.choice(available_actions)
         else:
-            # Exploit: choose best action based on Q-values
+            # 利用：按 Q 值选最优动作
             state_hash = self._get_state_hash(game)
-            
-            # Get Q-values for all available actions
+
+            # 获取所有可用动作的 Q 值
             action_values = {
-                action: self.q_table[state_hash][action] 
+                action: self.q_table[state_hash][action]
                 for action in available_actions
             }
-            
-            # If all Q-values are 0 (unexplored), choose randomly
+
+            # 若所有 Q 值均为 0（未探索过），随机选择
             if all(v == 0 for v in action_values.values()):
                 return random.choice(available_actions)
-            
-            # Choose action with highest Q-value
+
+            # 选 Q 值最高的动作
             return max(action_values, key=action_values.get)
     
     def update_q_value(self, state: str, action: str, reward: float, 
                        next_state: str, next_actions: List[str], done: bool):
         """
-        Update Q-value using the Q-learning update rule.
+        按 Q-learning 更新规则更新 Q 值。
         Q(s,a) <- Q(s,a) + α[r + γ max Q(s',a') - Q(s,a)]
         """
         current_q = self.q_table[state][action]
-        
+
         if done:
-            # Terminal state
+            # 终止状态
             target = reward
         else:
-            # Get maximum Q-value for next state
+            # 取下一状态的最大 Q 值
             if next_actions:
                 max_next_q = max(
                     self.q_table[next_state][a] for a in next_actions
                 )
             else:
                 max_next_q = 0
-            
+
             target = reward + self.discount_factor * max_next_q
-        
-        # Update Q-value
+
+        # 更新 Q 值
         self.q_table[state][action] = (
             current_q + self.learning_rate * (target - current_q)
         )
     
     def train_episode(self, game: TreasureHuntGame) -> Tuple[float, int, bool]:
         """
-        Train the agent for one episode.
-        
+        训练一局。
+
         Returns:
-            Total reward, number of steps, victory status
+            总奖励、步数、是否获胜
         """
         game.reset()
         total_reward = 0
         steps = 0
-        
+
         while not game.game_over:
-            # Get current state
+            # 获取当前状态
             state_hash = self._get_state_hash(game)
-            
-            # Choose action
+
+            # 选择动作
             action = self.choose_action(game, training=True)
-            
-            # Execute action
+
+            # 执行动作
             feedback, reward, done = game.execute_action(action)
-            
-            # Get next state
+
+            # 获取下一状态
             next_state_hash = self._get_state_hash(game)
             next_actions = game.get_available_actions() if not done else []
-            
-            # Update Q-value
+
+            # 更新 Q 值
             self.update_q_value(
-                state_hash, action, reward, 
+                state_hash, action, reward,
                 next_state_hash, next_actions, done
             )
-            
+
             total_reward += reward
             steps += 1
-        
-        # Decay epsilon
+
+        # 衰减 epsilon
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-        
-        # Update statistics
+
+        # 更新统计
         self.episode_rewards.append(total_reward)
         self.episode_lengths.append(steps)
         self.episode_victories.append(1 if game.victory else 0)
@@ -173,21 +173,21 @@ class QLearningAgent:
     def train(self, num_episodes: int = 1000, verbose: bool = True,
               stochastic: bool = False, checkpoint_interval: int = 0) -> Dict[str, Any]:
         """
-        Train the agent for multiple episodes.
-        
+        训练多局。
+
         Args:
-            num_episodes: Number of episodes to train
-            verbose: Whether to print progress
-            stochastic: Whether to use stochastic environment
-            checkpoint_interval: If > 0, record a learning-curve snapshot
-                (episode, windowed victory rate, Q-table size, epsilon) every
-                this many episodes. Snapshots are stored in self.learning_curve.
+            num_episodes: 训练局数
+            verbose: 是否打印进度
+            stochastic: 是否使用随机环境
+            checkpoint_interval: 若 > 0，每训练这么多局记录一次学习曲线快照
+                （局数、滑动窗口胜率、Q 表大小、epsilon）。
+                快照存入 self.learning_curve。
         """
         game = TreasureHuntGame(stochastic=stochastic)
-        
-        # Adjust hyperparameters for stochastic environment
+
+        # 针对随机环境调整超参数
         if stochastic:
-            # Slightly slower epsilon decay for stochastic environments
+            # 随机环境下 epsilon 衰减略放缓
             original_decay = self.epsilon_decay
             self.epsilon_decay = min(0.9999, self.epsilon_decay * 1.001)
             if verbose:
@@ -198,7 +198,7 @@ class QLearningAgent:
         for episode in range(num_episodes):
             reward, steps, victory = self.train_episode(game)
 
-            # Record a learning-curve snapshot at each checkpoint
+            # 在每个检查点记录学习曲线快照
             if checkpoint_interval and checkpoint_interval > 0 and (episode + 1) % checkpoint_interval == 0:
                 recent = self.episode_victories[-window:]
                 self.learning_curve.append({
@@ -211,7 +211,7 @@ class QLearningAgent:
             if verbose and (episode + 1) % 100 == 0:
                 recent_rewards = self.episode_rewards[-100:]
                 recent_victories = sum(
-                    1 for r in recent_rewards if r > 50  # Approximate victory
+                    1 for r in recent_rewards if r > 50  # 以奖励 > 50 近似判定获胜
                 )
                 avg_reward = np.mean(recent_rewards)
                 
@@ -235,19 +235,19 @@ class QLearningAgent:
 
     def evaluate(self, num_episodes: int = 100, verbose: bool = False, stochastic: bool = False) -> Dict[str, Any]:
         """
-        Evaluate the trained agent without learning.
-        
+        不再学习，直接评估训练好的智能体。
+
         Args:
-            num_episodes: Number of episodes to evaluate
-            verbose: Whether to print details
-            stochastic: Whether to use stochastic environment
+            num_episodes: 评估局数
+            verbose: 是否打印细节
+            stochastic: 是否使用随机环境
         """
         game = TreasureHuntGame(stochastic=stochastic)
         eval_rewards = []
         eval_lengths = []
         eval_victories = 0
-        
-        # Store original epsilon and set to 0 for evaluation
+
+        # 保存原 epsilon 并置 0 用于评估
         original_epsilon = self.epsilon
         self.epsilon = 0
         
@@ -262,7 +262,7 @@ class QLearningAgent:
                 total_reward += reward
                 steps += 1
                 
-                if verbose and episode == 0:  # Show first evaluation episode
+                if verbose and episode == 0:  # 只展示第一局评估
                     print(f"Step {steps}: {action}")
                     print(f"Feedback: {feedback}")
                     print()
@@ -272,7 +272,7 @@ class QLearningAgent:
             if game.victory:
                 eval_victories += 1
         
-        # Restore epsilon
+        # 恢复 epsilon
         self.epsilon = original_epsilon
         
         return {
@@ -286,7 +286,7 @@ class QLearningAgent:
         }
     
     def save(self, filepath: str):
-        """Save the Q-table and parameters."""
+        """保存 Q 表和参数。"""
         data = {
             "q_table": dict(self.q_table),
             "epsilon": self.epsilon,
@@ -304,7 +304,7 @@ class QLearningAgent:
             pickle.dump(data, f)
     
     def load(self, filepath: str):
-        """Load a saved Q-table and parameters."""
+        """加载已保存的 Q 表和参数。"""
         with open(filepath, 'rb') as f:
             data = pickle.load(f)
         
@@ -326,8 +326,8 @@ class QLearningAgent:
 
 class DQNAgent:
     """
-    Deep Q-Network agent for comparison.
-    Uses neural network function approximation instead of tabular Q-learning.
+    用于对比的 Deep Q-Network 智能体。
+    用神经网络做函数逼近，而非表格型 Q-learning。
     """
     
     def __init__(self, 
@@ -341,8 +341,8 @@ class DQNAgent:
                  batch_size: int = 32,
                  memory_size: int = 10000):
         """
-        Initialize DQN agent with neural network.
-        Note: Simplified implementation for demonstration.
+        初始化带神经网络的 DQN 智能体。
+        注意：为演示而做的简化实现。
         """
         self.state_dim = state_dim
         self.hidden_dim = hidden_dim
@@ -353,36 +353,36 @@ class DQNAgent:
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
         
-        # Experience replay buffer
+        # 经验回放缓冲区
         self.memory = []
         self.memory_size = memory_size
-        
-        # Statistics
+
+        # 统计信息
         self.episode_rewards = []
         self.episode_lengths = []
         self.victories = 0
         self.total_episodes = 0
         
-        # Note: For full implementation, we would use PyTorch or TensorFlow
-        # This is a simplified placeholder
+        # 注：完整实现应使用 PyTorch 或 TensorFlow
+        # 这里只是简化的占位实现
         print("Note: DQN implementation requires neural network library.")
         print("Using simplified random policy for demonstration.")
     
     def choose_action(self, game: TreasureHuntGame, training: bool = True) -> str:
-        """Choose action (simplified for demonstration)."""
+        """选择动作（演示用简化版）。"""
         available_actions = game.get_available_actions()
         if not available_actions:
             return "look around"
-        
-        # Simplified: just use epsilon-greedy with random selection
+
+        # 简化处理：只做带随机选择的 epsilon-greedy
         if training and random.random() < self.epsilon:
             return random.choice(available_actions)
         else:
-            # In full implementation, this would use neural network
+            # 完整实现中，这里应走神经网络
             return random.choice(available_actions)
-    
+
     def train_episode(self, game: TreasureHuntGame) -> Tuple[float, int, bool]:
-        """Train for one episode (simplified)."""
+        """训练一局（简化版）。"""
         game.reset()
         total_reward = 0
         steps = 0

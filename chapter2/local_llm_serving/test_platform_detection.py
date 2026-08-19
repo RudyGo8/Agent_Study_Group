@@ -1,4 +1,4 @@
-"""Regression tests for platform-specific backend selection."""
+"""平台相关后端选择的回归测试。"""
 
 import contextlib
 import io

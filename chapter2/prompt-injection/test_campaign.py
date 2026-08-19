@@ -11,7 +11,7 @@ class UnusedClient:
 
 def make_agent(tmp_path: Path, defense_index: int = 0) -> Agent:
     return Agent(
-        client=UnusedClient(),  # execute_tool/system_prompt tests do not call the provider
+        client=UnusedClient(),  # execute_tool/system_prompt 相关测试不会调用提供商
         model="kimi-k3",
         defense=DEFENSES[defense_index],
         workspace=tmp_path,

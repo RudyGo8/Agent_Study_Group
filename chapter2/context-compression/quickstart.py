@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Quick start script to test the context compression experiment
+快速上手脚本：测试上下文压缩实验
 """
 
 import os
 import sys
 from dotenv import load_dotenv
 
-# Load environment variables
+# 加载环境变量
 load_dotenv()
 
 def check_environment():
-    """Check if environment is properly configured"""
+    """检查环境是否配置妥当"""
     provider = os.getenv("LLM_PROVIDER", "kimi").lower()
     provider_key = os.getenv("DASHSCOPE_API_KEY") if provider in {"dashscope", "qwen", "bailian"} else os.getenv("MOONSHOT_API_KEY")
     serper_key = os.getenv("SERPER_API_KEY")
@@ -39,7 +39,7 @@ def check_environment():
 
 
 def quick_test():
-    """Run a quick test with context-aware citations strategy"""
+    """用“带引用的上下文感知”策略做快速测试"""
     from agent import ResearchAgent
     from compression_strategies import CompressionStrategy
     from config import Config
@@ -47,7 +47,7 @@ def quick_test():
     print("\n🚀 Running quick test with Context-Aware Citations strategy...")
     print("Task: Research OpenAI co-founders' current affiliations\n")
     
-    # Create agent
+    # 创建 Agent
     agent = ResearchAgent(
         api_key=Config.resolve_llm()[0],
         compression_strategy=CompressionStrategy.CONTEXT_AWARE_CITATIONS,
@@ -55,17 +55,17 @@ def quick_test():
         enable_streaming=True
     )
     
-    # Execute research
+    # 执行研究
     result = agent.execute_research(max_iterations=10)
     
-    # Print results
+    # 打印结果
     print("\n" + "="*60)
     if result.get('success'):
         print("✅ SUCCESS!")
         print("\nFinal Answer:")
         print(result.get('final_answer', 'No answer found'))
         
-        # Statistics
+        # 统计信息
         trajectory = result.get('trajectory')
         if trajectory:
             print(f"\n📊 Statistics:")
@@ -80,12 +80,12 @@ def quick_test():
 
 
 def main():
-    """Main entry point"""
+    """主入口"""
     print("\n" + "="*60)
     print("CONTEXT COMPRESSION EXPERIMENT - QUICK START")
     print("="*60 + "\n")
     
-    # Check environment
+    # 检查环境
     if not check_environment():
         print("\n❌ Please configure your environment first!")
         print("\n1. Copy env.example to .env:")
@@ -94,7 +94,7 @@ def main():
         print("\n3. Run this script again")
         sys.exit(1)
     
-    # Menu
+    # 菜单
     print("\n📋 What would you like to do?")
     print("1. Run quick test (Context-Aware Citations)")
     print("2. Run full experiment (all 6 strategies)")

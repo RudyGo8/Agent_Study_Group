@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Run the complete, real local-server campaign for Chapter 2 Experiment 2-1.
+"""运行第 2 章实验 2-1 的完整、真实本地服务端实验。
 
-Unlike an OpenAI-compatible client, this runner deliberately uses Ollama's
-``/api/generate`` endpoint with ``raw=true``.  The exact string emitted by the
-Qwen chat template is therefore visible in the evidence, including role
-sentinels and the model's XML tool-call protocol.  No model output is mocked.
+与 OpenAI 兼容客户端不同，本脚本刻意使用 Ollama 的 ``/api/generate``
+端点并设置 ``raw=true``。这样证据中就能看到 Qwen chat template 渲染出的
+原始字符串，包括角色标记和模型自带的 XML 工具调用协议。所有模型输出
+均为真实数据，无任何 mock。
 """
 
 from __future__ import annotations
@@ -84,7 +84,7 @@ class OllamaRawClient:
         num_predict: int,
         temperature: float,
     ) -> dict[str, Any]:
-        """Stream one raw request and retain every credential-free chunk."""
+        """发起一次 raw 流式请求，保留每个不含凭据的分片。"""
         request_body = {
             "model": self.model,
             "prompt": prompt,
@@ -154,7 +154,7 @@ class OllamaRawClient:
 
 
 def normalize_tool_call(call: dict[str, Any]) -> dict[str, Any]:
-    """Normalize the small model's harmless city-vs-schema variations."""
+    """归一化小模型输出的 city 参数与 schema 之间的无害偏差。"""
     name = call["name"]
     args = dict(call["arguments"])
     if name == "get_current_time":
@@ -299,7 +299,7 @@ def run_cache_case(client, tokenizer, protocol) -> dict[str, Any]:
     pairs = []
     for index in range(cfg["matched_repeats"]):
         hit = client.generate(stable, num_predict=8, temperature=0)
-        marker = f"M{index:07d}"  # fixed width and placed at byte zero
+        marker = f"M{index:07d}"  # 定宽且放在第 0 字节
         mutated_system = marker + system[len(marker):]
         mutated = render_prompt(
             tokenizer,

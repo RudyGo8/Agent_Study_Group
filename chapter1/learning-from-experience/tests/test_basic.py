@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Basic test to verify all components work correctly.
+基础测试：验证各组件都能正常工作。
 """
 
 import sys
@@ -12,30 +12,30 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 def test_game_environment():
-    """Test that the game environment works."""
+    """测试游戏环境可用。"""
     print("Testing game environment...")
     from game_environment import TreasureHuntGame
-    
+
     game = TreasureHuntGame(seed=42)
-    
-    # Test initial state
+
+    # 测试初始状态
     state = game.get_state_description()
     assert "entrance" in state.lower()
     print("  ✓ Game initialization works")
-    
-    # Test actions
+
+    # 测试动作
     actions = game.get_available_actions()
     assert len(actions) > 0
     print("  ✓ Actions generation works")
-    
-    # Test action execution
+
+    # 测试动作执行
     feedback, reward, done = game.execute_action("look around")
     assert isinstance(feedback, str)
     assert isinstance(reward, float)
     assert isinstance(done, bool)
     print("  ✓ Action execution works")
-    
-    # Test reset
+
+    # 测试重置
     game.reset()
     assert game.moves == 0
     print("  ✓ Game reset works")
@@ -44,29 +44,29 @@ def test_game_environment():
 
 
 def test_rl_agent():
-    """Test that the RL agent works."""
+    """测试 RL 智能体可用。"""
     print("Testing RL agent...")
     from game_environment import TreasureHuntGame
     from rl_agent import QLearningAgent
-    
+
     game = TreasureHuntGame(seed=42)
     agent = QLearningAgent()
-    
-    # Test action selection
+
+    # 测试动作选择
     action = agent.choose_action(game, training=True)
     assert isinstance(action, str)
     print("  ✓ Action selection works")
-    
-    # Test Q-value update
+
+    # 测试 Q 值更新
     state = agent._get_state_hash(game)
     feedback, reward, done = game.execute_action(action)
     next_state = agent._get_state_hash(game)
     next_actions = game.get_available_actions()
-    
+
     agent.update_q_value(state, action, reward, next_state, next_actions, done)
     print("  ✓ Q-value update works")
-    
-    # Test training (just 10 episodes for speed)
+
+    # 测试训练（为提速只跑 10 局）
     results = agent.train(num_episodes=10, verbose=False)
     assert "total_episodes" in results
     print("  ✓ Training works")
@@ -75,12 +75,12 @@ def test_rl_agent():
 
 
 def test_llm_agent():
-    """Test that the LLM agent works (without API calls)."""
+    """测试 LLM 智能体可用（不调用 API）。"""
     print("Testing LLM agent structure...")
     from game_environment import TreasureHuntGame
     from llm_agent import LLMAgent, GameExperience
-    
-    # Test experience storage
+
+    # 测试经验存储
     exp = GameExperience(
         state_description="test state",
         action="test action",
@@ -91,9 +91,9 @@ def test_llm_agent():
     assert exp.action == "test action"
     print("  ✓ Experience dataclass works")
     
-    # Test context building (without API)
+    # 测试上下文构建（不调 API）
     try:
-        # This will fail without API key, but we can test the structure
+        # 没有 API key 时会失败，但可以借此测试结构
         agent = LLMAgent(api_key="dummy-key-for-testing")
         
         game = TreasureHuntGame()
@@ -104,7 +104,7 @@ def test_llm_agent():
         assert "treasure hunt" in context.lower()
         print("  ✓ Context building works")
         
-        # Test experience update
+        # 测试经验更新
         agent.update_experience(state, "test action", "test feedback", 1.0)
         assert len(agent.experiences) == 1
         print("  ✓ Experience storage works")
@@ -119,15 +119,15 @@ def test_llm_agent():
 
 
 def test_experiment_runner():
-    """Test that the experiment runner works."""
+    """测试实验运行器可用。"""
     print("Testing experiment runner...")
     from experiment import ExperimentRunner
-    
+
     runner = ExperimentRunner(results_dir="test_results")
     assert runner.results_dir.exists()
     print("  ✓ Experiment runner initialization works")
-    
-    # Clean up test directory
+
+    # 清理测试目录
     import shutil
     if runner.results_dir.exists():
         shutil.rmtree(runner.results_dir)
@@ -136,7 +136,7 @@ def test_experiment_runner():
 
 
 def main():
-    """Run all tests."""
+    """运行全部测试。"""
     print("\n" + "="*60)
     print("RUNNING BASIC TESTS")
     print("="*60 + "\n")

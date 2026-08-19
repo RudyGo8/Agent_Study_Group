@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test script to demonstrate streaming functionality
-for both vLLM and Ollama backends
+演示 vLLM 与 Ollama 两种后端
+流式输出功能的测试脚本
 """
 
 import sys
@@ -10,19 +10,19 @@ from main import ToolCallingAgent
 
 
 def test_streaming():
-    """Test streaming functionality with various queries"""
+    """用多个查询测试流式输出功能"""
     print("="*60)
     print("🚀 STREAMING TEST DEMO")
     print("="*60)
     print(f"Platform: {platform.system()}")
     print("="*60)
     
-    # Initialize agent
+    # 初始化 Agent
     print("\n⚙️  Initializing agent...")
     agent = ToolCallingAgent()
     print(f"✅ Using {agent.backend_type} backend")
-    
-    # Test queries that will demonstrate streaming features
+
+    # 用于演示流式特性的测试查询
     test_queries = [
         {
             "name": "Simple Calculation with Thinking",
@@ -52,7 +52,7 @@ def test_streaming():
             tools_shown = False
             response_shown = False
             
-            # Stream the response
+            # 流式获取响应
             for chunk in agent.chat(test['query'], stream=True):
                 chunk_type = chunk.get("type")
                 content = chunk.get("content", "")
@@ -62,7 +62,7 @@ def test_streaming():
                         print("🧠 Internal Thinking:")
                         print("  ", end="")
                         thinking_shown = True
-                    # Show thinking in gray/dim text
+                    # 以灰色/暗色显示思考内容
                     print(f"\033[90m{content}\033[0m")
                 
                 elif chunk_type == "tool_call":
@@ -82,21 +82,21 @@ def test_streaming():
                         print("\n🤖 Assistant Response:")
                         print("  ", end="")
                         response_shown = True
-                    # Stream the content character by character
+                    # 逐字符流式输出内容
                     print(content, end="", flush=True)
                 
                 elif chunk_type == "error":
                     print(f"\n❌ Error: {content}")
             
-            print("\n")  # New line after response
+            print("\n")  # 响应结束后换行
             
         except Exception as e:
             print(f"\n❌ Error during test: {e}")
         
-        # Reset conversation for next test
+        # 为下一个测试重置对话
         agent.reset_conversation()
         
-        # Ask user if they want to continue
+        # 询问用户是否继续
         if test != test_queries[-1]:
             cont = input("\nPress Enter to continue to next test (or 'q' to quit): ")
             if cont.lower() == 'q':
@@ -108,12 +108,12 @@ def test_streaming():
 
 
 def compare_streaming_vs_regular():
-    """Compare streaming vs regular responses"""
+    """对比流式与普通响应"""
     print("="*60)
     print("📊 STREAMING VS REGULAR COMPARISON")
     print("="*60)
     
-    # Initialize agent
+    # 初始化 Agent
     agent = ToolCallingAgent()
     
     test_query = "What's the weather in Paris and convert 20°C to Fahrenheit?"
@@ -121,7 +121,7 @@ def compare_streaming_vs_regular():
     print(f"\n📋 Test Query: {test_query}")
     print("="*60)
     
-    # Regular mode
+    # 普通模式
     print("\n1️⃣ REGULAR MODE (No Streaming):")
     print("-"*40)
     print("⏳ Processing...")
@@ -130,7 +130,7 @@ def compare_streaming_vs_regular():
     
     agent.reset_conversation()
     
-    # Streaming mode
+    # 流式模式
     print("\n2️⃣ STREAMING MODE:")
     print("-"*40)
     print("⏳ Processing (you'll see content as it arrives)...\n")

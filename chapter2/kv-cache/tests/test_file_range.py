@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
-Test script for the read_file tool with offset and size parameters
+read_file 工具 offset 与 size 参数的测试脚本
 """
 
 from agent import LocalFileTools
 
 def test_file_range_reading():
-    """Test reading files with offset and size parameters"""
+    """测试用 offset 和 size 参数读文件"""
     
     print("🧪 Testing File Range Reading")
     print("="*60)
     
-    # Initialize tools
+    # 初始化工具
     tools = LocalFileTools(root_dir="../..")
     
-    # Test file
+    # 测试文件
     test_file = "chapter1/context/agent.py"
     
-    # Test 1: Read first 10 lines
+    # 测试 1：读前 10 行
     print("\n1️⃣ Reading first 10 lines:")
     result = tools.read_file(test_file, offset=0, size=10)
     if result["success"]:
@@ -27,7 +27,7 @@ def test_file_range_reading():
     else:
         print(f"   ✗ Error: {result['error']}")
     
-    # Test 2: Read lines 100-110
+    # 测试 2：读 100-110 行
     print("\n2️⃣ Reading lines 100-110:")
     result = tools.read_file(test_file, offset=100, size=10)
     if result["success"]:
@@ -39,7 +39,7 @@ def test_file_range_reading():
     else:
         print(f"   ✗ Error: {result['error']}")
     
-    # Test 3: Read from offset 250 with size 500 (as specified)
+    # 测试 3：从 offset 250 读 size 500（按指定）
     print("\n3️⃣ Reading from offset 250, size 500:")
     result = tools.read_file(test_file, offset=250, size=500)
     if result["success"]:
@@ -49,7 +49,7 @@ def test_file_range_reading():
     else:
         print(f"   ✗ Error: {result['error']}")
     
-    # Test 4: Read without size (from offset to end)
+    # 测试 4：不指定 size（从 offset 读到末尾）
     print("\n4️⃣ Reading from offset 700 to end:")
     result = tools.read_file(test_file, offset=700)
     if result["success"]:
@@ -58,7 +58,7 @@ def test_file_range_reading():
     else:
         print(f"   ✗ Error: {result['error']}")
     
-    # Test 5: Offset beyond file length
+    # 测试 5：offset 超出文件长度
     print("\n5️⃣ Testing offset beyond file length:")
     result = tools.read_file(test_file, offset=10000, size=10)
     if result["success"]:
@@ -67,7 +67,7 @@ def test_file_range_reading():
     else:
         print(f"   Result: {result}")
     
-    # Test 6: Read entire file (no offset, no size)
+    # 测试 6：读整个文件（不指定 offset 和 size）
     print("\n6️⃣ Reading entire file (default behavior):")
     result = tools.read_file("chapter1/context/README.md")
     if result["success"]:
@@ -78,7 +78,7 @@ def test_file_range_reading():
     else:
         print(f"   ✗ Error: {result['error']}")
     
-    # Test 7: Compare with limit parameter (the user's original request)
+    # 测试 7：API 风格用法（offset=250, size=500）
     print("\n7️⃣ API-style usage (offset=250, size=500):")
     result = tools.read_file("chapter2/local_llm_serving/main.py", offset=250, size=500)
     if result["success"]:
@@ -86,7 +86,7 @@ def test_file_range_reading():
         print(f"   Lines read: {result['lines_read']}")
         print(f"   File has {result['total_lines']} total lines")
         
-        # Show a sample of the content
+        # 展示部分内容
         lines = result['content'].split('\n')[:3]
         print("\n   First 3 lines of content:")
         for i, line in enumerate(lines):

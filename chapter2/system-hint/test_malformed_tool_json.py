@@ -1,4 +1,4 @@
-"""Regression: malformed tool-argument JSON must not abort the ReAct loop."""
+"""回归测试：非法的工具参数 JSON 不得中断 ReAct 循环。"""
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -25,7 +25,7 @@ def test_execute_task_survives_malformed_tool_arguments_json():
         id="call-bad",
         function=SimpleNamespace(
             name="read_file",
-            arguments='{"file_path": "x.txt",}',  # trailing comma
+            arguments='{"file_path": "x.txt",}',  # 尾随逗号
         ),
     )
     tool_msg = SimpleNamespace(

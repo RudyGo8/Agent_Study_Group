@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Demo script to showcase sample tasks with PDF functionality
+展示含 PDF 功能的示例任务的演示脚本
 """
 
 import os
@@ -14,19 +14,19 @@ add_project_root()
 from main import get_sample_tasks, ensure_sample_pdfs
 
 def main():
-    """Demo the sample tasks"""
+    """演示示例任务"""
     print("\n" + "="*60)
     print("🎯 CONTEXT-AWARE AGENT - SAMPLE TASKS DEMO")
     print("="*60)
     
-    # Ensure PDFs exist
+    # 确保样例 PDF 存在
     print("\n📄 Checking for sample PDFs...")
     if ensure_sample_pdfs():
         print("✅ Sample PDFs are ready!")
     else:
         print("⚠️ Could not create sample PDFs, will use online alternatives")
-    
-    # Get sample tasks
+
+    # 获取示例任务
     tasks = get_sample_tasks()
     
     print(f"\n📋 Found {len(tasks)} sample tasks:")
@@ -37,7 +37,7 @@ def main():
         print(f"   📝 {task['description']}")
         print(f"   📊 Complexity: {'⭐' * (i if i <= 3 else 3)}")
         
-        # Show a preview of the task
+        # 展示任务内容预览
         task_preview = task['task'].replace('\n', ' ')[:100] + "..."
         print(f"   💬 Preview: {task_preview}")
     
@@ -63,7 +63,7 @@ def main():
     print("📊 PDF TASKS:")
     print("-"*60)
     
-    # Check if local PDFs exist
+    # 检查本地 PDF 是否存在
     pdf_dir = Path("fixtures/pdfs")
     if pdf_dir.exists():
         pdfs = list(pdf_dir.glob("*.pdf"))

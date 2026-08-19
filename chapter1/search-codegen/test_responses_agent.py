@@ -32,8 +32,8 @@ def test_dashscope_request_uses_hosted_tool_shapes_and_streaming():
     request = agent._build_responses_request(
         "task", reasoning_effort="high", verbosity="high"
     )
-    # DashScope runs thinking natively: no reasoning.effort or text.verbosity,
-    # and streaming is mandatory because its gateway drops idle connections.
+    # DashScope 原生开启思考：没有 reasoning.effort 和 text.verbosity，
+    # 且因网关会掐断空闲连接而必须使用流式。
     assert "reasoning" not in request
     assert "text" not in request
     assert request["stream"] is True
@@ -180,12 +180,12 @@ def test_acceptance_is_multi_provider_not_openai_gated():
     result = acceptance([blocked_openai, passing_run])
     assert result["passed"] is True
     assert result["acceptance_backend"] == "dashscope"
-    # OpenAI keeps priority when both pass.
+    # 两者都通过时 OpenAI 优先。
     blocked_openai["asean_validation"] = {"passed": True}
     blocked_openai["clarification"] = {"validation": {"passed": True}}
     result = acceptance([blocked_openai, passing_run])
     assert result["acceptance_backend"] == "openai"
-    # OpenRouter alone can never close the experiment.
+    # 仅凭 OpenRouter 永远无法完结实验。
     openrouter_run = dict(passing_run, backend="openrouter")
     result = acceptance([openrouter_run])
     assert result["passed"] is False

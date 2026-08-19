@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test with a simpler task to diagnose the issue
+用更简单的任务排查问题的测试
 """
 
 import os
@@ -14,26 +14,26 @@ add_project_root()
 from agent import ContextAwareAgent, ContextMode
 
 def test_simple_task():
-    """Test with a very simple task to check if the agent is working"""
+    """用极简任务检查 Agent 是否正常工作"""
     
     print("\n" + "="*60)
     print("🧪 SIMPLE TASK TEST")
     print("="*60)
     
-    # Get API key
+    # 获取 API Key
     api_key = os.getenv("SILICONFLOW_API_KEY")
     if not api_key:
         print("❌ SILICONFLOW_API_KEY not found")
         return
-    
+
     print("✅ API key found")
-    
-    # Create agent
+
+    # 创建 Agent
     agent = ContextAwareAgent(api_key, ContextMode.FULL, provider="siliconflow")
     print(f"✅ Agent created")
     print(f"   Model: {agent.model}")
     
-    # Very simple task - no tools needed
+    # 极简任务 —— 不需要工具
     print("\n📝 Test 1: Simple question (no tools)")
     task1 = "What is 2 + 2? Just tell me the answer. FINAL ANSWER: provide the result."
     
@@ -53,7 +53,7 @@ def test_simple_task():
         print(f"❌ Error: {str(e)}")
         return
     
-    # Task with a single tool
+    # 只用一次工具的任务
     print("\n📝 Test 2: Simple calculation (with tool)")
     task2 = "Use the calculate tool to compute 15 * 3. FINAL ANSWER: provide the result."
     

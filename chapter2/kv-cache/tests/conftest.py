@@ -1,4 +1,4 @@
-"""Pytest bootstrap for the kv-cache experiment tests."""
+"""kv-cache 实验测试的 pytest 引导模块。"""
 
 from pathlib import Path
 import sys

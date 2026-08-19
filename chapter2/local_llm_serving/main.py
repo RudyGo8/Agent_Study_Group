@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Main Entry Point for Tool Calling Demo
-Automatically selects the best backend based on your platform:
-- Linux (including WSL2) with NVIDIA GPU: Uses vLLM
-- Native Windows, macOS, or Linux without CUDA: Uses Ollama
+工具调用演示的主入口
+根据平台自动选择最合适的后端：
+- Linux（含 WSL2）且有 NVIDIA GPU：使用 vLLM
+- 原生 Windows、macOS 或无 CUDA 的 Linux：使用 Ollama
 """
 
 import os
@@ -22,16 +22,16 @@ logger = logging.getLogger(__name__)
 
 class ToolCallingAgent:
     """
-    Universal tool calling agent that works on all platforms
-    Automatically selects vLLM (if supported and a GPU is available) or Ollama
+    跨平台通用的工具调用 Agent
+    自动选择 vLLM（受支持且有 GPU 时）或 Ollama
     """
     
     def __init__(self, backend: Optional[str] = None):
         """
-        Initialize with automatic backend detection
-        
+        初始化并自动检测后端
+
         Args:
-            backend: Force a specific backend ('vllm', 'ollama', or None for auto)
+            backend: 强制指定后端（'vllm'、'ollama'，None 表示自动检测）
         """
         self.agent = None
         self.backend_type = backend or self._detect_best_backend()
@@ -40,12 +40,12 @@ class ToolCallingAgent:
         self._initialize_backend()
     
     def _detect_best_backend(self) -> str:
-        """Detect the best backend for current platform"""
+        """检测当前平台最合适的后端"""
         system = platform.system()
         
-        # Official vLLM GPU execution requires Linux. WSL2 reports itself as
-        # Linux here, while native Windows must use Ollama even when PyTorch
-        # can see a CUDA-capable GPU.
+        # 官方 vLLM 的 GPU 执行要求 Linux。WSL2 在这里报告为 Linux；
+        # 而原生 Windows 即使 PyTorch 能看到支持 CUDA 的 GPU，
+        # 也只能用 Ollama。
         if system == "Linux":
             try:
                 import torch
@@ -62,21 +62,21 @@ class ToolCallingAgent:
             )
             return "ollama"
         
-        # Default to Ollama for macOS or Linux systems without CUDA
+        # macOS 或无 CUDA 的 Linux 默认用 Ollama
         logger.info(f"Using Ollama on {system}")
         return "ollama"
     
     def _initialize_backend(self):
-        """Initialize the selected backend"""
+        """初始化选定的后端"""
         if self.backend_type == "vllm":
             self._init_vllm()
         else:
             self._init_ollama()
     
     def _init_vllm(self):
-        """Initialize vLLM backend"""
+        """初始化 vLLM 后端"""
         try:
-            # Check if vLLM server is running
+            # 检查 vLLM 服务端是否在运行
             import requests
             from config import VLLM_HOST, VLLM_PORT
             
@@ -87,13 +87,13 @@ class ToolCallingAgent:
                 if response.status_code != 200:
                     raise ConnectionError("vLLM server not responding")
             except Exception:
-                # Try to start the server
+                # 尝试启动服务端
                 logger.info("Starting vLLM server...")
                 from server import VLLMServer
                 server = VLLMServer()
                 server.start(wait_for_ready=True)
             
-            # Initialize vLLM agent
+            # 初始化 vLLM Agent
             from agent import VLLMToolAgent
             from config import OPENAI_API_BASE, OPENAI_API_KEY
             
@@ -110,12 +110,12 @@ class ToolCallingAgent:
             self._init_ollama()
     
     def _init_ollama(self):
-        """Initialize Ollama backend"""
+        """初始化 Ollama 后端"""
         try:
             import ollama
             from ollama_native import OllamaNativeAgent
             
-            # Check if Ollama is running
+            # 检查 Ollama 是否在运行
             client = ollama.Client()
             try:
                 models_response = client.list()
@@ -128,14 +128,14 @@ class ToolCallingAgent:
                     logger.info("Install a model with: ollama pull qwen3:0.6b")
                     sys.exit(1)
                 
-                # Use qwen3:0.6b as the default model
+                # 默认使用 qwen3:0.6b
                 model = "qwen3:0.6b"
                 
-                # Check if qwen3:0.6b is available
+                # 检查 qwen3:0.6b 是否可用
                 if model not in available_models:
                     logger.warning(f"Recommended model {model} not found in available models")
                     logger.info("Install with: ollama pull qwen3:0.6b")
-                    # Fall back to first available model if qwen3:0.6b is not installed
+                    # 未安装 qwen3:0.6b 时回退到第一个可用模型
                     model = available_models[0]
                     logger.info(f"Using fallback model: {model}")
                 
@@ -166,16 +166,16 @@ class ToolCallingAgent:
     
     def chat(self, message: str, use_tools: bool = True, stream: bool = False, **kwargs) -> str:
         """
-        Send a message to the agent
-        
+        向 Agent 发送消息
+
         Args:
-            message: User message
-            use_tools: Whether to enable tool calling
-            stream: Whether to stream the response
-            **kwargs: Additional backend-specific parameters
-            
+            message: 用户消息
+            use_tools: 是否启用工具调用
+            stream: 是否流式返回响应
+            **kwargs: 其他后端特定参数
+
         Returns:
-            Agent response (or generator if streaming)
+            Agent 的响应（流式模式下为生成器）
         """
         if not self.agent:
             raise RuntimeError("Agent not initialized")
@@ -183,13 +183,13 @@ class ToolCallingAgent:
         return self.agent.chat(message, use_tools=use_tools, stream=stream, **kwargs)
     
     def reset_conversation(self):
-        """Reset conversation history"""
+        """清空对话历史"""
         if hasattr(self.agent, 'reset_conversation'):
             self.agent.reset_conversation()
 
 
 def get_sample_tasks() -> List[Dict[str, str]]:
-    """Get sample tasks for demonstration"""
+    """获取用于演示的示例任务"""
     return [
         {
             "name": "🕐 Current Time Check",
@@ -257,7 +257,7 @@ If the meeting is at 2 PM London time:
 
 
 def run_single_task(agent: ToolCallingAgent, task: str, stream: bool = True):
-    """Run a single task with optional streaming"""
+    """运行单个任务，可选流式输出"""
     print("\n" + "="*60)
     print("TASK EXECUTION")
     print("="*60)
@@ -282,29 +282,29 @@ def run_single_task(agent: ToolCallingAgent, task: str, stream: bool = True):
                     if not thinking_shown:
                         print("🧠 Thinking: ", end="", flush=True)
                         thinking_shown = True
-                    # Stream thinking character by character in gray
+                    # 以灰色逐字符流式输出思考内容
                     print(f"\033[90m{content}\033[0m", end="", flush=True)
                 
                 elif chunk_type == "tool_call":
                     if not tools_shown:
                         print("\n\n🔧 Tool Calls:")
                         tools_shown = True
-                    # Display tool call info
+                    # 显示工具调用信息
                     tool_info = content
                     print(f"  → {tool_info.get('name', 'unknown')}: {tool_info.get('arguments', {})}")
-                    # Reset response_started flag after tool calls
+                    # 工具调用后重置 response_started 标志
                     response_started = False
                 
                 elif chunk_type == "tool_result":
-                    # Display tool result
+                    # 显示工具结果
                     result_str = str(content)
                     print(f"    ✓ {result_str}")
-                    # Reset response_started flag after tool results
+                    # 工具结果后重置 response_started 标志
                     response_started = False
                 
                 elif chunk_type == "content":
                     if not response_started:
-                        # Check if this is content after tool execution
+                        # 判断是否为工具执行后的内容
                         if last_chunk_type in ["tool_result", "tool_call"]:
                             print("\n🤖 Assistant: ", end="", flush=True)
                         elif thinking_shown or tools_shown:
@@ -312,7 +312,7 @@ def run_single_task(agent: ToolCallingAgent, task: str, stream: bool = True):
                         else:
                             print("🤖 Assistant: ", end="", flush=True)
                         response_started = True
-                    # Stream the actual response content
+                    # 流式输出实际响应内容
                     print(content, end="", flush=True)
                     response_chunks.append(content)
                 
@@ -338,13 +338,13 @@ def run_single_task(agent: ToolCallingAgent, task: str, stream: bool = True):
 
 
 def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
-    """Run interactive chat mode with optional streaming"""
+    """进入交互式聊天模式，可选流式输出"""
     print("\n" + "="*60)
     print("💬 INTERACTIVE MODE" + (" (STREAMING)" if stream else ""))
     print("="*60)
     print("\nYou can now chat with the AI agent. It has access to various tools:")
     
-    # Show available tools
+    # 显示可用工具
     from tools import ToolRegistry
     registry = ToolRegistry()
     tools = registry.get_tool_schemas()
@@ -373,7 +373,7 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
             if not user_input:
                 continue
             
-            # Handle commands
+            # 处理命令
             if user_input.lower() == "/exit" or user_input.lower() == "quit":
                 print("👋 Goodbye!")
                 break
@@ -395,7 +395,7 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
                 sample_tasks = get_sample_tasks()
                 for i, sample in enumerate(sample_tasks, 1):
                     print(f"  {i}. {sample['name']}")
-                    # Show first 100 chars of task for readability
+                    # 为便于阅读只显示任务前 100 字符
                     task_preview = sample['task'].replace('\n', ' ')[:100]
                     if len(sample['task']) > 100:
                         task_preview += "..."
@@ -404,7 +404,7 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
                 continue
             
             elif user_input.lower().startswith("/sample "):
-                # Extract the sample number
+                # 提取示例编号
                 try:
                     sample_num = int(user_input.split()[1])
                     sample_tasks = get_sample_tasks()
@@ -416,9 +416,9 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
                         print(f"Task: {selected_sample['task']}")
                         print("-"*60)
                         
-                        # Process the sample task as regular input
+                        # 把示例任务当作普通输入处理
                         user_input = selected_sample['task']
-                        # Don't continue - let it fall through to normal processing
+                        # 不 continue——让它落入下面的正常处理流程
                     else:
                         print(f"❌ Invalid sample number. Please choose between 1 and {len(sample_tasks)}")
                         print("Use /samples to see available samples")
@@ -443,7 +443,7 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
                 print(f"✅ Streaming {'enabled' if streaming_enabled else 'disabled'}")
                 continue
             
-            # Process user input
+            # 处理用户输入
             if streaming_enabled:
                 print("\n⏳ Processing (streaming)...\n")
                 
@@ -461,7 +461,7 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
                         if not thinking_shown:
                             print("🧠 Thinking: ", end="", flush=True)
                             thinking_shown = True
-                        # Stream thinking character by character in gray
+                        # 以灰色逐字符流式输出思考内容
                         print(f"\033[90m{content}\033[0m", end="", flush=True)
                     
                     elif chunk_type == "tool_call":
@@ -470,20 +470,20 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
                             tools_shown = True
                         tool_info = content
                         print(f"  → {tool_info.get('name', 'unknown')}: {tool_info.get('arguments', {})}")
-                        # Reset response_started flag after tool calls so the next content gets a label
+                        # 工具调用后重置 response_started，让下一段内容重新显示标签
                         response_started = False
                     
                     elif chunk_type == "tool_result":
                         result_str = str(content)
                         print(f"    ✓ {result_str}")
-                        # Reset response_started flag after tool results
+                        # 工具结果后重置 response_started 标志
                         response_started = False
                     
                     elif chunk_type == "content":
-                        # If we're starting a new content section after tool results
+                        # 若是工具结果之后新开始的正文
                         if not response_started:
                             if last_chunk_type in ["tool_result", "tool_call"]:
-                                # This is a response after tool execution
+                                # 这是工具执行后的响应
                                 print("\n🤖 Assistant: ", end="", flush=True)
                             elif thinking_shown or tools_shown:
                                 print("\n🤖 Assistant: ", end="", flush=True)
@@ -498,7 +498,7 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
                     
                     last_chunk_type = chunk_type
                 
-                print()  # New line after streaming
+                print()  # 流式输出结束后换行
             else:
                 print("\n⏳ Processing...")
                 response = agent.chat(user_input, stream=False)
@@ -514,7 +514,7 @@ def interactive_mode(agent: ToolCallingAgent, stream: bool = True):
 
 
 def main():
-    """Main function"""
+    """主函数"""
     import argparse
     
     parser = argparse.ArgumentParser(
@@ -556,19 +556,19 @@ def main():
     
     args = parser.parse_args()
     
-    # Header
+    # 标题横幅
     print("="*60)
     print("🚀 Universal Tool Calling Agent")
     print("="*60)
     
-    # Show system info if requested
+    # 按需显示系统信息
     if args.info:
         print("\n📊 System Information:")
         print(f"  Platform: {platform.system()} {platform.release()}")
         print(f"  Architecture: {platform.machine()}")
         print(f"  Python: {sys.version.split()[0]}")
         
-        # Check CUDA
+        # 检查 CUDA
         try:
             import torch
             cuda_available = torch.cuda.is_available()
@@ -579,7 +579,7 @@ def main():
         except ImportError:
             print("  CUDA: ❌ PyTorch not installed")
         
-        # Check Ollama
+        # 检查 Ollama
         try:
             import ollama
             print("  Ollama: ✅ Package installed")
@@ -588,7 +588,7 @@ def main():
         
         return 0
     
-    # Initialize agent
+    # 初始化 Agent
     print("\n⚙️  Initializing agent...")
     
     backend = None if args.backend == "auto" else args.backend
@@ -603,10 +603,10 @@ def main():
     
     print(f"✅ Agent ready! Using {agent.backend_type} backend")
     
-    # Execute based on mode
+    # 按模式执行
     if args.mode == "single":
         if not args.task:
-            # Show sample tasks for selection
+            # 显示示例任务供选择
             print("\n" + "="*60)
             print("SINGLE TASK MODE - No task provided")
             print("="*60)
@@ -648,7 +648,7 @@ def main():
             stream_enabled = not args.no_stream if hasattr(args, 'no_stream') else True
             run_single_task(agent, args.task, stream=stream_enabled)
     
-    else:  # interactive mode
+    else:  # 交互模式
         stream_enabled = not args.no_stream if hasattr(args, 'no_stream') else True
         interactive_mode(agent, stream=stream_enabled)
     

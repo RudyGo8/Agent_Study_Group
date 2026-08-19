@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test script for DeepSeek model integration.
-Tests deepseek-v4-flash (default) with conversation and tool calling.
+DeepSeek 模型集成的测试脚本。
+测试 deepseek-v4-flash（默认模型）的对话与工具调用。
 """
 
 import os
@@ -15,12 +15,12 @@ from dotenv import load_dotenv
 from agent import ContextAwareAgent, ContextMode
 from config import Config
 
-# Load environment variables
+# 加载环境变量
 load_dotenv()
 
 
 def test_basic_conversation():
-    """Test basic conversation capabilities"""
+    """测试基础对话能力"""
     print("\n" + "=" * 60)
     print("TEST 1: Basic Conversation")
     print("=" * 60)
@@ -58,7 +58,7 @@ def test_basic_conversation():
 
 
 def test_tool_usage():
-    """Test tool calling capabilities"""
+    """测试工具调用能力"""
     print("\n" + "=" * 60)
     print("TEST 2: Tool Usage (Calculator)")
     print("=" * 60)
@@ -101,7 +101,7 @@ def test_tool_usage():
 
 
 def test_currency_conversion():
-    """Test currency conversion tool"""
+    """测试货币换算工具"""
     print("\n" + "=" * 60)
     print("TEST 3: Currency Conversion")
     print("=" * 60)
@@ -140,7 +140,7 @@ def test_currency_conversion():
 
 
 def test_model_info():
-    """Test and display model information"""
+    """测试并展示模型信息"""
     print("\n" + "=" * 60)
     print("TEST 4: Model Information")
     print("=" * 60)
@@ -179,7 +179,7 @@ def test_model_info():
 
 
 def main():
-    """Run all tests"""
+    """运行全部测试"""
     print("\n" + "=" * 60)
     print("DEEPSEEK MODEL INTEGRATION TEST SUITE")
     print("=" * 60)

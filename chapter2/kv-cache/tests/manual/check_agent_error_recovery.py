@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manual live check for agent recovery after tool errors."""
+"""手动实测：Agent 在工具出错后的恢复能力。"""
 
 import os
 import sys
@@ -12,7 +12,7 @@ from agent import KVCacheAgent, KVCacheMode
 
 
 def check_agent_error_recovery():
-    """Run the live agent against an intentionally failing tool path."""
+    """让真实 Agent 面对一条刻意失败的工具路径。"""
     api_key = os.getenv("MOONSHOT_API_KEY")
     if not api_key:
         print("❌ Please set MOONSHOT_API_KEY environment variable")

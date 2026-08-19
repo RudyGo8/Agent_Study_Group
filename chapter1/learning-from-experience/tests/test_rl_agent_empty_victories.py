@@ -1,6 +1,6 @@
 """
-Test suite locking out ZeroDivisionError in QLearningAgent.train
-when computing victory_rate on an empty episode_victories list.
+测试套件：锁定 QLearningAgent.train 在 episode_victories 为空列表
+计算 victory_rate 时的 ZeroDivisionError。
 """
 
 from rl_agent import QLearningAgent
@@ -8,7 +8,7 @@ from rl_agent import QLearningAgent
 
 def test_q_learning_agent_train_empty_victories_snapshot():
     """
-    Ensure checkpoint victory_rate calculation does not raise ZeroDivisionError when recent is empty.
+    确保检查点 victory_rate 计算在 recent 为空时不会抛 ZeroDivisionError。
     """
     agent = QLearningAgent.__new__(QLearningAgent)
     agent.episode_victories = []
@@ -16,7 +16,7 @@ def test_q_learning_agent_train_empty_victories_snapshot():
     agent.q_table = {}
     agent.epsilon = 0.1
 
-    # Simulate snapshot logic when checkpoint_interval matches
+    # 模拟 checkpoint_interval 命中时的快照逻辑
     recent = agent.episode_victories[-1000:]
     victory_rate = sum(recent) / len(recent) if recent else 0.0
 

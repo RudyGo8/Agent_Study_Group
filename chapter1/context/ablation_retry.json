@@ -1,0 +1,32 @@
+[
+  {
+    "test_name": "Ablation 1 - No Historical Tool Calls",
+    "case_name": "Multinational Budget",
+    "context_mode": "no_history",
+    "execution_time": 153.48,
+    "iterations": 10,
+    "num_tool_calls": 51,
+    "completed": false,
+    "success": false,
+    "task_success": null,
+    "has_final_answer": false,
+    "error": null,
+    "reasoning_steps": 10,
+    "final_answer_preview": null
+  },
+  {
+    "test_name": "Ablation 2 - No Reasoning Process",
+    "case_name": "Multinational Budget",
+    "context_mode": "no_reasoning",
+    "execution_time": 65.13,
+    "iterations": 4,
+    "num_tool_calls": 7,
+    "completed": true,
+    "success": true,
+    "task_success": null,
+    "has_final_answer": true,
+    "error": null,
+    "reasoning_steps": 4,
+    "final_answer_preview": "**\n- **Total global Q1 2024 expenses: $11,990,955.43 USD**\n- **Average per region: $2,398,191.09 USD**\n- **Regional share:** Japan 21.20%, US 20.85%, Singapore 19.92%, EU 19.04%, UK 19.00%\n- **Post-8%..."
+  }
+]

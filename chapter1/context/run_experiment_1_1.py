@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Run the exact five-arm context ablation from book/chapter1.md.
+"""运行 book/chapter1.md 中精确的五组上下文消融实验。
 
-Unlike the legacy demo table, this runner persists every credential-free API
-request and response.  That makes it possible to prove which context component
-was removed on every inference instead of inferring the ablation from a CLI
-flag after the fact.
+与旧的演示表格不同，此运行器会保存每一轮不含凭据的 API 请求与响应。
+这样才能证明每次推理时到底移除了哪个上下文组件，而不是事后从 CLI
+参数反推消融情况。
 """
 
 from __future__ import annotations
@@ -24,7 +23,6 @@ from typing import Any, Dict, Iterable, List
 
 from agent import ContextAwareAgent, ContextMode
 
-
 EXPERIMENT_ID = "1-1"
 MODES = list(ContextMode)
 CANONICAL_TASK = """According to the company's quarterly revenue:
@@ -39,6 +37,8 @@ Report both values rounded to two decimal places. Do not estimate exchange
 rates yourself; use the tool observations."""
 
 EXPECTED_NUMBERS = ("9602895.73", "2400723.93")
+
+# 封装环境
 KEY_ENV = {
     "dashscope": ("DASHSCOPE_API_KEY",),
     "qwen": ("DASHSCOPE_API_KEY",),
@@ -49,6 +49,8 @@ KEY_ENV = {
     "siliconflow": ("SILICONFLOW_API_KEY",),
     "deepseek": ("DEEPSEEK_API_KEY",),
     "openrouter": ("OPENROUTER_API_KEY",),
+    # 学习小组本地扩展：支持 .env 配置的 OpenAI 兼容网关（如公司中转）
+    "openai": ("OPENAI_API_KEY",),
 }
 
 
@@ -75,6 +77,7 @@ def package_version(distribution: str) -> str | None:
 
 
 def resolve_key(provider: str) -> tuple[str, str]:
+    """模型提供商"""
     names = KEY_ENV.get(provider, ())
     for name in names:
         value = os.getenv(name)
@@ -110,11 +113,13 @@ def response_message(turn: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def request_roles(turn: Dict[str, Any]) -> List[str]:
-    return [message.get("role") for message in turn.get("request", {}).get("messages", [])]
+    return [
+        message.get("role") for message in turn.get("request", {}).get("messages", [])
+    ]
 
 
 def evaluate_context_contract(mode: str, turns: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Verify the actual provider request, not the requested CLI mode."""
+    """校验真实的提供商请求，而不是 CLI 传入的模式名。"""
     requests = [turn.get("request", {}) for turn in turns if turn.get("request")]
     real_responses = [turn for turn in turns if turn.get("response", {}).get("id")]
     details: Dict[str, Any] = {
@@ -213,8 +218,7 @@ def evaluate_context_contract(mode: str, turns: List[Dict[str, Any]]) -> Dict[st
             {
                 "only_static_prefix_and_user_every_turn": bool(requests)
                 and all(
-                    [m.get("role") for m in r.get("messages", [])]
-                    == ["system", "user"]
+                    [m.get("role") for m in r.get("messages", [])] == ["system", "user"]
                     for r in requests
                 ),
                 "tools_still_present": all(bool(r.get("tools")) for r in requests),
@@ -238,17 +242,20 @@ def normalized_number_text(value: str | None) -> str:
 
 
 def canonical_answer_correct(final_answer: str | None) -> bool:
-    """Evaluate the known numeric rubric for the canonical Experiment 1-1 task.
+    """按实验 1-1 既有任务的数字评分标准判分。
 
-    This is deliberately kept outside ``ContextAwareAgent``.  A generic agent
-    cannot infer correctness from an arbitrary natural-language task, while
-    this experiment has an explicit answer rubric.
+    刻意不放进 ``ContextAwareAgent``：通用 Agent 无法从任意自然语言
+    任务推断对错，而本实验有明确的答案评分标准。
     """
     normalized = normalized_number_text(final_answer)
-    return bool(final_answer) and all(number in normalized for number in EXPECTED_NUMBERS)
+    return bool(final_answer) and all(
+        number in normalized for number in EXPECTED_NUMBERS
+    )
 
 
-def summarize_arm(mode: ContextMode, result: Dict[str, Any], elapsed: float) -> Dict[str, Any]:
+def summarize_arm(
+    mode: ContextMode, result: Dict[str, Any], elapsed: float, max_iterations: int
+) -> Dict[str, Any]:
     trajectory = result["trajectory"]
     tool_calls = [tool_call_dict(call) for call in trajectory.tool_calls]
     signatures = call_signatures(tool_calls)
@@ -264,8 +271,8 @@ def summarize_arm(mode: ContextMode, result: Dict[str, Any], elapsed: float) -> 
         "using_openrouter": result.get("using_openrouter", False),
         "started_at": None,
         "elapsed_seconds": round(elapsed, 6),
-        # ``success`` is retained for compatibility with existing evidence;
-        # it means terminal response/completion, not task correctness.
+        # 保留 ``success`` 是为了兼容既有证据格式；它表示"收到终止
+        # 响应/跑完"，不表示任务正确。
         "success": completed,
         "completed": completed,
         "task_success": task_success,
@@ -278,17 +285,22 @@ def summarize_arm(mode: ContextMode, result: Dict[str, Any], elapsed: float) -> 
         "reasoning_steps": trajectory.reasoning_steps,
         "api_turns": trajectory.api_turns,
     }
-    arm["context_contract"] = evaluate_context_contract(mode.value, trajectory.api_turns)
+    arm["context_contract"] = evaluate_context_contract(
+        mode.value, trajectory.api_turns
+    )
     arm["behavior"] = {
         "tool_action_count": len(tool_calls),
         "has_repeated_tool_action": repeats > 0,
-        "hit_iteration_ceiling": result.get("iterations") >= 5 and not completed,
+        "hit_iteration_ceiling": result.get("iterations", 0) >= max_iterations
+        and not completed,
         "canonical_answer_correct": task_success,
     }
     return arm
 
 
 def token_usage(arms: List[Dict[str, Any]]) -> Dict[str, int]:
+    """汇总所有 API 调用的 token 使用情况。"""
+
     prompt = completion = cached = reasoning = 0
     for arm in arms:
         for turn in arm["api_turns"]:
@@ -297,12 +309,16 @@ def token_usage(arms: List[Dict[str, Any]]) -> Dict[str, int]:
             completion += int(
                 usage.get("completion_tokens") or usage.get("output_tokens") or 0
             )
-            prompt_details = usage.get("prompt_tokens_details") or usage.get(
-                "input_tokens_details"
-            ) or {}
-            completion_details = usage.get("completion_tokens_details") or usage.get(
-                "output_tokens_details"
-            ) or {}
+            prompt_details = (
+                usage.get("prompt_tokens_details")
+                or usage.get("input_tokens_details")
+                or {}
+            )
+            completion_details = (
+                usage.get("completion_tokens_details")
+                or usage.get("output_tokens_details")
+                or {}
+            )
             cached += int(prompt_details.get("cached_tokens") or 0)
             reasoning += int(completion_details.get("reasoning_tokens") or 0)
     return {
@@ -327,25 +343,28 @@ def analyze(arms: List[Dict[str, Any]]) -> Dict[str, Any]:
         for arm in arms
     )
     behavior = {
-        "full_baseline_correct": by_mode.get("full", {}).get("behavior", {}).get(
-            "canonical_answer_correct", by_mode.get("full", {}).get("task_success", False)
+        "full_baseline_correct": by_mode.get("full", {})
+        .get("behavior", {})
+        .get(
+            "canonical_answer_correct",
+            by_mode.get("full", {}).get("task_success", False),
         ),
-        "without_tool_definitions_no_tool_action": by_mode.get(
-            "no_tool_calls", {}
-        ).get("behavior", {}).get("tool_action_count")
+        "without_tool_definitions_no_tool_action": by_mode.get("no_tool_calls", {})
+        .get("behavior", {})
+        .get("tool_action_count")
         == 0,
-        "without_tool_results_repeated_action": by_mode.get(
-            "no_tool_results", {}
-        ).get("behavior", {}).get("has_repeated_tool_action", False),
-        "without_history_repeated_action": by_mode.get("no_history", {}).get(
-            "behavior", {}
-        ).get("has_repeated_tool_action", False),
-        # Contradiction is an empirical outcome, not something the harness can
-        # legitimately force.  We report whether the no-reasoning answer lost
-        # canonical correctness and keep this separate from execution validity.
-        "without_reasoning_degraded": not by_mode.get("no_reasoning", {}).get(
-            "behavior", {}
-        ).get("canonical_answer_correct", False),
+        "without_tool_results_repeated_action": by_mode.get("no_tool_results", {})
+        .get("behavior", {})
+        .get("has_repeated_tool_action", False),
+        "without_history_repeated_action": by_mode.get("no_history", {})
+        .get("behavior", {})
+        .get("has_repeated_tool_action", False),
+        # "出现矛盾"是实证结果，harness 不能合法地强行制造。这里只报告
+        # 去掉思考后的答案是否失去了标准答案的正确性，并将其与
+        # "执行是否有效"分开记录。
+        "without_reasoning_degraded": not by_mode.get("no_reasoning", {})
+        .get("behavior", {})
+        .get("canonical_answer_correct", False),
     }
     behavior["all_manuscript_behavior_claims_observed"] = all(behavior.values())
     return {
@@ -365,13 +384,15 @@ def analyze(arms: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 def write_json(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--provider", default="kimi", choices=sorted(KEY_ENV))
-    parser.add_argument("--model", default="kimi-k3")
+    parser.add_argument("--provider", default="openai", choices=sorted(KEY_ENV))
+    parser.add_argument("--model", default="glm-5.3")
     parser.add_argument("--max-iterations", type=int, default=5)
     parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
@@ -406,13 +427,8 @@ def main() -> int:
         )
         begin = time.monotonic()
         result = agent.execute_task(CANONICAL_TASK, max_iterations=args.max_iterations)
-        arm = summarize_arm(mode, result, time.monotonic() - begin)
+        arm = summarize_arm(mode, result, time.monotonic() - begin, args.max_iterations)
         arm["started_at"] = started
-        # Recompute the configured ceiling rather than retaining the default in
-        # the pure summarizer (which is also exercised by unit tests).
-        arm["behavior"]["hit_iteration_ceiling"] = (
-            result.get("iterations") >= args.max_iterations and not result.get("success")
-        )
         arms.append(arm)
 
     evidence: Dict[str, Any] = {

@@ -1,6 +1,6 @@
 """
-Test suite locking out TypeError in ContextCompressor._no_compression
-when a search result dictionary contains 'content': None.
+测试套件：防止 ContextCompressor._no_compression 在搜索结果字典
+包含 'content': None 时抛出 TypeError。
 """
 
 import os
@@ -13,7 +13,7 @@ from compression_strategies import ContextCompressor
 
 def test_no_compression_handles_null_content():
     """
-    Ensure _no_compression does not raise TypeError when result['content'] is None.
+    确保 result['content'] 为 None 时 _no_compression 不抛 TypeError。
     """
     compressor = ContextCompressor.__new__(ContextCompressor)
     search_results = {

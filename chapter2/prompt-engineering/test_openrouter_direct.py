@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Direct test of OpenRouter API connection with openai/gpt-5
-This helps isolate API connection issues from tau-bench logic
+直接测试 openai/gpt-5 经 OpenRouter 的 API 连接
+用于把 API 连接问题与 tau-bench 逻辑隔离开
 """
 
 import os
@@ -16,13 +16,13 @@ except ImportError:
 from litellm import completion
 
 def test_openrouter():
-    """Test direct API call to OpenRouter"""
+    """直接测试对 OpenRouter 的 API 调用"""
     
     print("="*60)
     print("🔍 Testing OpenRouter API directly")
     print("="*60)
     
-    # Check API key
+    # 检查 API Key
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         print("❌ OPENROUTER_API_KEY not set!")
@@ -31,7 +31,7 @@ def test_openrouter():
     else:
         print(f"✅ OPENROUTER_API_KEY found (length: {len(api_key)})")
     
-    # Test message
+    # 测试消息
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say 'Hello, I'm working!' in exactly 5 words."}
@@ -42,18 +42,18 @@ def test_openrouter():
     print(f"   Provider: openrouter")
     print(f"   Messages: {len(messages)}")
     
-    # Enable verbose logging
+    # 开启详细日志
     os.environ["LITELLM_LOG"] = "DEBUG"
     
     try:
-        # Make API call with reasoning_effort set to low via extra_body
+        # 通过 extra_body 把 reasoning_effort 设为 low 再发起 API 调用
         response = completion(
             model="openai/gpt-5",
             custom_llm_provider="openrouter",
             messages=messages,
-            temperature=1.0,  # gpt-5 only supports 1.0
-            # Add reasoning_effort to minimize thinking tokens via extra_body
-            extra_body={"reasoning_effort": "minimal"}  # Options: "minimal", "low", "medium", "high"
+            temperature=1.0,  # gpt-5 只支持 1.0
+            # 通过 extra_body 加 reasoning_effort，尽量减少思考 token
+            extra_body={"reasoning_effort": "minimal"}  # 可选值："minimal"、"low"、"medium"、"high"
         )
         
         print("\n✅ SUCCESS! Response received:")
@@ -69,7 +69,7 @@ def test_openrouter():
         print(f"\n❌ ERROR: {type(e).__name__}")
         print(f"   {str(e)}")
         
-        # Check common issues
+        # 检查常见问题
         if "401" in str(e) or "Unauthorized" in str(e):
             print("\n💡 This looks like an authentication issue.")
             print("   Check that your OPENROUTER_API_KEY is valid.")

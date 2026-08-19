@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick test for Doubao provider
+Doubao 提供商的快速测试
 """
 
 import os
@@ -12,13 +12,13 @@ add_project_root()
 from agent import ContextAwareAgent, ContextMode
 
 def test_doubao():
-    """Test Doubao provider with a simple task"""
+    """用简单任务测试 Doubao 提供商"""
     
     print("\n" + "="*60)
     print("🧪 DOUBAO PROVIDER TEST")
     print("="*60)
     
-    # Check for API key
+    # 检查 API Key
     api_key = os.getenv("ARK_API_KEY")
     if not api_key:
         print("❌ ARK_API_KEY not found. Please set it to test Doubao provider.")
@@ -27,14 +27,14 @@ def test_doubao():
     
     print("✅ ARK API key found")
     
-    # Create agent with Doubao provider
+    # 用 Doubao 提供商创建 Agent
     try:
         agent = ContextAwareAgent(api_key, ContextMode.FULL, provider="doubao")
         print(f"✅ Agent created with Doubao provider")
         print(f"   Model: {agent.model}")
         print(f"   Base URL: {agent.client.base_url}")
         
-        # Simple test task (minimal to save tokens)
+        # 简单测试任务（尽量省 token）
         print("\n📝 Running simple test task...")
         task = "Calculate: What is 15 + 27? Provide FINAL ANSWER with the result."
         

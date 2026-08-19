@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Quick demonstration of KV cache impact
-Shows the difference between correct and incorrect implementations
+KV cache 影响的快速演示
+展示正确与错误实现之间的差异
 """
 
 import os
@@ -22,9 +22,9 @@ from agent import KVCacheAgent, KVCacheMode
 from agentbook.providers import PROVIDERS
 
 def main():
-    """Run a quick demo comparing correct vs incorrect implementation"""
+    """快速演示：对比正确与错误实现"""
     
-    # Get API key. 优先 Moonshot/Kimi；缺失时回退 OPENROUTER_API_KEY
+    # 获取 API key。优先 Moonshot/Kimi；缺失时回退 OPENROUTER_API_KEY
     # （KVCacheAgent 会自动切换到 OpenRouter 端点并映射模型名）。
     # 接受哪些环境变量由 agentbook 的 provider 注册表定义。
     api_key = PROVIDERS["kimi"].api_key() or os.getenv("OPENROUTER_API_KEY")
@@ -36,7 +36,7 @@ def main():
     print("🚀 KV Cache Quick Demo")
     print("="*60)
     
-    # Simple task that requires multiple tool calls
+    # 需要多次工具调用的简单任务
     task = """Please do the following:
     1. Find all Python files in the chapter1 directory
     2. Read the main.py file from the context project
@@ -46,14 +46,14 @@ def main():
     print(f"📝 Task: {task}")
     print("="*60)
     
-    # Test 1: Correct implementation
+    # 测试 1：正确实现
     print("\n✅ Testing CORRECT implementation (with KV cache)...")
     print("-"*60)
     agent_correct = KVCacheAgent(
         api_key=api_key,
         mode=KVCacheMode.CORRECT,
         root_dir="../..",
-        verbose=False  # Set to True for detailed logs
+        verbose=False  # 设为 True 可查看详细日志
     )
     
     result_correct = agent_correct.execute_task(task, max_iterations=10)
@@ -65,7 +65,7 @@ def main():
     print(f"✓ Cache Hits: {metrics_correct.cache_hits}")
     print(f"✓ Total Tokens Used: {metrics_correct.prompt_tokens + metrics_correct.completion_tokens:,}")
     
-    # Test 2: Incorrect implementation (dynamic system prompt)
+    # 测试 2：错误实现（动态系统提示词）
     print("\n❌ Testing INCORRECT implementation (dynamic system prompt)...")
     print("-"*60)
     agent_incorrect = KVCacheAgent(
@@ -84,7 +84,7 @@ def main():
     print(f"✗ Cache Hits: {metrics_incorrect.cache_hits}")
     print(f"✗ Total Tokens Used: {metrics_incorrect.prompt_tokens + metrics_incorrect.completion_tokens:,}")
     
-    # Comparison
+    # 对比
     print("\n📊 Performance Impact:")
     print("="*60)
     

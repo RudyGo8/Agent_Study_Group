@@ -1,39 +1,35 @@
 """
-Attention Visualization CLI
-===========================
+注意力可视化命令行工具
+=====================
 
-Command-line tool that renders the self-attention heatmap of a real
-language model for an arbitrary prompt, letting you pick which layer and
-head to inspect. This is the standalone counterpart to the interactive
-frontend: instead of saving a trajectory JSON for the React app, it writes
-a publication-ready PNG directly.
+命令行工具：对任意提示渲染真实语言模型的自注意力热力图，
+可自由指定要观察的层和头。它是交互式前端的独立补充：不保存供
+React 应用使用的轨迹 JSON，而是直接输出可直接发布的 PNG。
 
-It reproduces the two patterns discussed in Chapter 2 ("实验 2-2 注意力机制
-可视化"):
+它复现第 2 章讨论的两种模式（"实验 2-2 注意力机制可视化"）：
 
-  * the **attention sink** - the first token soaking up a large,
-    disproportionate share of every row's attention, and
-  * the **causal triangle** - each token only attending to itself and the
-    tokens before it.
+  * **attention sink（注意力汇聚）**——第一个 token 吸走每一行注意力中
+    过大的份额；
+  * **causal triangle（因果三角）**——每个 token 只关注自己及其前面的
+    token。
 
-Examples
---------
-    # Single heatmap for the default prompt (last layer, heads averaged)
+示例
+----
+    # 对默认提示画单张热力图（最后一层，各头取平均）
     python attention_cli.py
 
-    # Custom prompt, inspect layer 0, head 3, save to a chosen path
+    # 自定义提示，观察第 0 层第 3 头，保存到指定路径
     python attention_cli.py --prompt "北京 的 天气 怎么样" \
         --layer 0 --head 3 --output layer0_head3.png
 
-    # Let the model generate a short continuation, then visualize the
-    # attention over the whole prompt+generation sequence
+    # 让模型先生成一段简短续写，再对整个"提示+生成"序列做注意力可视化
     python attention_cli.py --prompt "Explain attention in one sentence." \
         --max-new-tokens 40
 
-    # Compare two layers of the same prompt side by side
+    # 并排比较同一提示的两层注意力
     python attention_cli.py --compare-layers 0 -1 --output layer_compare.png
 
-Model weights (Qwen/Qwen3-0.6B, ~1-2 GB) are downloaded on first run.
+模型权重（Qwen/Qwen3-0.6B，约 1-2 GB）在首次运行时下载。
 """
 
 import argparse
@@ -133,7 +129,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def build_input_ids(agent, prompt: str, use_chat_template: bool):
-    """Tokenize the prompt, optionally via the model's chat template."""
+    """对提示分词，可选是否经模型的聊天模板处理。"""
     if use_chat_template:
         messages = [
             {"role": "system", "content": "You are a helpful AI assistant."},
@@ -150,10 +146,10 @@ def build_input_ids(agent, prompt: str, use_chat_template: bool):
 
 def extract_layer_matrix(attentions, layer: int, head: int) -> np.ndarray:
     """
-    Extract a [seq, seq] matrix from a HF `attentions` tuple.
+    从 HF 的 `attentions` 元组中提取 [seq, seq] 矩阵。
 
-    attentions: tuple(len = num_layers) of tensors [batch, heads, seq, seq].
-    head < 0 averages over heads; otherwise selects one head.
+    attentions：长度为 num_layers 的元组，元素是 [batch, heads, seq, seq] 张量。
+    head < 0 时对各头取平均，否则选取指定头。
     """
     num_layers = len(attentions)
     if not -num_layers <= layer < num_layers:
@@ -176,8 +172,8 @@ def extract_layer_matrix(attentions, layer: int, head: int) -> np.ndarray:
 
 
 def run(args) -> int:
-    # Heavy imports deferred so that --help and argument parsing stay fast
-    # and work even without torch / a downloaded model.
+    # 延迟重量级导入，让 --help 和参数解析保持快速，
+    # 即使没有 torch / 未下载模型也能运行。
     import torch
     from agent import AttentionVisualizationAgent
     from visualization import (
@@ -197,8 +193,7 @@ def run(args) -> int:
     inputs = build_input_ids(agent, args.prompt, use_chat_template)
     context_length = inputs["input_ids"].shape[1]
 
-    # Optionally extend the sequence with a real generation so the heatmap
-    # covers prompt + model output.
+    # 可选：用真实生成扩充序列，使热力图覆盖提示 + 模型输出。
     if args.max_new_tokens > 0:
         print(f"Generating up to {args.max_new_tokens} tokens...")
         with torch.no_grad():
@@ -221,7 +216,7 @@ def run(args) -> int:
     print(f"Sequence length: {len(tokens)} tokens "
           f"(prompt: {context_length}, generated: {len(tokens) - context_length})")
 
-    # Single forward pass over the full sequence to get attention weights.
+    # 对完整序列做一次前向传播以获取注意力权重。
     with torch.no_grad():
         outputs = agent.model(
             input_ids=full_ids,

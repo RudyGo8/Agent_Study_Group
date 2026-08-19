@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Canonical real-model campaign for Chapter 2 Experiment 2-2."""
+"""第 2 章实验 2-2 的标准真模型实验。"""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ def resolve_layer(index: int, count: int) -> int:
 
 
 def region_indices(tokens: list[str], context_length: int) -> dict[str, list[int]]:
-    """Locate generated Qwen thinking/answer regions without rewriting text."""
+    """在不改写文本的前提下定位生成的 Qwen 思考/回答区域。"""
     think_start = next(
         (i for i in range(context_length, len(tokens)) if "<think>" in tokens[i]),
         context_length,

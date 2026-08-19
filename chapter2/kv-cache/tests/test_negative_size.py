@@ -1,4 +1,4 @@
-"""Regression: negative size must read to EOF, not drop a suffix."""
+"""回归测试：负 size 必须读到 EOF，而不是丢掉末尾内容。"""
 import sys
 import types
 from pathlib import Path

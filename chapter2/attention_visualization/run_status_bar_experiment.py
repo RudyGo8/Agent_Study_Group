@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real Qwen3 attention comparison for Chapter 2 Experiment 2-8."""
+"""第 2 章实验 2-8 的真实 Qwen3 注意力对比实验。"""
 
 from __future__ import annotations
 
@@ -123,7 +123,7 @@ def base_messages(protocol: dict[str, Any]) -> list[dict[str, Any]]:
                     ),
                 }
             )
-    # Two more distractors after the final phone event place the count in the middle.
+    # 最后一次电话事件之后再加两个干扰项，使该计数落在上下文中部。
     for number in (3, 4):
         messages.append(
             assistant_tool(
@@ -300,9 +300,8 @@ def draw_heatmaps(records: dict[str, Any], path: Path) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(15, 6), constrained_layout=True)
     for axis, (arm, record) in zip(axes, records.items()):
         matrix = record["attention"]["matrix"]
-        # Attention contains a few near-one diagonal/sink cells and a large field
-        # of small but meaningful weights. A fixed power transform makes the
-        # latter visible without altering the losslessly saved matrix.
+        # 注意力里只有少数接近 1 的对角/sink 单元，其余是一大片数值小但有
+        # 意义的权重。固定的幂次变换让后者可见，且不改动无损保存的矩阵。
         image = axis.imshow(
             matrix,
             cmap="viridis",
@@ -373,7 +372,7 @@ def main() -> int:
             "attention": attention,
         }
 
-    # Matrices are stored losslessly in a compact NPZ; JSON keeps hashes and summaries.
+    # 矩阵以紧凑的 NPZ 无损存储；JSON 只保存哈希和摘要。
     matrices_path = output / "attention_matrices.npz"
     np.savez_compressed(
         matrices_path,

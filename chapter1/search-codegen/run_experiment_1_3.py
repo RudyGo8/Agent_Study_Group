@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Run Experiment 1-3 on a hosted web-search + code-execution Responses API.
+"""在带托管 web 搜索 + 代码执行的 Responses API 上运行实验 1-3。
 
-Acceptance policy (author-mandated, 2026-07-31): the experiment's essence is
-model-directed multi-round web search + hosted code execution, clarification
-before tools, and a current answer with authoritative sources. The canonical
-OpenAI GPT-5.6 Sol path remains the reference implementation, but acceptance
-is NOT gated on the official OpenAI account: any provider whose Responses API
-genuinely closes the search/code loop server-side (currently Alibaba Model
-Studio DashScope ``qwen3.7-plus``) is an eligible acceptance backend. The
-OpenRouter route stays a diagnostic and is never accepted.
+验收政策（作者规定，2026-07-31）：实验的实质是模型主导的多轮 web
+搜索 + 托管代码执行、调用工具前先澄清，以及给出带权威来源的时效性
+答案。OpenAI GPT-5.6 Sol 官方路径仍是参考实现，但验收不以官方
+OpenAI 账号为门槛：任何其 Responses API 确实在服务端闭环完成搜索/
+代码回路的提供商（目前是阿里云 Model Studio DashScope
+``qwen3.7-plus``）都是合格的验收后端。OpenRouter 通道仅作诊断，
+永不作为验收。
 """
 
 from __future__ import annotations
@@ -46,12 +45,12 @@ CLARIFICATION_REPLY = (
     "Python 工具实际计算，再给出含来源的报告和交易建议。"
 )
 
-# Backends whose runs may close the experiment, in priority order. The
-# OpenRouter proxy is diagnostic-only and never appears here.
+# 有资格完结实验的后端，按优先级排列。OpenRouter 代理仅用于诊断，
+# 绝不出现在这里。
 ACCEPTANCE_BACKENDS = ("openai", "dashscope")
 
-# Independent reference: standard coordinates of the ten ASEAN capitals,
-# used to verify the model's computed nearest pair without trusting it.
+# 独立参照：东盟十国首都的标准坐标，用于在不依赖模型自述的前提下
+# 验证它算出的最近首都对。
 ASEAN_CAPITAL_COORDS: Dict[str, Tuple[float, float]] = {
     "Bandar Seri Begawan": (4.9031, 114.9398),
     "Phnom Penh": (11.5564, 104.9282),
@@ -76,7 +75,7 @@ def haversine_km(a: Tuple[float, float], b: Tuple[float, float]) -> float:
 
 
 def independent_asean_reference() -> Dict[str, Any]:
-    """Locally computed ground truth for the ASEAN nearest-pair check."""
+    """本地计算的东盟最近首都对校验基准。"""
     pairs = [
         (haversine_km(ca, cb), a, b)
         for (a, ca), (b, cb) in itertools.combinations(ASEAN_CAPITAL_COORDS.items(), 2)
@@ -118,7 +117,7 @@ def url_citations(result: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def model_identity_exact(result: Dict[str, Any]) -> bool:
-    """The returned model must be exactly the requested model."""
+    """返回的模型必须与请求的模型完全一致。"""
     requested = (result.get("requested_model") or result.get("model") or "").removeprefix(
         "openai/"
     )
@@ -259,7 +258,7 @@ def run_backend(backend: str, reasoning: str) -> Dict[str, Any]:
 
 
 def acceptance(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Multi-provider policy: any eligible backend may close the experiment."""
+    """多提供商政策：任一合格后端均可完结实验。"""
     per_backend = {}
     for run in runs:
         backend = run.get("backend")
@@ -315,7 +314,7 @@ def write_json(path: Path, value: Dict[str, Any]) -> str:
 
 
 def assert_credential_free(payloads: Iterable[str]) -> None:
-    """Refuse to write evidence that embeds any configured API key."""
+    """拒绝写入内嵌任何已配置 API Key 的证据。"""
     secrets = [
         value
         for value in (

@@ -1,5 +1,5 @@
 """
-Context Compression Research Agent with Streaming Support
+上下文压缩研究 Agent（支持流式输出）
 """
 
 import json
@@ -20,42 +20,40 @@ from compression_strategies import (
 
 
 def _reasoning_safe_temperature(model, requested=1.0):
-    """Reasoning models (Kimi K3, GPT-5, ...) only accept temperature=1.
-    Return 1 for those; otherwise the requested value so non-reasoning
-    providers (Doubao, DeepSeek, older Moonshot) are unchanged."""
+    """思考型模型（Kimi K3、GPT-5 等）只接受 temperature=1。
+    对这类模型返回 1；否则返回请求值，保持非思考型提供商
+    （Doubao、DeepSeek、旧版 Moonshot）行为不变。"""
     m = str(model or "").lower().replace("/", "-")
     return 1 if ("kimi-k3" in m or "gpt-5" in m) else requested
 
-# Configure logging
+# 配置日志
 logging.basicConfig(level=logging.INFO, format=Config.LOG_FORMAT)
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class ToolCall:
-    """Represents a single tool call"""
+    """表示一次工具调用"""
     tool_name: str
     arguments: Dict[str, Any]
     result: Optional[Any] = None
     compressed_result: Optional[CompressedContent] = None
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
-    # Provider-side tool_call id, so a tool message in the history can be
-    # matched back to the call that produced it (used by windowed compression
-    # to recover the original query).
+    # 提供商侧的 tool_call id，用于把历史中的 tool 消息关联回产生它的
+    # 那次调用（窗口化压缩靠它找回原始查询）。
     id: Optional[str] = None
 
 
 @dataclass
 class AgentTrajectory:
-    """Tracks the agent's execution trajectory"""
+    """记录 Agent 的执行轨迹"""
     tool_calls: List[ToolCall] = field(default_factory=list)
     total_tokens_used: int = 0
     prompt_tokens_used: int = 0
     completion_tokens_used: int = 0
-    # Prompt tokens of the most recent API call = the current context size.
-    # prompt_tokens_used above is a cumulative COST counter (each call's
-    # prompt re-counts the shared prefix), so it must not be compared
-    # against the per-request context window.
+    # 最近一次 API 调用的 prompt token 数 = 当前上下文规模。
+    # 上面的 prompt_tokens_used 是累计成本计数器（每次调用的 prompt
+    # 都会重复计入共享前缀），不能拿来与单次请求的上下文窗口比较。
     last_prompt_tokens: int = 0
     context_overflows: int = 0
     compression_strategy: CompressionStrategy = CompressionStrategy.NO_COMPRESSION
@@ -65,7 +63,7 @@ class AgentTrajectory:
 
 class ResearchAgent:
     """
-    AI Agent for researching with context compression
+    带上下文压缩的研究型 AI Agent
     """
     
     def __init__(
@@ -76,13 +74,13 @@ class ResearchAgent:
         enable_streaming: bool = True
     ):
         """
-        Initialize the research agent
-        
-        Args:
-            api_key: API key for Moonshot/Kimi
-            compression_strategy: Strategy for context compression
-            verbose: Enable verbose logging
-            enable_streaming: Enable streaming responses
+        初始化研究 Agent
+
+        参数:
+            api_key: Moonshot/Kimi 的 API Key
+            compression_strategy: 上下文压缩策略
+            verbose: 启用详细日志
+            enable_streaming: 启用流式响应
         """
         # Moonshot 官方 key 存在则直连；否则回退 OpenRouter（见 Config.resolve_llm）。
         resolved_key, resolved_base_url, resolved_model = Config.resolve_llm()
@@ -95,22 +93,22 @@ class ResearchAgent:
         self.verbose = verbose
         self.enable_streaming = enable_streaming
         
-        # Initialize tools
+        # 初始化工具
         self.web_tools = WebTools()
         self.compressor = ContextCompressor(compression_strategy, api_key, enable_streaming)
         
-        # Initialize trajectory
+        # 初始化轨迹
         self.trajectory = AgentTrajectory(compression_strategy=compression_strategy)
         
-        # Initialize conversation history
+        # 初始化对话历史
         self.conversation_history = []
         self._init_system_prompt()
         
         logger.info(f"Agent initialized with compression strategy: {compression_strategy.value}")
     
     def _init_system_prompt(self):
-        """Initialize the system prompt for OpenAI co-founders research"""
-        # Get current date dynamically
+        """初始化 OpenAI 联合创始人研究任务的系统提示词"""
+        # 动态获取当前日期
         from datetime import datetime
         today = datetime.now()
         date_string = today.strftime("%A, %B %d, %Y")
@@ -143,7 +141,7 @@ TODAY'S DATE: {date_string}"""
         ]
     
     def _get_tools_description(self) -> List[Dict[str, Any]]:
-        """Get tool descriptions for the model"""
+        """获取提供给模型的工具描述"""
         return [
             {
                 "type": "function",
@@ -188,14 +186,14 @@ TODAY'S DATE: {date_string}"""
     
     def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Tuple[Any, Optional[CompressedContent]]:
         """
-        Execute a tool and return the result with optional compression
-        
-        Args:
-            tool_name: Name of the tool to execute
-            arguments: Arguments for the tool
-            
-        Returns:
-            Tuple of (tool result, compressed content if applicable)
+        执行工具并返回结果（可选附带压缩）
+
+        参数:
+            tool_name: 要执行的工具名
+            arguments: 工具参数
+
+        返回:
+            （工具结果, 压缩后内容（如适用））元组
         """
         if not isinstance(arguments, dict):
             arguments = {}
@@ -209,7 +207,7 @@ TODAY'S DATE: {date_string}"""
                 logger.error(f"Failed to execute search_web: {e}")
                 return {"error": f"Failed to execute search_web: {e}"}, None
             
-            # Apply compression strategy
+            # 应用压缩策略
             query = arguments.get('query', '')
             current_context = self._get_current_context_summary()
             compressed = self.compressor.compress_search_results(
@@ -229,17 +227,17 @@ TODAY'S DATE: {date_string}"""
                 logger.error(f"Failed to execute fetch_webpage: {e}")
                 return {"error": f"Failed to execute fetch_webpage: {e}"}, None
             
-            # For fetch, we typically don't compress (used for follow-ups)
+            # fetch_webpage 一般不压缩（供后续追问使用）
             return result, None
         else:
             return {"error": f"Unknown tool: {tool_name}"}, None
     
     def _get_current_context_summary(self) -> str:
-        """Get a summary of current context for context-aware compression"""
+        """获取当前上下文摘要，供上下文感知压缩使用"""
         if not self.trajectory.tool_calls:
             return ""
         
-        # Get last few tool calls for context
+        # 取最近几次工具调用作为上下文
         recent_calls = self.trajectory.tool_calls[-3:]
         context_parts = []
         
@@ -250,34 +248,34 @@ TODAY'S DATE: {date_string}"""
     
     def _handle_windowed_compression(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Apply windowed compression strategy to message history
-        Only compresses when context usage exceeds 80% threshold
-        
-        Args:
-            messages: Current message history
-            
-        Returns:
-            Messages with compressed history when needed
+        对消息历史应用窗口化压缩策略
+        仅当上下文占用超过 80% 阈值时才压缩
+
+        参数:
+            messages: 当前消息历史
+
+        返回:
+            需要压缩时返回带压缩历史的消息列表
         """
         if self.compression_strategy != CompressionStrategy.WINDOWED_CONTEXT:
             return messages
         
-        # Check if we should start compressing (80% context usage).
-        # Use the LAST call's prompt size (current context), not the
-        # cumulative cost counter, which grows quadratically and would
-        # trigger compression long before the window is actually near full.
+        # 判断是否该开始压缩（上下文占用 80%）。
+        # 用最近一次调用的 prompt 规模（当前上下文），而不是累计
+        # 成本计数器——后者按平方增长，会在窗口真正接近占满之前
+        # 很久就触发压缩。
         context_threshold = Config.CONTEXT_WINDOW_SIZE * 0.8
 
         if self.trajectory.last_prompt_tokens <= context_threshold:
             logger.debug(f"Windowed compression: Context usage below threshold ({self.trajectory.last_prompt_tokens:,}/{context_threshold:.0f} tokens)")
-            return messages  # No compression needed yet
+            return messages  # 还不需要压缩
 
         logger.info(f"⚠️ Context usage exceeds 80% threshold ({self.trajectory.last_prompt_tokens:,}/{Config.CONTEXT_WINDOW_SIZE} tokens) - Starting compression")
         
-        # Compression marker to identify already-compressed messages
+        # 压缩标记，用于识别已压缩过的消息
         COMPRESSION_MARKER = "[COMPRESSED]"
         
-        # First, count how many tool messages we have and how many need compression
+        # 先统计有多少条 tool 消息、其中多少条需要压缩
         tool_messages_to_compress = []
         already_compressed_count = 0
         
@@ -293,11 +291,11 @@ TODAY'S DATE: {date_string}"""
         
         if not tool_messages_to_compress:
             logger.debug(f"Windowed compression: All {total_tool_messages} tool messages already compressed")
-            return messages  # All tool messages already compressed
+            return messages  # 所有 tool 消息都已压缩
         
         logger.info(f"📊 Compressing {len(tool_messages_to_compress)} uncompressed tool messages (out of {total_tool_messages} total)")
         
-        # Build the result with compression for all uncompressed tool messages
+        # 对所有未压缩的 tool 消息执行压缩，并组装结果
         compressed_messages = []
         compressed_in_this_pass = 0
         
@@ -305,19 +303,19 @@ TODAY'S DATE: {date_string}"""
             if msg.get('role') == 'tool':
                 original_content = msg.get('content', '')
                 
-                # Check if already compressed
+                # 检查是否已压缩
                 if original_content.startswith(COMPRESSION_MARKER):
-                    # Already compressed, keep as is
+                    # 已压缩，原样保留
                     compressed_messages.append(msg)
                 else:
-                    # Compress this tool result
+                    # 压缩这条工具结果
                     compressed_in_this_pass += 1
                     
-                    # Find the corresponding tool call to get context
+                    # 找到对应的工具调用记录以获取上下文
                     tool_call_id = msg.get('tool_call_id')
-                    query = "Information search"  # Default
+                    query = "Information search"  # 默认值
                     
-                    # Try to find the query from the tool call
+                    # 尝试从工具调用记录中找回查询
                     for call in self.trajectory.tool_calls:
                         if call.id is not None and call.id == tool_call_id:
                             query = call.arguments.get('query', query)
@@ -332,7 +330,7 @@ TODAY'S DATE: {date_string}"""
                     )
                     logger.debug(f"Compressed: {compressed.original_length:,} → {compressed.compressed_length:,} chars")
                     
-                    # Mark as compressed with clear marker
+                    # 用明确的标记注明已压缩
                     compressed_content = (
                         f"{COMPRESSION_MARKER} "
                         f"[Original: {compressed.original_length:,} chars → Compressed: {compressed.compressed_length:,} chars]\n"
@@ -352,13 +350,13 @@ TODAY'S DATE: {date_string}"""
     
     def _stream_response(self, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Stream response from the model
-        
-        Args:
-            messages: Conversation messages
-            
-        Returns:
-            Complete message object with token usage
+        以流式方式获取模型响应
+
+        参数:
+            messages: 对话消息
+
+        返回:
+            完整的消息对象（含 token 用量）
         """
         try:
             stream = self.client.chat.completions.create(
@@ -369,7 +367,7 @@ TODAY'S DATE: {date_string}"""
                 temperature=_reasoning_safe_temperature(self.model, Config.MODEL_TEMPERATURE),
                 max_tokens=Config.MODEL_MAX_TOKENS,
                 stream=True,
-                stream_options={"include_usage": True}  # Request token usage in stream
+                stream_options={"include_usage": True}  # 请求在流中返回 token 用量
             )
             
             collected_chunks = []
@@ -382,25 +380,25 @@ TODAY'S DATE: {date_string}"""
             for chunk in stream:
                 collected_chunks.append(chunk)
                 
-                # Capture usage data if present (might be in a chunk without choices)
+                # 若出现 usage 数据则捕获（可能在不含 choices 的 chunk 里）
                 if hasattr(chunk, 'usage') and chunk.usage is not None:
                     usage_data = chunk.usage
                 
-                # Check if chunk has choices before accessing
+                # 访问前先确认 chunk 带 choices
                 if hasattr(chunk, 'choices') and chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
                     
-                    # Handle content
+                    # 处理正文内容
                     if hasattr(delta, 'content') and delta.content:
                         content = delta.content
                         print(content, end="", flush=True)
                         collected_messages.append(content)
                     
-                    # Handle tool calls in streaming
+                    # 处理流式传输中的工具调用
                     if hasattr(delta, 'tool_calls') and delta.tool_calls:
                         for tool_call_delta in delta.tool_calls:
                             if tool_call_delta.index is not None:
-                                # Ensure we have enough tool calls in the list
+                                # 确保列表中的工具调用槽位足够
                                 while len(current_tool_calls) <= tool_call_delta.index:
                                     current_tool_calls.append({
                                         "id": "",
@@ -418,7 +416,7 @@ TODAY'S DATE: {date_string}"""
             
             print("\n", flush=True)
             
-            # Log token usage if available
+            # 如有 token 用量则记录日志
             if usage_data:
                 prompt_tokens = usage_data.prompt_tokens if hasattr(usage_data, 'prompt_tokens') else 0
                 completion_tokens = usage_data.completion_tokens if hasattr(usage_data, 'completion_tokens') else 0
@@ -426,13 +424,13 @@ TODAY'S DATE: {date_string}"""
                 
                 logger.info(f"🔢 Kimi API Token Usage - Prompt: {prompt_tokens}, Completion: {completion_tokens}, Total: {total_tokens}")
 
-                # Update trajectory
+                # 更新轨迹
                 self.trajectory.last_prompt_tokens = prompt_tokens
                 self.trajectory.prompt_tokens_used += prompt_tokens
                 self.trajectory.completion_tokens_used += completion_tokens
                 self.trajectory.total_tokens_used += total_tokens
             
-            # Construct the complete message
+            # 组装完整消息
             complete_message = {
                 "role": "assistant",
                 "content": "".join(collected_messages) if collected_messages else None
@@ -449,13 +447,13 @@ TODAY'S DATE: {date_string}"""
     
     def _non_streaming_response(self, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Get non-streaming response from the model
-        
-        Args:
-            messages: Conversation messages
-            
-        Returns:
-            Complete message object with token usage
+        以非流式方式获取模型响应
+
+        参数:
+            messages: 对话消息
+
+        返回:
+            完整的消息对象（含 token 用量）
         """
         response = self.client.chat.completions.create(
             model=self.model,
@@ -469,7 +467,7 @@ TODAY'S DATE: {date_string}"""
         
         message = response.choices[0].message
         
-        # Log token usage
+        # 记录 token 用量
         if hasattr(response, 'usage') and response.usage:
             prompt_tokens = response.usage.prompt_tokens
             completion_tokens = response.usage.completion_tokens
@@ -477,13 +475,13 @@ TODAY'S DATE: {date_string}"""
             
             logger.info(f"🔢 Kimi API Token Usage - Prompt: {prompt_tokens}, Completion: {completion_tokens}, Total: {total_tokens}")
 
-            # Update trajectory
+            # 更新轨迹
             self.trajectory.last_prompt_tokens = prompt_tokens
             self.trajectory.prompt_tokens_used += prompt_tokens
             self.trajectory.completion_tokens_used += completion_tokens
             self.trajectory.total_tokens_used += total_tokens
         
-        # Convert to dict format
+        # 转为字典格式
         message_dict = {
             "role": "assistant",
             "content": message.content
@@ -502,7 +500,7 @@ TODAY'S DATE: {date_string}"""
                 for tc in message.tool_calls
             ]
         
-        # Display the response
+        # 展示响应
         if message.content:
             print(f"\n🤖 Assistant: {message.content}\n")
         
@@ -510,15 +508,15 @@ TODAY'S DATE: {date_string}"""
     
     def execute_research(self, max_iterations: int = 15) -> Dict[str, Any]:
         """
-        Execute the research task
-        
-        Args:
-            max_iterations: Maximum number of tool calls
-            
-        Returns:
-            Research results
+        执行研究任务
+
+        参数:
+            max_iterations: 最大工具调用轮数
+
+        返回:
+            研究结果
         """
-        # Add initial user message
+        # 加入初始用户消息
         self.conversation_history.append({
             "role": "user",
             "content": "Please research and find the current affiliations of all OpenAI co-founders."
@@ -537,19 +535,18 @@ TODAY'S DATE: {date_string}"""
             print(f"\n📍 Iteration {iteration}/{max_iterations}")
             
             try:
-                # Apply windowed compression if needed
+                # 需要时应用窗口化压缩
                 if self.compression_strategy == CompressionStrategy.WINDOWED_CONTEXT:
                     messages = self._handle_windowed_compression(messages)
                 
-                # Display current token usage from trajectory
+                # 展示轨迹中当前累计的 token 用量
                 print(f"📊 Cumulative Token Usage - Prompt: {self.trajectory.prompt_tokens_used:,}, Completion: {self.trajectory.completion_tokens_used:,}, Total: {self.trajectory.total_tokens_used:,}")
                 
-                # Check if we're approaching token limit based on actual usage
-                if self.trajectory.total_tokens_used > 0:  # Only check after first call
-                    # Compression demo uses a 128k context budget. Compare the
-                    # LAST call's prompt size (the actual context) against the
-                    # window — the cumulative counter re-counts the shared
-                    # prefix every call and overstates usage quadratically.
+                # 按真实用量判断是否逼近 token 上限
+                if self.trajectory.total_tokens_used > 0:  # 仅在首轮调用之后检查
+                    # 压缩演示使用 128k 上下文预算。用最近一次调用的
+                    # prompt 规模（真实上下文）对比窗口——累计计数器每次
+                    # 调用都会重复计入共享前缀，会按平方高估用量。
                     if self.trajectory.last_prompt_tokens > Config.CONTEXT_WINDOW_SIZE * 0.8:
                         logger.warning(f"Approaching context limit: {self.trajectory.last_prompt_tokens:,} prompt tokens in last request")
                         self.trajectory.context_overflows += 1
@@ -562,13 +559,13 @@ TODAY'S DATE: {date_string}"""
                                 "iterations": iteration
                             }
                 
-                # Get response from model
+                # 获取模型响应
                 if self.enable_streaming:
                     message = self._stream_response(messages)
                 else:
                     message = self._non_streaming_response(messages)
                 
-                # Handle tool calls
+                # 处理工具调用
                 if message.get('tool_calls'):
                     messages.append(message)
 
@@ -595,7 +592,7 @@ TODAY'S DATE: {date_string}"""
                                 )
                                 function_args = {}
                         except (json.JSONDecodeError, TypeError, UnicodeDecodeError):
-                            # Tolerate bad tool-arg JSON; keep the loop alive.
+                            # 容忍非法的工具参数 JSON，保住循环不中断。
                             function_args = {}
                             logger.warning(
                                 "Tool argument is not valid JSON, proceeding with empty object: %r",
@@ -605,10 +602,10 @@ TODAY'S DATE: {date_string}"""
                         print(f"\n🔧 Executing: {function_name}")
                         print(f"   Args: {function_args}")
                         
-                        # Execute the tool
+                        # 执行工具
                         result, compressed = self._execute_tool(function_name, function_args)
                         
-                        # Record the tool call
+                        # 记录工具调用
                         tool_call_record = ToolCall(
                             tool_name=function_name,
                             arguments=function_args,
@@ -618,20 +615,20 @@ TODAY'S DATE: {date_string}"""
                         )
                         self.trajectory.tool_calls.append(tool_call_record)
                         
-                        # Determine what content to add to messages
+                        # 决定写入消息的内容
                         if compressed and self.compression_strategy != CompressionStrategy.NO_COMPRESSION:
-                            # Use compressed content
+                            # 使用压缩后的内容
                             tool_content = compressed.content
                             print(f"   ✂️ Compressed: {compressed.original_length:,} → {compressed.compressed_length:,} chars")
                         else:
-                            # Use original content (for no compression or last message in windowed)
+                            # 使用原始内容（不压缩，或窗口化策略下的最新消息）
                             if function_name == "search_web":
-                                # Format search results
+                                # 格式化搜索结果
                                 tool_content = json.dumps(result, indent=2)
                             else:
                                 tool_content = json.dumps(result)
                         
-                        # Add tool result to messages
+                        # 把工具结果加入消息
                         tool_msg = {
                             "role": "tool",
                             "tool_call_id": tool_call['id'],
@@ -642,7 +639,7 @@ TODAY'S DATE: {date_string}"""
                         print(f"   📄 Result size: {len(tool_content):,} characters")
                 
                 elif message.get('content'):
-                    # No tool calls, just content
+                    # 无工具调用，只有文本内容
                     messages.append(message)
                     final_answer = message['content']
                     logger.info("Final answer found")
@@ -656,7 +653,7 @@ TODAY'S DATE: {date_string}"""
                     "iterations": iteration
                 }
         
-        # Set end time
+        # 记录结束时间
         self.trajectory.end_time = time.time()
         
         return {
@@ -668,7 +665,7 @@ TODAY'S DATE: {date_string}"""
         }
     
     def reset(self):
-        """Reset the agent's state"""
+        """重置 Agent 状态"""
         self.trajectory = AgentTrajectory(compression_strategy=self.compression_strategy)
         self._init_system_prompt()
         self.web_tools.clear_cache()

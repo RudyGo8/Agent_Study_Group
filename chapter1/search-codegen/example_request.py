@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example showing the exact OpenRouter GPT-5 request format matching the Go implementation
+示例：展示与 Go 实现完全一致的 OpenRouter GPT-5 请求格式
 """
 
 import json
@@ -21,12 +21,12 @@ def make_gpt5_openrouter_request(
     reasoning_effort: str = "low"
 ) -> Dict[str, Any]:
     """
-    Make a GPT-5 request using the exact format from the Go implementation
+    按照 Go 实现的精确格式发起 GPT-5 请求
     
-    This matches the GPT5OpenRouterRequest structure from the Go code
+    对应 Go 代码中的 GPT5OpenRouterRequest 结构
     """
     
-    # Build messages (matching Go implementation)
+    # 构建消息（与 Go 实现一致）
     messages = [
         {
             "role": "system",
@@ -38,7 +38,7 @@ def make_gpt5_openrouter_request(
         }
     ]
     
-    # Build web search tool configuration (matching Go GPT5OpenRouterWebSearchTool)
+    # 构建 web search 工具配置（对应 Go 的 GPT5OpenRouterWebSearchTool）
     web_search_tool = {
         "type": "web_search",
         "search_context_size": "medium",
@@ -48,9 +48,9 @@ def make_gpt5_openrouter_request(
         }
     }
     
-    # Build request with OpenRouter-specific parameters (matching Go GPT5OpenRouterRequest)
+    # 构建含 OpenRouter 专属参数的请求体（对应 Go 的 GPT5OpenRouterRequest）
     request_body = {
-        "model": "openai/gpt-5.6-sol",  # Default from Go code
+        "model": "openai/gpt-5.6-sol",  # Go 代码中的默认值
         "messages": messages,
         "tools": [web_search_tool],
         "tool_choice": "auto",
@@ -60,7 +60,7 @@ def make_gpt5_openrouter_request(
             "generate_summary": False
         },
         "background": False,
-        "stream": False  # Can be set to True for streaming
+        "stream": False  # 流式时可改为 True
     }
     
     print("="*60)
@@ -69,13 +69,13 @@ def make_gpt5_openrouter_request(
     print(json.dumps(request_body, indent=2))
     print("="*60)
     
-    # Set headers (matching Go implementation)
+    # 设置请求头（与 Go 实现一致）
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}"
     }
     
-    # Make the request
+    # 发起请求
     url = "https://openrouter.ai/api/v1/chat/completions"
     
     try:
@@ -83,7 +83,7 @@ def make_gpt5_openrouter_request(
             url,
             headers=headers,
             json=request_body,
-            timeout=600  # Match Go timeout
+            timeout=600  # 与 Go 的超时一致
         )
         
         print(f"\nResponse Status: {response.status_code}")
@@ -91,7 +91,7 @@ def make_gpt5_openrouter_request(
         if response.status_code == 200:
             response_data = response.json()
             
-            # Log usage (matching Go logging)
+            # 记录 token 用量（与 Go 的日志一致）
             if "usage" in response_data:
                 usage = response_data["usage"]
                 input_tokens = usage.get(
@@ -133,7 +133,7 @@ def make_gpt5_openrouter_request(
 
 def demonstrate_streaming_response():
     """
-    Demonstrate how streaming would work (matching Go handleStreamingResponse)
+    演示流式响应的处理方式（对应 Go 的 handleStreamingResponse）
     """
     print("\n" + "="*60)
     print("Streaming Response Handler (pseudo-code matching Go):")
@@ -192,14 +192,14 @@ def handle_streaming_response(response):
 
 def main():
     """
-    Main demonstration
+    主演示流程
     """
     print("\n" + "="*60)
     print("   GPT-5 OpenRouter Request Format Demo")
     print("   Exact match with Go implementation")
     print("="*60)
     
-    # Get API key from environment
+    # 从环境变量读取 API Key
     api_key = os.getenv("OPENROUTER_API_KEY")
     
     if not api_key:
@@ -207,7 +207,7 @@ def main():
         print("Please set: export OPENROUTER_API_KEY=your-openrouter-api-key")
         return
     
-    # Example prompts
+    # 示例提示词
     system_prompt = "You are a helpful AI assistant with web search capabilities."
     user_prompt = "What are the latest developments in artificial intelligence?"
     
@@ -237,7 +237,7 @@ def main():
         content = result_high["choices"][0]["message"]["content"]
         print(f"\nResponse preview: {content[:200]}...")
     
-    # Show streaming handler
+    # 展示流式处理器
     demonstrate_streaming_response()
     
     print("\n" + "="*60)

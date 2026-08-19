@@ -1,6 +1,6 @@
 """
-Attention Visualization Agent
-Integrates Qwen3 0.5B model with attention tracking and visualization
+注意力可视化 Agent
+将 Qwen3 0.5B 模型与注意力追踪和可视化集成
 """
 
 import json
@@ -21,22 +21,22 @@ from transformers import (
 import warnings
 warnings.filterwarnings("ignore")
 
-# Set up logging
+# 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class AttentionStep:
-    """Records attention information for a single generation step"""
+    """记录单个生成步骤的注意力信息"""
     step: int
     token_id: int
     token: str
     position: int
-    attention_weights: List[List[float]]  # [num_heads x seq_len] or averaged [seq_len]
+    attention_weights: List[List[float]]  # [num_heads x seq_len] 或平均后的 [seq_len]
     
     def to_dict(self):
-        """Convert to dictionary for JSON serialization"""
+        """转换为字典以便 JSON 序列化"""
         return {
             'step': self.step,
             'token_id': self.token_id, 
@@ -48,16 +48,16 @@ class AttentionStep:
 
 @dataclass  
 class GenerationResult:
-    """Complete result from a generation with attention tracking"""
+    """带注意力追踪的一次完整生成结果"""
     input_text: str
     output_text: str
     input_tokens: List[str]
     output_tokens: List[str]
     attention_steps: List[AttentionStep]
     context_length: int
-    response: str = ""  # For compatibility
-    tokens: List[str] = field(default_factory=list)  # For compatibility
-    attention_weights: Dict = field(default_factory=dict)  # For compatibility
+    response: str = ""  # 兼容字段
+    tokens: List[str] = field(default_factory=list)  # 兼容字段
+    attention_weights: Dict = field(default_factory=dict)  # 兼容字段
     
     def __post_init__(self):
         if not self.tokens:
@@ -66,7 +66,7 @@ class GenerationResult:
             self.response = self.output_text
     
     def to_dict(self):
-        """Convert to dictionary for JSON serialization"""
+        """转换为字典以便 JSON 序列化"""
         return {
             'input_text': self.input_text,
             'output_text': self.output_text,
@@ -81,7 +81,7 @@ class GenerationResult:
 
 class AttentionTracker(LogitsProcessor):
     """
-    LogitsProcessor that tracks attention weights during generation
+    在生成过程中追踪注意力权重的 LogitsProcessor
     """
     
     def __init__(self, tokenizer, context_length: int, verbose: bool = False):
@@ -91,19 +91,19 @@ class AttentionTracker(LogitsProcessor):
         self.attention_cache = {}
         self.generation_step = 0
         self.generated_tokens = []
-        self.output_only = True  # Only track attention from output tokens
+        self.output_only = True  # 只追踪输出 token 的注意力
         
     def reset(self):
-        """Reset tracker for new generation"""
+        """为新一轮生成重置追踪器"""
         self.attention_cache = {}
         self.generation_step = 0
         self.generated_tokens = []
         
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
-        """Called during generation to track tokens"""
+        """生成过程中被调用，用于追踪 token"""
         self.generation_step += 1
         
-        # Track generated token
+        # 追踪已生成的 token
         if input_ids.shape[1] > self.context_length:
             last_token_id = input_ids[0, -1].item()
             last_token = self.tokenizer.decode([last_token_id])
@@ -122,14 +122,14 @@ class AttentionTracker(LogitsProcessor):
         return scores
     
     def update_attention(self, position: int, attention_weights):
-        """Store attention weights for a position (only for output tokens)"""
-        # Only store attention for output tokens (positions >= context_length)
+        """存储某个位置的注意力权重（仅针对输出 token）"""
+        # 只存储输出 token 的注意力（位置 >= context_length）
         if self.output_only and position < self.context_length:
-            return  # Skip input token attention
+            return  # 跳过输入 token 的注意力
         self.attention_cache[position] = attention_weights
         
     def get_attention_steps(self) -> List[AttentionStep]:
-        """Convert cached data into AttentionStep objects"""
+        """将缓存数据转换为 AttentionStep 对象"""
         steps = []
         for token_info in self.generated_tokens:
             position = token_info['position']
@@ -152,7 +152,7 @@ class AttentionTracker(LogitsProcessor):
 
 class AttentionVisualizationAgent:
     """
-    Agent that generates text using Qwen3 0.6B while tracking attention weights
+    使用 Qwen3 0.6B 生成文本并追踪注意力权重的 Agent
     """
     
     def __init__(
@@ -163,19 +163,19 @@ class AttentionVisualizationAgent:
         verbose: bool = True
     ):
         """
-        Initialize the agent with Qwen3 model
-        
+        用 Qwen3 模型初始化 Agent
+
         Args:
-            model_name: Hugging Face model name
-            device: Device to run on (cuda/mps/cpu)
-            attention_layer_index: Which layer's attention to track (-1 for last)
-            verbose: Whether to print debug info
+            model_name: Hugging Face 模型名
+            device: 运行设备（cuda/mps/cpu）
+            attention_layer_index: 追踪哪一层的注意力（-1 表示最后一层）
+            verbose: 是否打印调试信息
         """
         self.model_name = model_name
         self.attention_layer_index = attention_layer_index
         self.verbose = verbose
         
-        # Detect device
+        # 检测设备
         if device is None:
             self.device = "cuda" if torch.cuda.is_available() else \
                          "mps" if torch.backends.mps.is_available() else "cpu"
@@ -184,7 +184,7 @@ class AttentionVisualizationAgent:
             
         logger.info(f"Initializing {model_name} on {self.device}")
         
-        # Load model and tokenizer
+        # 加载模型和分词器
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -193,20 +193,20 @@ class AttentionVisualizationAgent:
             model_name,
             torch_dtype=torch.float32 if self.device == "cpu" else torch.float16,
             trust_remote_code=True,
-            attn_implementation="eager"  # Enable attention output
+            attn_implementation="eager"  # 启用注意力输出
         ).to(self.device)
         
-        # Determine number of layers
+        # 确定层数
         self.num_layers = self._get_num_layers()
         if self.num_layers:
             logger.info(f"Model has {self.num_layers} layers")
             
-        # Initialize attention tracker
+        # 初始化注意力追踪器
         self.tracker = None
         self.conversation_history = []
         
     def _get_num_layers(self) -> Optional[int]:
-        """Get the number of transformer layers in the model"""
+        """获取模型中 transformer 层的数量"""
         if hasattr(self.model, 'config'):
             for attr in ['num_hidden_layers', 'n_layer', 'num_layers']:
                 if hasattr(self.model.config, attr):
@@ -214,14 +214,14 @@ class AttentionVisualizationAgent:
         return None
     
     def _capture_attention_hook(self, module, input, output):
-        """Hook to capture attention weights from model layers"""
+        """捕获模型层注意力权重的钩子"""
         if self.tracker is None:
             return
             
         try:
             attention_weights = None
             
-            # Try different ways to extract attention
+            # 尝试多种方式提取注意力
             if hasattr(output, 'attentions') and output.attentions is not None:
                 attention_weights = output.attentions
             elif isinstance(output, tuple) and len(output) > 1:
@@ -231,25 +231,25 @@ class AttentionVisualizationAgent:
                         break
                         
             if attention_weights is not None:
-                # Handle multiple layers
+                # 处理多层情况
                 if isinstance(attention_weights, (list, tuple)):
                     layer_idx = self.attention_layer_index
                     if layer_idx >= 0 and layer_idx < len(attention_weights):
                         attention_weights = attention_weights[layer_idx]
                     else:
-                        attention_weights = attention_weights[-1]  # Default to last
+                        attention_weights = attention_weights[-1]  # 默认取最后一层
                         
-                # Extract attention for last token
+                # 提取最后一个 token 的注意力
                 if isinstance(attention_weights, torch.Tensor) and attention_weights.dim() >= 3:
                     if attention_weights.dim() == 4:
-                        # Average across heads: [batch, heads, seq, seq] -> [seq]
+                        # 各头取平均：[batch, heads, seq, seq] -> [seq]
                         avg_attention = attention_weights[0, :, -1, :].mean(dim=0)
                     else:
                         avg_attention = attention_weights[0, -1, :]
                         
                     current_pos = avg_attention.shape[0] - 1
                     
-                    # Only track attention for output tokens
+                    # 只追踪输出 token 的注意力
                     if current_pos >= self.tracker.context_length:
                         self.tracker.update_attention(current_pos, avg_attention)
                     
@@ -259,23 +259,23 @@ class AttentionVisualizationAgent:
     
     def save_trajectory(self, result: GenerationResult, query: str = None, category: str = "General",
                         temperature: float = 0.7, max_new_tokens: int = 100) -> str:
-        """Save a trajectory to frontend/public/ with unique filename"""
-        # Create output directory
+        """将轨迹以唯一文件名保存到 frontend/public/"""
+        # 创建输出目录
         output_dir = Path("frontend/public/trajectories")
         output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Generate unique filename with timestamp
+
+        # 用时间戳生成唯一文件名
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         filename = output_dir / f"trajectory_{timestamp}.json"
         
-        # Extract attention data for visualization (output tokens only)
+        # 提取用于可视化的注意力数据（仅输出 token）
         attention_matrix = []
         if result.attention_steps:
             for step in result.attention_steps:
                 if step.attention_weights:
                     attention_matrix.append(step.attention_weights)
         
-        # Prepare data in the format expected by frontend
+        # 按前端期望的格式组织数据
         trajectory_data = {
             "id": timestamp,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -289,25 +289,25 @@ class AttentionVisualizationAgent:
             "attention_data": {
                 "tokens": result.tokens,
                 "attention_matrix": attention_matrix,
-                "num_layers": 1,  # Simplified for now
+                "num_layers": 1,  # 目前做了简化
                 "num_heads": len(attention_matrix[0]) if attention_matrix and attention_matrix[0] else 0,
-                "output_only": True,  # Flag to indicate output-only attention
-                "context_length": result.context_length  # Where output tokens start
+                "output_only": True,  # 标记：仅含输出 token 的注意力
+                "context_length": result.context_length  # 输出 token 的起始位置
             },
             "metadata": {
                 "model": self.model_name,
                 "temperature": temperature,
                 "max_tokens": max_new_tokens,
                 "device": str(self.device),
-                "attention_type": "output_only"  # Clarify attention type
+                "attention_type": "output_only"  # 注明注意力类型
             }
         }
         
-        # Save to file
+        # 保存到文件
         with open(filename, 'w') as f:
             json.dump(trajectory_data, f, indent=2, default=str)
-        
-        # Update manifest file
+
+        # 更新清单文件
         manifest_file = output_dir / "manifest.json"
         manifest = []
         if manifest_file.exists():
@@ -317,7 +317,7 @@ class AttentionVisualizationAgent:
             except Exception:
                 manifest = []
         
-        # Add new trajectory to manifest
+        # 把新轨迹加入清单
         manifest.append({
             "filename": f"trajectory_{timestamp}.json",
             "id": timestamp,
@@ -326,7 +326,7 @@ class AttentionVisualizationAgent:
             "query": query or result.input_text
         })
         
-        # Keep only last 50 trajectories in manifest
+        # 清单只保留最近 50 条轨迹
         manifest = manifest[-50:]
         
         with open(manifest_file, 'w') as f:
@@ -347,34 +347,34 @@ class AttentionVisualizationAgent:
         store_full_tokens: bool = True
     ) -> GenerationResult:
         """
-        Generate text while tracking attention weights
-        
+        生成文本并追踪注意力权重
+
         Args:
-            prompt: Input prompt text
-            max_new_tokens: Maximum tokens to generate
-            temperature: Sampling temperature
-            top_p: Nucleus sampling parameter
-            do_sample: Whether to use sampling
-            store_full_tokens: Whether to store all input tokens (not truncated)
-            
+            prompt: 输入提示文本
+            max_new_tokens: 最多生成的 token 数
+            temperature: 采样温度
+            top_p: 核采样参数
+            do_sample: 是否使用采样
+            store_full_tokens: 是否存储全部输入 token（不截断）
+
         Returns:
-            GenerationResult with tokens and attention information
+            包含 token 和注意力信息的 GenerationResult
         """
-        # Tokenize input without truncation to preserve all tokens
+        # 对输入分词时不截断，保留全部 token
         inputs = self.tokenizer(prompt, return_tensors="pt", truncation=False)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         context_length = inputs['input_ids'].shape[1]
         
-        # Decode input tokens - store full sequence
+        # 解码输入 token——保存完整序列
         input_token_ids = inputs['input_ids'][0].tolist()
         input_tokens = [self.tokenizer.decode([tid], skip_special_tokens=False) for tid in input_token_ids]
         
         logger.info(f"Input: {len(input_tokens)} tokens")
         
-        # Initialize tracker
+        # 初始化追踪器
         self.tracker = AttentionTracker(self.tokenizer, context_length, self.verbose)
-        
-        # Set up generation config
+
+        # 配置生成参数
         generation_config = GenerationConfig(
             max_new_tokens=max_new_tokens,
             temperature=temperature,
@@ -383,11 +383,11 @@ class AttentionVisualizationAgent:
             repetition_penalty=1.1
         )
         
-        # Register attention hooks
+        # 注册注意力钩子
         hooks = []
         hook_modules = []
         
-        # Find attention modules
+        # 查找注意力模块
         for name, module in self.model.named_modules():
             if any(pattern in name.lower() for pattern in ['attn', 'attention', 'self_attn']):
                 if hasattr(module, 'forward'):
@@ -399,7 +399,7 @@ class AttentionVisualizationAgent:
             logger.info(f"Registered {len(hooks)} attention hooks")
             
         try:
-            # Generate with attention tracking
+            # 生成并追踪注意力
             with torch.no_grad():
                 outputs = self.model.generate(
                     **inputs,
@@ -410,27 +410,27 @@ class AttentionVisualizationAgent:
                     return_dict_in_generate=True
                 )
                 
-            # Process attention from generate output if available
+            # 若可用，处理 generate 输出中的注意力
             if hasattr(outputs, 'attentions') and outputs.attentions is not None:
                 self._process_generation_attentions(outputs.attentions, context_length)
                 
         finally:
-            # Remove hooks
+            # 移除钩子
             for hook in hooks:
                 hook.remove()
                 
-        # Decode output
+        # 解码输出
         generated_ids = outputs.sequences[0][context_length:]
         output_text = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
-        # Keep special tokens in token list for accurate representation
+        # token 列表中保留特殊 token，确保准确呈现
         output_tokens = [self.tokenizer.decode([tid], skip_special_tokens=False) for tid in generated_ids.tolist()]
         
-        # Get attention steps
+        # 获取注意力步骤
         attention_steps = self.tracker.get_attention_steps()
         
         logger.info(f"Generated {len(output_tokens)} tokens with {len(attention_steps)} attention steps")
         
-        # Store all tokens (input + output) for complete sequence
+        # 保存全部 token（输入 + 输出），构成完整序列
         all_token_ids = outputs.sequences[0].tolist()
         all_tokens = [self.tokenizer.decode([tid], skip_special_tokens=False) for tid in all_token_ids]
         
@@ -439,12 +439,12 @@ class AttentionVisualizationAgent:
             output_text=output_text,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            tokens=all_tokens,  # Complete token sequence
+            tokens=all_tokens,  # 完整 token 序列
             attention_steps=attention_steps,
             context_length=context_length
         )
         
-        # Save trajectory if requested
+        # 如有要求则保存轨迹
         if save_trajectory:
             self.save_trajectory(result, query=prompt, category=category,
                                  temperature=temperature, max_new_tokens=max_new_tokens)
@@ -452,7 +452,7 @@ class AttentionVisualizationAgent:
         return result
     
     def _process_generation_attentions(self, attentions, context_length):
-        """Process attention weights from generation output"""
+        """处理生成输出中的注意力权重"""
         if not attentions or not self.tracker:
             return
             
@@ -461,7 +461,7 @@ class AttentionVisualizationAgent:
                 if step_attentions is None or len(step_attentions) == 0:
                     continue
                     
-                # Select layer
+                # 选择层
                 layer_index = self.attention_layer_index
                 if layer_index >= 0 and layer_index < len(step_attentions):
                     selected_attention = step_attentions[layer_index]
@@ -471,14 +471,14 @@ class AttentionVisualizationAgent:
                     selected_attention = step_attentions[-1]
                     
                 if isinstance(selected_attention, torch.Tensor):
-                    # Get attention for last position
+                    # 获取最后一个位置的注意力
                     current_seq_len = selected_attention.shape[2]
                     last_pos = current_seq_len - 1
                     
-                    # Average across heads
+                    # 各头取平均
                     avg_attention = selected_attention[0, :, last_pos, :].mean(dim=0)
-                    
-                    # Store in tracker
+
+                    # 存入追踪器
                     seq_pos = context_length + step_idx
                     self.tracker.update_attention(seq_pos, avg_attention)
                     
@@ -488,35 +488,35 @@ class AttentionVisualizationAgent:
     
     def chat(self, message: str, **kwargs) -> GenerationResult:
         """
-        Chat interface that maintains conversation history
-        
+        维护对话历史的聊天接口
+
         Args:
-            message: User message
-            **kwargs: Generation parameters
-            
+            message: 用户消息
+            **kwargs: 生成参数
+
         Returns:
-            GenerationResult with attention tracking
+            带注意力追踪的 GenerationResult
         """
-        # Add to conversation history
+        # 加入对话历史
         self.conversation_history.append({"role": "user", "content": message})
-        
-        # Build full prompt with history
+
+        # 结合历史构建完整提示
         messages = [
             {"role": "system", "content": "You are a helpful AI assistant."}
         ]
         messages.extend(self.conversation_history)
         
-        # Apply chat template
+        # 应用聊天模板
         prompt = self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True
         )
         
-        # Generate response
+        # 生成回复
         result = self.generate_with_attention(prompt, **kwargs)
-        
-        # Add assistant response to history
+
+        # 将助手回复加入历史
         self.conversation_history.append({
             "role": "assistant",
             "content": result.output_text
@@ -525,21 +525,21 @@ class AttentionVisualizationAgent:
         return result
     
     def reset_conversation(self):
-        """Reset conversation history"""
+        """重置对话历史"""
         self.conversation_history = []
         logger.info("Conversation history reset")
 
 
 def demonstrate_attention_tracking():
-    """Demonstrate the attention tracking functionality"""
+    """演示注意力追踪功能"""
     print("=" * 60)
     print("Attention Visualization Demo")
     print("=" * 60)
     
-    # Initialize agent
+    # 初始化 Agent
     agent = AttentionVisualizationAgent(verbose=True)
-    
-    # Test prompts with categories
+
+    # 带类别的测试提示
     test_prompts = [
         ("What is the capital of France?", "Knowledge"),
         ("Calculate 25 * 4 + 10", "Math"),
@@ -555,7 +555,7 @@ def demonstrate_attention_tracking():
         print(f"\n--- Test {i}: {category} ---")
         print(f"Prompt: {prompt}")
         
-        # Generate with attention tracking and save trajectory
+        # 生成并追踪注意力，同时保存轨迹
         result = agent.generate_with_attention(
             prompt,
             max_new_tokens=100,
@@ -570,7 +570,7 @@ def demonstrate_attention_tracking():
         print(f"Attention steps tracked: {len(result.attention_steps)}")
         
         results.append(result)
-        time.sleep(1)  # Ensure unique timestamps
+        time.sleep(1)  # 确保时间戳唯一
         
     return results
 

@@ -1,8 +1,8 @@
 """
-Live manual cases for GPT-5 Native Tools Agent.
+GPT-5 原生工具 Agent 的联网手动用例。
 
-These cases demonstrate web_search with the OpenRouter format and require
-OPENROUTER_API_KEY.
+这些用例演示 OpenRouter 格式的 web_search，需要设置
+OPENROUTER_API_KEY。
 """
 
 import json
@@ -19,7 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from agent import GPT5NativeAgent, GPT5AgentChain
 from config import Config
 
-# Set up logging
+# 配置日志
 logging.basicConfig(
     level=getattr(logging, Config.LOG_LEVEL),
     format=Config.LOG_FORMAT
@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 class TestGPT5Agent:
-    """Live manual case suite for GPT-5 Native Tools Agent"""
+    """GPT-5 原生工具 Agent 的联网手动用例套件"""
     
     def __init__(self):
-        """Initialize manual case suite"""
+        """初始化手动用例套件"""
         if not Config.validate():
             raise ValueError("Invalid configuration. Please check your .env file")
         
@@ -44,7 +44,7 @@ class TestGPT5Agent:
     
     def test_web_search_basic(self) -> Dict[str, Any]:
         """
-        Test Case 1: Basic web search
+        测试用例 1：基础网页搜索
         """
         print("\n" + "="*60)
         print("TEST 1: Basic Web Search")
@@ -63,7 +63,7 @@ class TestGPT5Agent:
     
     def test_web_search_with_analysis(self) -> Dict[str, Any]:
         """
-        Test Case 2: Web search with analysis request
+        测试用例 2：带分析请求的网页搜索
         """
         print("\n" + "="*60)
         print("TEST 2: Web Search with Analysis")
@@ -83,7 +83,7 @@ class TestGPT5Agent:
     
     def test_complex_research(self) -> Dict[str, Any]:
         """
-        Test Case 3: Complex research task
+        测试用例 3：复杂研究任务
         """
         print("\n" + "="*60)
         print("TEST 3: Complex Research Task")
@@ -105,7 +105,7 @@ class TestGPT5Agent:
     
     def test_search_and_code(self) -> Dict[str, Any]:
         """
-        Test Case 4: Search and code generation
+        测试用例 4：搜索与代码生成
         """
         print("\n" + "="*60)
         print("TEST 4: Search and Code Generation")
@@ -125,7 +125,7 @@ class TestGPT5Agent:
     
     def test_reasoning_efforts(self) -> List[Dict[str, Any]]:
         """
-        Test Case 5: Compare different reasoning efforts
+        测试用例 5：对比不同推理力度
         """
         print("\n" + "="*60)
         print("TEST 5: Reasoning Effort Comparison")
@@ -151,7 +151,7 @@ class TestGPT5Agent:
     
     def test_search_and_analyze_method(self) -> Dict[str, Any]:
         """
-        Test Case 6: Using the search_and_analyze convenience method
+        测试用例 6：使用 search_and_analyze 便捷方法
         """
         print("\n" + "="*60)
         print("TEST 6: Search and Analyze Method")
@@ -182,7 +182,7 @@ print(f"Volatility: {volatility:.2f}%")
     
     def test_agent_chain(self) -> List[Dict[str, Any]]:
         """
-        Test Case 7: Chain multiple requests
+        测试用例 7：串联多个请求
         """
         print("\n" + "="*60)
         print("TEST 7: Agent Chain")
@@ -190,21 +190,21 @@ print(f"Volatility: {volatility:.2f}%")
         
         chain = GPT5AgentChain(self.agent)
         
-        # Step 1: Research
+        # 第 1 步：检索信息
         chain.add_step(
             "Search for information about the latest AI developments in 2025",
             use_tools=True,
             reasoning_effort="low"
         )
         
-        # Step 2: Deep dive
+        # 第 2 步：深入挖掘
         chain.add_step(
             "Based on the previous findings, search for more details about the most promising AI breakthrough",
             use_tools=True,
             reasoning_effort="medium"
         )
         
-        # Step 3: Analysis
+        # 第 3 步：分析
         chain.add_step(
             "Analyze the impact of these AI developments on various industries",
             use_tools=True,
@@ -221,10 +221,10 @@ print(f"Volatility: {volatility:.2f}%")
     
     def _print_result(self, result: Dict[str, Any]):
         """
-        Pretty print test result
+        以易读格式打印测试结果
         
-        Args:
-            result: Test result dictionary
+        参数:
+            result: 测试结果字典
         """
         if result["success"]:
             print(f"\n✅ Test Passed")
@@ -252,7 +252,7 @@ print(f"Volatility: {volatility:.2f}%")
             print(f"Error: {result.get('error', 'Unknown error')}")
     
     def run_all_tests(self):
-        """Run all live manual cases"""
+        """运行全部联网手动用例"""
         print("\n" + "="*60)
         print("RUNNING GPT-5 NATIVE TOOLS MANUAL CASES")
         print(f"Timestamp: {datetime.now().isoformat()}")
@@ -276,9 +276,9 @@ print(f"Volatility: {volatility:.2f}%")
                 print(f"\n🧪 Running: {case_name}")
                 result = case_method()
                 
-                # Handle different result types
+                # 处理不同类型的结果
                 if isinstance(result, list):
-                    # For tests that return multiple results
+                    # 针对返回多个结果的用例
                     if all(isinstance(r, dict) and "result" in r for r in result):
                         success = all(r["result"]["success"] for r in result)
                     else:
@@ -300,7 +300,7 @@ print(f"Volatility: {volatility:.2f}%")
                     "error": str(e)
                 })
         
-        # Print summary
+        # 打印汇总
         print("\n" + "="*60)
         print("MANUAL CASE SUMMARY")
         print("="*60)
@@ -320,10 +320,10 @@ print(f"Volatility: {volatility:.2f}%")
 
 def run_single_test(test_name: str = "basic"):
     """
-    Run a single live manual case
+    运行单个联网手动用例
     
-    Args:
-        test_name: Name of manual case to run
+    参数:
+        test_name: 要运行的手动用例名称
     """
     tester = TestGPT5Agent()
     
@@ -345,7 +345,7 @@ def run_single_test(test_name: str = "basic"):
 
 
 if __name__ == "__main__":
-    # Check configuration first
+    # 先检查配置
     Config.display()
     
     if not Config.validate():
@@ -353,11 +353,11 @@ if __name__ == "__main__":
         print("Please set up your .env file with OPENROUTER_API_KEY")
         sys.exit(1)
     
-    # Run manual cases
+    # 运行手动用例
     if len(sys.argv) > 1:
-        # Run specific test
+        # 运行指定用例
         run_single_test(sys.argv[1])
     else:
-        # Run all tests
+        # 运行全部用例
         tester = TestGPT5Agent()
         tester.run_all_tests()

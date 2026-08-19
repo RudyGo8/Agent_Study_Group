@@ -1,6 +1,6 @@
 """
-Ollama Native Tool Calling Implementation
-Uses Ollama's standard tool calling API (requires compatible models)
+Ollama 原生工具调用实现
+使用 Ollama 标准工具调用 API（需要支持工具调用的模型）
 """
 
 import json
@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 class OllamaNativeAgent:
-    """Agent using Ollama's native tool calling support"""
+    """使用 Ollama 原生工具调用能力的 Agent"""
     
     def __init__(self, model: str = "qwen3:0.6b"):
         """
-        Initialize with a model that supports tool calling
+        用支持工具调用的模型初始化
         """
         self.model = model
         self.client = ollama.Client()
@@ -27,7 +27,7 @@ class OllamaNativeAgent:
         self.conversation_history = []
         self._think_disabled: set[str] = set()
         
-        # Check if Ollama is running
+        # 检查 Ollama 是否在运行
         try:
             self.client.list()
             logger.info(f"✅ Connected to Ollama with model: {model}")
@@ -36,22 +36,21 @@ class OllamaNativeAgent:
             logger.info("Please start Ollama with: ollama serve")
     
     def _convert_tools_to_ollama_format(self) -> List[Dict]:
-        """Convert tool registry to Ollama's expected format"""
+        """把工具注册表转换为 Ollama 要求的格式"""
         tools = []
         for tool_def in self.tool_registry.get_tool_schemas():
-            # Ollama expects the same format as OpenAI
+            # Ollama 使用的格式与 OpenAI 相同
             tools.append(tool_def)
         return tools
     
     def _chat_with_think_fallback(self, **kwargs) -> dict:
-        """Call client.chat with think=True when supported, falling back gracefully.
+        """尽可能以 think=True 调用 client.chat，不支持时优雅回退。
 
-        Models without thinking support (qwen2.5, llama3.2, gemma, etc.) return
-        a 400 error when think=True. This method catches the error once per
-        model and retries without think, caching the result so subsequent calls
-        are free. Also catches unexpected errors (old client, unknown issues)
-        and retries — if the error wasn't think-related the retry will fail
-        again and the exception propagates naturally.
+        不支持思考的模型（qwen2.5、llama3.2、gemma 等）在 think=True 时
+        返回 400 错误。此方法对每个模型只捕获一次该错误并去掉 think 重试，
+        同时缓存结果，后续调用不再付出试错成本。对于意外错误（旧版客户端、
+        未知问题）也会去掉 think 重试——若错误与 think 无关，重试会再次
+        失败，异常自然向上抛出。
         """
         if self.model in self._think_disabled:
             return self.client.chat(**kwargs)
@@ -65,26 +64,25 @@ class OllamaNativeAgent:
                 return self.client.chat(**kwargs)
             raise
         except Exception:
-            # Unknown failure with think=True (old client, unexpected issues).
-            # Retry without think; if the error was unrelated the retry will
-            # also fail and the exception propagates naturally.
+            # think=True 出现未知失败（旧版客户端、意外问题）。
+            # 去掉 think 重试；若错误与之无关，重试会再次失败，
+            # 异常自然向上抛出。
             logger.warning("think=True failed for '%s', retrying without think", self.model)
             self._think_disabled.add(self.model)
             return self.client.chat(**kwargs)
 
     def _execute_tool_calls(self, tool_calls: List[Dict[str, Any]]) -> List[str]:
         """
-        Execute tool calls and return results in order.
-        Multiple tool calls in the same turn are executed in parallel (they are
-        independent by construction, since the model generated all of them
-        without seeing any result).
+        执行工具调用并按顺序返回结果。
+        同一轮的多个工具调用并行执行（它们天然相互独立，
+        因为模型是在未看到任何结果的情况下一次生成的）。
         """
         def run_one(tool_call: Dict[str, Any]) -> str:
             function = tool_call.get('function', {})
             tool_name = function.get('name')
             tool_args = function.get('arguments')
             
-            # Parse arguments if they're a string
+            # 参数若是字符串则先解析
             if isinstance(tool_args, str):
                 try:
                     tool_args = json.loads(tool_args)
@@ -92,46 +90,46 @@ class OllamaNativeAgent:
                     logger.error(f"Failed to parse tool arguments: {tool_args}")
                     tool_args = {}
             
-            # Execute the tool
+            # 执行工具
             logger.info(f"Executing tool: {tool_name} with args: {tool_args}")
             return self.tool_registry.execute_tool(tool_name, tool_args)
         
         if len(tool_calls) <= 1:
             return [run_one(tc) for tc in tool_calls]
         
-        # Independent tool calls run concurrently; executor.map preserves order
+        # 相互独立的工具调用并发执行；executor.map 保持顺序
         with ThreadPoolExecutor(max_workers=len(tool_calls)) as executor:
             return list(executor.map(run_one, tool_calls))
     
     def chat(self, message: str, use_tools: bool = True,  
              temperature: float = 0.3, stream: bool = False) -> str:
         """
-        Send a message using Ollama's native tool calling
-        
+        使用 Ollama 原生工具调用发送消息
+
         Args:
-            message: User message
-            use_tools: Whether to enable tool calling
-            temperature: Sampling temperature
-            stream: Whether to stream the response
-            
+            message: 用户消息
+            use_tools: 是否启用工具调用
+            temperature: 采样温度
+            stream: 是否流式返回响应
+
         Returns:
-            Final response from the model (or generator if streaming)
+            模型的最终响应（流式模式下为生成器）
         """
         if stream:
             return self.chat_stream(message, use_tools, temperature)
         
-        # Original non-streaming implementation continues below...
-        # Add user message to history
+        # 下面是原有的非流式实现...
+        # 把用户消息加入历史
         self.conversation_history.append({
             "role": "user",
             "content": message
         })
         
-        # Prepare tools if enabled
+        # 启用工具时先准备工具列表
         tools = self._convert_tools_to_ollama_format() if use_tools else None
         
         try:
-            # Call Ollama with tools
+            # 带工具调用 Ollama
             response = self._chat_with_think_fallback(
                 model=self.model,
                 messages=self.conversation_history,
@@ -139,46 +137,46 @@ class OllamaNativeAgent:
                 options={"temperature": temperature},
             )
             
-            # Check if model made tool calls
+            # 检查模型是否发起工具调用
             message_content = response.get('message', {})
             
-            # Handle tool calls if present
+            # 若有工具调用则处理
             if 'tool_calls' in message_content:
                 tool_calls = message_content['tool_calls']
                 logger.info(f"Model requested {len(tool_calls)} tool call(s)")
                 
-                # Add assistant's message with tool calls to history
+                # 把带工具调用的 assistant 消息加入历史
                 self.conversation_history.append({
                     "role": "assistant",
                     "content": message_content.get('content', ''),
                     "tool_calls": tool_calls
                 })
                 
-                # Execute the tool calls (independent calls run in parallel)
+                # 执行工具调用（相互独立的调用并行执行）
                 results = self._execute_tool_calls(tool_calls)
                 
-                # Add tool results to conversation
+                # 把工具结果加入对话
                 for result in results:
                     self.conversation_history.append({
                         "role": "tool",
                         "content": result
                     })
                 
-                # Get final response with tool results (still include tools!)
+                # 带工具结果获取最终响应（仍要传入 tools！）
                 final_response = self._chat_with_think_fallback(
                     model=self.model,
                     messages=self.conversation_history,
-                    tools=tools,  # IMPORTANT: Keep tools available
+                    tools=tools,  # 重要：保持 tools 可用
                     options={"temperature": temperature},
                 )
                 
                 final_content = final_response.get('message', {}).get('content', '')
                 
-                # Clean response (remove <think> tags if present)
+                # 清理响应（去掉可能存在的 <think> 标签）
                 import re
                 final_content = re.sub(r'<think>.*?</think>', '', final_content, flags=re.DOTALL).strip()
                 
-                # Add final response to history
+                # 把最终响应加入历史
                 self.conversation_history.append({
                     "role": "assistant",
                     "content": final_content
@@ -187,7 +185,7 @@ class OllamaNativeAgent:
                 return final_content
             
             else:
-                # No tool calls, just return the response
+                # 没有工具调用，直接返回响应
                 content = message_content.get('content', '')
                 self.conversation_history.append({
                     "role": "assistant",
@@ -202,30 +200,30 @@ class OllamaNativeAgent:
     def chat_stream(self, message: str, use_tools: bool = True,
                     temperature: float = 0.3):
         """
-        Stream a message to the model and handle tool calls in a ReAct loop
-        
-        Yields chunks that include:
-        - type: 'thinking', 'tool_call', 'tool_result', 'content'
-        - content: The actual content
+        流式发送消息给模型，并在 ReAct 循环中处理工具调用
+
+        逐个 yield 分片，包含：
+        - type: 'thinking'、'tool_call'、'tool_result'、'content'
+        - content: 实际内容
         """
-        # Add user message to history
+        # 把用户消息加入历史
         self.conversation_history.append({
             "role": "user",
             "content": message
         })
         
-        # Prepare tools if enabled
+        # 启用工具时先准备工具列表
         tools = self._convert_tools_to_ollama_format() if use_tools else None
         
-        # ReAct loop - keep going until no more tool calls are needed
-        max_iterations = 10  # Prevent infinite loops
+        # ReAct 循环——持续迭代直到不再需要工具调用
+        max_iterations = 10  # 防止无限循环
         iteration = 0
         
         while iteration < max_iterations:
             iteration += 1
             
             try:
-                # Get response from model
+                # 获取模型响应
                 stream_response = self._chat_with_think_fallback(
                     model=self.model,
                     messages=self.conversation_history,
@@ -240,9 +238,9 @@ class OllamaNativeAgent:
                 thinking_buffer = ""
                 in_thinking = False
                 
-                # Process the stream
+                # 处理流式响应
                 for chunk in stream_response:
-                    # Extract message content from chunk
+                    # 从分片中提取消息内容
                     message_chunk = chunk.get('message', {})
                     thinking_chunk = message_chunk.get('thinking', '')
                     content_chunk = message_chunk.get('content', '')
@@ -253,57 +251,57 @@ class OllamaNativeAgent:
                     if content_chunk:
                         collected_content.append(content_chunk)
                         
-                        # Handle thinking content
+                        # 处理思考内容
                         if '<think>' in content_chunk:
                             in_thinking = True
                             thinking_buffer = content_chunk
-                            # Extract any content before <think>
+                            # 提取 <think> 之前的内容
                             import re
                             before_think = content_chunk.split('<think>')[0]
                             if before_think:
                                 yield {"type": "content", "content": before_think}
-                            # Extract thinking content from this chunk
+                            # 提取该分片中的思考内容
                             if '</think>' in content_chunk:
-                                # Complete thinking in one chunk
+                                # 一个分片内包含完整思考
                                 thinking_match = re.search(r'<think>(.*?)</think>', content_chunk, re.DOTALL)
                                 if thinking_match:
                                     thinking_content = thinking_match.group(1).strip()
-                                    # Stream thinking content character by character
+                                    # 逐字符流式输出思考内容
                                     for char in thinking_content:
                                         yield {"type": "thinking", "content": char}
-                                # Check for content after </think>
+                                # 检查 </think> 之后的内容
                                 after_think = content_chunk.split('</think>')[-1]
                                 if after_think:
                                     yield {"type": "content", "content": after_think}
                                 in_thinking = False
                                 thinking_buffer = ""
                             else:
-                                # Partial thinking, extract what we have so far
+                                # 思考未结束，先输出已收到的部分
                                 partial_thinking = content_chunk.split('<think>')[-1]
                                 for char in partial_thinking:
                                     yield {"type": "thinking", "content": char}
                         elif in_thinking:
                             thinking_buffer += content_chunk
                             if '</think>' in content_chunk:
-                                # End of thinking
+                                # 思考结束
                                 before_end = content_chunk.split('</think>')[0]
                                 for char in before_end:
                                     yield {"type": "thinking", "content": char}
-                                # Check for content after </think>
+                                # 检查 </think> 之后的内容
                                 after_think = content_chunk.split('</think>')[-1]
                                 if after_think:
                                     yield {"type": "content", "content": after_think}
                                 in_thinking = False
                                 thinking_buffer = ""
                             else:
-                                # Continue streaming thinking
+                                # 继续流式输出思考内容
                                 for char in content_chunk:
                                     yield {"type": "thinking", "content": char}
                         else:
-                            # Regular content - yield as-is
+                            # 普通正文——原样 yield
                             yield {"type": "content", "content": content_chunk}
                     
-                    # Check for tool calls in the chunk
+                    # 检查分片中是否有工具调用
                     if 'tool_calls' in message_chunk:
                         tool_calls_detected = True
                         
@@ -312,17 +310,17 @@ class OllamaNativeAgent:
                             tool_name = function.get('name')
                             tool_args = function.get('arguments')
                             
-                            # Parse arguments if they're a string
+                            # 参数若是字符串则先解析
                             if isinstance(tool_args, str):
                                 try:
                                     tool_args = json.loads(tool_args)
                                 except json.JSONDecodeError:
                                     tool_args = {}
                             
-                            # Collect the tool call; execution happens after the
-                            # stream finishes so calls can run in parallel.
-                            # Skip duplicates: some servers stream the accumulated
-                            # tool_calls list in every chunk.
+                            # 先收集工具调用，流结束后再执行，
+                            # 以便多个调用可以并行。
+                            # 跳过重复项：某些服务端会在每个分片里
+                            # 流式返回累积的 tool_calls 列表。
                             if not any(
                                 tc.get('function', {}).get('name') == tool_name
                                 and tc.get('function', {}).get('arguments') == function.get('arguments')
@@ -331,37 +329,37 @@ class OllamaNativeAgent:
                                 pending_tool_calls.append(tool_call)
                                 yield {"type": "tool_call", "content": {"name": tool_name, "arguments": tool_args}}
                 
-                # Execute all tool calls from this turn in parallel
+                # 并行执行本轮所有工具调用
                 if pending_tool_calls:
                     results = self._execute_tool_calls(pending_tool_calls)
                     for result in results:
-                        # Yield tool result
+                        # 输出工具结果
                         yield {"type": "tool_result", "content": result}
                         
-                        # Add tool result to conversation
+                        # 把工具结果加入对话
                         self.conversation_history.append({
                             "role": "tool",
                             "content": result
                         })
                 
-                # Save complete response to history
+                # 把完整响应存入历史
                 complete_response = ''.join(collected_content)
                 
                 if tool_calls_detected:
-                    # Add assistant's message to history
+                    # 把 assistant 消息加入历史
                     self.conversation_history.append({
                         "role": "assistant",
                         "content": complete_response if complete_response else ""
                     })
-                    # Continue the ReAct loop - let the model decide what to do next
-                    # The loop will continue and get the next response
+                    # 继续 ReAct 循环——让模型决定下一步
+                    # 循环会继续并获取下一个响应
                 else:
-                    # No tool calls - we have a final response
+                    # 没有工具调用——已得到最终响应
                     self.conversation_history.append({
                         "role": "assistant",
                         "content": complete_response
                     })
-                    # Exit the ReAct loop
+                    # 退出 ReAct 循环
                     break
                     
             except Exception as e:
@@ -369,32 +367,32 @@ class OllamaNativeAgent:
                 yield {"type": "error", "content": str(e)}
                 break
         
-        # Check if we hit max iterations
+        # 检查是否达到最大迭代次数
         if iteration >= max_iterations:
             yield {"type": "error", "content": "Maximum iterations reached in ReAct loop"}
     
     def reset_conversation(self):
-        """Reset the conversation history"""
+        """清空对话历史"""
         self.conversation_history = []
         logger.info("Conversation history reset")
 
 
 class OllamaOpenAICompatible:
-    """Use Ollama through its OpenAI-compatible endpoint"""
+    """通过 Ollama 的 OpenAI 兼容端点使用 Ollama"""
     
     def __init__(self, model: str = "qwen3:0.6b", 
                  base_url: str = "http://localhost:11434/v1"):
         """
-        Initialize using Ollama's OpenAI-compatible API
-        
-        This provides better compatibility with tool calling
+        使用 Ollama 的 OpenAI 兼容 API 初始化
+
+        这样对工具调用的兼容性更好
         """
         from openai import OpenAI
         
         self.model = model
         self.client = OpenAI(
             base_url=base_url,
-            api_key="ollama"  # Ollama doesn't need a real key
+            api_key="ollama"  # Ollama 不需要真实 key
         )
         self.tool_registry = ToolRegistry()
         self.conversation_history = []
@@ -404,19 +402,19 @@ class OllamaOpenAICompatible:
     def chat(self, message: str, use_tools: bool = True,
              temperature: float = 0.3) -> str:
         """
-        Chat using OpenAI-compatible endpoint
+        通过 OpenAI 兼容端点聊天
         """
-        # Add user message
+        # 加入用户消息
         self.conversation_history.append({
             "role": "user",
             "content": message
         })
         
-        # Prepare tools
+        # 准备工具
         tools = self.tool_registry.get_tool_schemas() if use_tools else None
         
         try:
-            # Call with tools
+            # 带工具调用
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=self.conversation_history,
@@ -427,11 +425,11 @@ class OllamaOpenAICompatible:
             
             assistant_message = response.choices[0].message
             
-            # Check for tool calls
+            # 检查工具调用
             if assistant_message.tool_calls:
                 logger.info(f"Model requested {len(assistant_message.tool_calls)} tool(s)")
                 
-                # Add assistant message to history
+                # 把 assistant 消息加入历史
                 self.conversation_history.append({
                     "role": "assistant",
                     "content": assistant_message.content or "",
@@ -447,16 +445,16 @@ class OllamaOpenAICompatible:
                     ]
                 })
                 
-                # Execute tool calls (independent calls run in parallel;
-                # executor.map preserves order)
+                # 执行工具调用（相互独立的调用并行执行；
+                # executor.map 保持顺序）
                 def run_one(tool_call):
-                    # Parse arguments
+                    # 解析参数
                     try:
                         args = json.loads(tool_call.function.arguments)
                     except json.JSONDecodeError:
                         args = {}
                     
-                    # Execute tool
+                    # 执行工具
                     return self.tool_registry.execute_tool(
                         tool_call.function.name,
                         args
@@ -469,7 +467,7 @@ class OllamaOpenAICompatible:
                     with ThreadPoolExecutor(max_workers=len(tool_calls_list)) as executor:
                         results = list(executor.map(run_one, tool_calls_list))
                 
-                # Add tool results
+                # 加入工具结果
                 for tool_call, result in zip(tool_calls_list, results):
                     self.conversation_history.append({
                         "role": "tool",
@@ -477,17 +475,17 @@ class OllamaOpenAICompatible:
                         "content": result
                     })
                 
-                # Get final response
+                # 获取最终响应
                 final_response = self.client.chat.completions.create(
                     model=self.model,
                     messages=self.conversation_history,
-                    tools=tools,   # IMPORTANT: Keep tools available
+                    tools=tools,   # 重要：保持 tools 可用
                     temperature=temperature
                 )
                 
                 final_content = final_response.choices[0].message.content
                 
-                # Add to history
+                # 加入历史
                 self.conversation_history.append({
                     "role": "assistant",
                     "content": final_content
@@ -496,7 +494,7 @@ class OllamaOpenAICompatible:
                 return final_content
             
             else:
-                # No tool calls
+                # 没有工具调用
                 content = assistant_message.content
                 self.conversation_history.append({
                     "role": "assistant",
@@ -509,20 +507,20 @@ class OllamaOpenAICompatible:
             return f"Error: {e}"
     
     def reset_conversation(self):
-        """Reset conversation history"""
+        """清空对话历史"""
         self.conversation_history = []
         logger.info("Conversation reset")
 
 
 def test_native_tools():
-    """Test Ollama's native tool calling"""
+    """测试 Ollama 原生工具调用"""
     print("="*60)
     print("🔧 Testing Ollama Native Tool Calling")
     print("="*60)
     
-    # Test with default model
+    # 用默认模型测试
     models_to_test = [
-        "qwen3:0.6b",  # Default model for this project
+        "qwen3:0.6b",  # 本项目默认模型
     ]
     
     for model_name in models_to_test:
@@ -530,7 +528,7 @@ def test_native_tools():
         print("-"*40)
         
         try:
-            # Check if model is available
+            # 检查模型是否可用
             client = ollama.Client()
             available_models = [m['name'] for m in client.list()['models']]
             
@@ -539,7 +537,7 @@ def test_native_tools():
                 print(f"   Install with: ollama pull {model_name}")
                 continue
             
-            # Test the model
+            # 测试该模型
             agent = OllamaNativeAgent(model=model_name)
             
             test_queries = [
@@ -550,7 +548,7 @@ def test_native_tools():
             for query in test_queries:
                 print(f"\n👤 User: {query}")
                 response = agent.chat(query)
-                print(f"🤖 Assistant: {response[:200]}...")  # Truncate long responses
+                print(f"🤖 Assistant: {response[:200]}...")  # 截断过长的响应
                 agent.reset_conversation()
                 
         except Exception as e:
@@ -564,12 +562,12 @@ def test_native_tools():
 
 
 def demo():
-    """Interactive demo with proper tool calling"""
+    """带完整工具调用的交互式演示"""
     print("="*60)
     print("🎯 Ollama Standard Tool Calling Demo")
     print("="*60)
     
-    # Let user choose implementation
+    # 让用户选择实现方式
     print("\nChoose implementation:")
     print("1. Native Ollama API (recommended)")
     print("2. OpenAI-compatible API")
@@ -581,12 +579,12 @@ def demo():
         agent = OllamaOpenAICompatible()
     else:
         print("\nUsing native Ollama API...")
-        # Check for best available model
+        # 检查最合适的可用模型
         try:
             client = ollama.Client()
             models = [m['name'] for m in client.list()['models']]
             
-            # Use qwen3:0.6b as the default model
+            # 默认使用 qwen3:0.6b
             model = "qwen3:0.6b"
             
             if model in models:
@@ -594,7 +592,7 @@ def demo():
             else:
                 print(f"Recommended model {model} not found")
                 print("Install with: ollama pull qwen3:0.6b")
-                # Fall back to first available model
+                # 回退到第一个可用模型
                 model = models[0] if models else "qwen3:0.6b"
                 print(f"Using fallback model: {model}")
                 
@@ -604,7 +602,7 @@ def demo():
             print(f"Error: {e}")
             return
     
-    # Interactive loop
+    # 交互循环
     print("\n💬 Chat with the assistant (type 'exit' to quit)")
     print("-"*40)
     

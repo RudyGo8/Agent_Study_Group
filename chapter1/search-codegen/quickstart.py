@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Quick Start Demo for GPT-5 Native Tools Agent
-Demonstrates basic usage of web_search and code_interpreter tools
+GPT-5 原生工具 Agent 快速入门演示
+演示 web_search 和 code_interpreter 工具的基本用法
 """
 
 import os
@@ -10,7 +10,7 @@ from agent import GPT5NativeAgent
 from config import Config
 
 def demo_web_search():
-    """Demonstrate web search capability"""
+    """演示网页搜索能力"""
     print("\n" + "="*60)
     print("DEMO: Web Search Tool")
     print("="*60)
@@ -35,7 +35,7 @@ def demo_web_search():
         print(f"❌ Error: {result['error']}")
 
 def demo_code_interpreter():
-    """Demonstrate code generation and analysis capability"""
+    """演示代码生成与分析能力"""
     print("\n" + "="*60)
     print("DEMO: Code Generation and Analysis")
     print("="*60)
@@ -64,7 +64,7 @@ def demo_code_interpreter():
         print(f"❌ Error: {result['error']}")
 
 def demo_combined_tools():
-    """Demonstrate using both tools together"""
+    """演示两个工具的组合使用"""
     print("\n" + "="*60)
     print("DEMO: Combined Web Search + Code Analysis")
     print("="*60)
@@ -106,12 +106,12 @@ for symbol, prices in stocks.items():
         print(f"❌ Error: {result['error']}")
 
 def main():
-    """Run all demos"""
+    """运行全部演示"""
     print("\n" + "="*60)
     print("      GPT-5 Native Tools Agent - Quick Start Demo")
     print("="*60)
     
-    # Check configuration
+    # 检查配置
     if not Config.validate():
         print("\n❌ Configuration Error!")
         print("Please set up your .env file with OPENROUTER_API_KEY")
@@ -124,7 +124,7 @@ def main():
     print("\n✅ Configuration valid")
     print(f"Using model: {Config.MODEL_NAME}")
     
-    # Ask user which demo to run
+    # 询问用户运行哪个演示
     print("\nSelect demo to run:")
     print("1. Web Search only")
     print("2. Code Generation and Analysis")

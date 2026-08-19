@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Test script for interactive mode selection
+交互式模式选择的测试脚本
 """
 
 from main import select_mode_interactive
 
 def test_mode_selection(monkeypatch):
-    """Test the interactive mode selection without running the agent"""
+    """不实际运行 Agent，仅测试交互式模式选择"""
     
     print("🧪 Testing Interactive Mode Selection")
     print("(This is a test - no agent will actually run)")
     
-    # Test the selection menu
+    # 测试选择菜单
     monkeypatch.setattr("builtins.input", lambda _prompt: "7")
     selected = select_mode_interactive()
     assert selected == "compare"

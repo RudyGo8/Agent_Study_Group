@@ -1,4 +1,4 @@
-"""Shared bootstrap for agent-skills-ppt regression tests."""
+"""agent-skills-ppt 回归测试的共享初始化（bootstrap）。"""
 
 import sys
 from pathlib import Path

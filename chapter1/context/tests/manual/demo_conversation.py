@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Demo script showing conversation history persistence
+演示对话历史持久化的脚本
 """
 
 import os
@@ -12,11 +12,11 @@ add_project_root()
 from dotenv import load_dotenv
 from agent import ContextAwareAgent, ContextMode
 
-# Load environment variables
+# 加载环境变量
 load_dotenv()
 
 def main():
-    # Get API key (use any available provider)
+    # 获取 API Key（用任一可用的提供商）
     if os.getenv("ARK_API_KEY"):
         api_key, provider = os.getenv("ARK_API_KEY"), "doubao"
     elif os.getenv("DASHSCOPE_API_KEY"):
@@ -44,7 +44,7 @@ def main():
     print(f"Provider: {provider.upper()}")
     print("-" * 50)
     
-    # Create agent
+    # 创建 Agent
     agent = ContextAwareAgent(
         api_key=api_key,
         provider=provider,
@@ -52,17 +52,17 @@ def main():
         verbose=False
     )
     
-    # Conversation 1: Set context
+    # 对话 1：设定上下文
     print("\n💬 Turn 1: Setting context...")
     result = agent.execute_task("My name is Alice and I have a budget of $5,000. What is 20% of my budget?")
     print(f"Agent: {result.get('final_answer', 'No answer')}")
     
-    # Conversation 2: Reference previous context
+    # 对话 2：引用之前的上下文
     print("\n💬 Turn 2: Referencing previous context...")
     result = agent.execute_task("Convert that 20% amount to EUR please.")
     print(f"Agent: {result.get('final_answer', 'No answer')}")
     
-    # Conversation 3: Recall information
+    # 对话 3：回忆信息
     print("\n💬 Turn 3: Recalling information...")
     result = agent.execute_task("What was my name and total budget that I mentioned?")
     print(f"Agent: {result.get('final_answer', 'No answer')}")
@@ -72,7 +72,7 @@ def main():
     print(f"  Total messages in history: {len(agent.conversation_history)}")
     print(f"  Total tool calls made: {len(agent.trajectory.tool_calls)}")
     
-    # Show that system prompt is unchanged
+    # 验证系统提示词未被修改
     system_prompt = agent.conversation_history[0]['content']
     if "Alice" not in system_prompt and "5000" not in system_prompt:
         print("  ✅ System prompt remained unchanged")

@@ -1,4 +1,4 @@
-"""Helpers for running kv-cache manual smoke scripts from tests/manual."""
+"""从 tests/manual 运行 kv-cache 手动冒烟脚本的辅助函数。"""
 
 from pathlib import Path
 import sys

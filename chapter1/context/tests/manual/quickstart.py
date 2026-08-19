@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Quick Start Script for Context-Aware Agent
-Run this to test the agent with a simple example
+上下文感知 Agent 的快速开始脚本
+运行它即可用简单示例测试 Agent
 """
 
 import os
@@ -15,13 +15,13 @@ from agent import ContextAwareAgent, ContextMode
 from config import Config
 
 def main():
-    """Quick start demonstration"""
+    """快速开始演示"""
     
     print("\n" + "="*60)
     print("CONTEXT-AWARE AGENT - QUICK START")
     print("="*60)
     
-    # Check for API key
+    # 检查 API Key
     api_key = os.getenv("SILICONFLOW_API_KEY")
     if not api_key:
         print("\n❌ ERROR: SILICONFLOW_API_KEY not found!")
@@ -33,7 +33,7 @@ def main():
     
     print("\n✅ API key found!")
     
-    # Simple demonstration task
+    # 简单的演示任务
     demo_task = """
     Please help me with the following financial calculation:
     
@@ -49,7 +49,7 @@ def main():
     print(demo_task)
     print("-"*40)
     
-    # Run with full context (baseline)
+    # 用完整上下文运行（基线）
     print("\n🚀 Running agent with FULL context...")
     agent_full = ContextAwareAgent(api_key, ContextMode.FULL)
     result_full = agent_full.execute_task(demo_task)
@@ -64,7 +64,7 @@ def main():
         print("-"*40)
         print(result_full['final_answer'])
     
-    # Demonstrate context ablation effect
+    # 演示上下文消融的效果
     print("\n" + "="*60)
     print("DEMONSTRATING CONTEXT ABLATION")
     print("="*60)
@@ -85,7 +85,7 @@ def main():
         print("-"*40)
         print(result_ablated['final_answer'][:500] + "...")
     
-    # Summary
+    # 汇总
     print("\n" + "="*60)
     print("COMPARISON SUMMARY")
     print("="*60)

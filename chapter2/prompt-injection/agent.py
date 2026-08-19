@@ -75,8 +75,8 @@ class RunResult:
     executed_tool_calls: list[dict[str, Any]] = field(default_factory=list)
     # 记录所有被请求的工具调用（含被拦截的），便于调试
     requested_tool_calls: list[dict[str, Any]] = field(default_factory=list)
-    # Durable evidence for the manuscript-grade campaign.  Each entry retains
-    # the exact provider request, response id/model/usage, and latency.
+    # 手稿级实验所需的持久证据。每条记录保留完整的提供商请求、
+    # 响应 id/模型/用量与耗时。
     provider_calls: list[dict[str, Any]] = field(default_factory=list)
     messages: list[dict[str, Any]] = field(default_factory=list)
     workspace_events: list[dict[str, Any]] = field(default_factory=list)
@@ -277,9 +277,8 @@ class Agent:
                     )
             else:
                 requested_call["runtime_authorized"] = None
-            # Execute against the run's real isolated filesystem/outbox.  This
-            # makes the attack outcome observable without touching the host's
-            # /tmp or delivering mail to an external recipient.
+            # 在本次运行的真实隔离文件系统/发件箱上执行。这样攻击结果
+            # 可被观测，既不碰宿主机的 /tmp，也不会真的向外部收件人投递邮件。
             self.result.executed_tool_calls.append({"name": name, "args": args})
             if name == "write_file":
                 requested = str(args.get("path", "unnamed.txt"))
@@ -390,7 +389,7 @@ def make_client(
     requested_model = model or os.getenv("OPENAI_MODEL")
     if not requested_model and requested_provider == "openai":
         requested_model = "gpt-4o-mini"
-    # Endpoint and key selection are handled by the shared provider registry.
+    # 端点与密钥的选择由共享的提供商注册表处理。
     backend = resolve_backend(requested_provider, model=requested_model)
     model = backend.model
     # 允许显式传入 base_url 覆盖（默认官方；OPENAI_BASE_URL 由注册表处理），

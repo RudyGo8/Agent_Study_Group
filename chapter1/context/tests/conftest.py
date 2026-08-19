@@ -1,4 +1,4 @@
-"""Pytest bootstrap for the context experiment tests."""
+"""上下文实验测试的 pytest 启动配置。"""
 
 from pathlib import Path
 import sys

@@ -1,4 +1,4 @@
-"""Regression: malformed tool-argument JSON must not abort the ReAct loop."""
+"""回归测试：非法的工具参数 JSON 不能中断 ReAct 循环。"""
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -35,7 +35,7 @@ def test_execute_task_survives_malformed_tool_arguments_json():
         id="call-bad",
         function=SimpleNamespace(
             name="calculate",
-            arguments='{"expression": "1+1",}',  # trailing comma
+            arguments='{"expression": "1+1",}',  # 末尾多余逗号
         ),
     )
     tool_turn = SimpleNamespace(choices=[_choice(tool_calls=[bad_call])])
@@ -52,7 +52,7 @@ def test_execute_task_survives_malformed_tool_arguments_json():
     assert result.get("error") is None
     assert result["completed"] is True
     assert result["task_success"] is None
-    assert result["success"] is True  # backwards-compatible completion alias
+    assert result["success"] is True  # 向后兼容的完成别名
     assert "recovered" in (result.get("final_answer") or result.get("answer") or "")
     tool_roles = [m for m in agent.conversation_history if m.get("role") == "tool"]
     assert tool_roles

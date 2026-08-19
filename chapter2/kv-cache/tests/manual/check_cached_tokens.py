@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify cached tokens are being parsed correctly from Kimi API
+验证缓存 token 能从 Kimi API 响应中被正确解析的测试脚本
 """
 
 import os
@@ -12,9 +12,9 @@ add_project_root()
 from agent import KVCacheAgent, KVCacheMode
 
 def test_cached_tokens():
-    """Test that cached tokens are correctly parsed from API response"""
+    """验证缓存 token 从 API 响应中被正确解析"""
     
-    # Get API key
+    # 获取 API key
     api_key = os.getenv("MOONSHOT_API_KEY")
     if not api_key:
         print("❌ Please set MOONSHOT_API_KEY environment variable")
@@ -23,19 +23,19 @@ def test_cached_tokens():
     print("🔍 Testing Cached Tokens Parsing")
     print("="*60)
     
-    # Simple task that requires a few iterations
+    # 需要几轮迭代的简单任务
     task = "Find Python files in chapter1/context directory and tell me how many there are."
     
     print(f"Task: {task}")
     print("-"*40)
     
-    # Run with correct implementation (should use cache)
+    # 用正确实现运行（应能命中缓存）
     print("\nRunning agent with CORRECT implementation...")
     agent = KVCacheAgent(
         api_key=api_key,
         mode=KVCacheMode.CORRECT,
         root_dir="../..",
-        verbose=True  # Enable verbose to see token logging
+        verbose=True  # 开启 verbose 以查看 token 日志
     )
     
     result = agent.execute_task(task, max_iterations=5)
@@ -48,14 +48,14 @@ def test_cached_tokens():
     print(f"  • Cache hits: {metrics.cache_hits}")
     print(f"  • Cache misses: {metrics.cache_misses}")
     
-    # Check each iteration's TTFT
+    # 查看每次迭代的 TTFT
     if metrics.ttft_per_iteration:
         print(f"\n  • TTFT per iteration:")
         for i, ttft in enumerate(metrics.ttft_per_iteration, 1):
             status = "🔴 No cache" if i == 1 else "🟢 With cache"
             print(f"      Iteration {i}: {ttft:.3f}s {status}")
     
-    # Verify cache is working
+    # 验证缓存是否生效
     print("\n✅ Verification:")
     if metrics.cached_tokens > 0:
         print(f"  ✓ Cached tokens detected: {metrics.cached_tokens}")
@@ -65,7 +65,7 @@ def test_cached_tokens():
     if len(metrics.ttft_per_iteration) > 1:
         first_ttft = metrics.ttft_per_iteration[0]
         second_ttft = metrics.ttft_per_iteration[1]
-        if second_ttft < first_ttft * 0.8:  # At least 20% improvement
+        if second_ttft < first_ttft * 0.8:  # 至少改善 20%
             print(f"  ✓ TTFT improved from {first_ttft:.3f}s to {second_ttft:.3f}s")
         else:
             print(f"  ⚠️ TTFT did not improve significantly")

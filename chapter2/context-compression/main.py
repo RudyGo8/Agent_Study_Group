@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Interactive demo for context compression strategies
+上下文压缩策略交互式演示
 """
 
 import os
@@ -12,11 +12,11 @@ from config import Config
 from agent import ResearchAgent
 from compression_strategies import CompressionStrategy
 
-# Initialize colorama
+# 初始化 colorama
 init(autoreset=True)
 
 
-# Short CLI aliases -> compression strategy (order matches the book's 实验 2-10)
+# CLI 简短别名 -> 压缩策略（顺序与书中实验 2-10 一致）
 STRATEGY_CHOICES = {
     "no_compression": CompressionStrategy.NO_COMPRESSION,
     "individual": CompressionStrategy.NON_CONTEXT_AWARE_INDIVIDUAL,
@@ -28,7 +28,7 @@ STRATEGY_CHOICES = {
 
 
 def print_banner():
-    """Print demo banner"""
+    """打印演示横幅"""
     print(f"\n{Fore.CYAN}{'='*70}")
     print(f"{Fore.CYAN}CONTEXT COMPRESSION RESEARCH AGENT - INTERACTIVE DEMO")
     print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
@@ -37,7 +37,7 @@ def print_banner():
 
 
 def select_strategy() -> CompressionStrategy:
-    """Let user select a compression strategy"""
+    """让用户选择压缩策略"""
     print(f"{Fore.YELLOW}Available Compression Strategies:{Style.RESET_ALL}")
     print("1. No Compression (expected to fail with large contexts)")
     print("2. Non-Context-Aware: Individual Summaries (summarize each page, then concatenate)")
@@ -63,15 +63,15 @@ def select_strategy() -> CompressionStrategy:
 
 
 def run_demo(enable_streaming=True, strategy: CompressionStrategy = None):
-    """Run the interactive demo
+    """运行交互式演示
 
-    Args:
-        enable_streaming: Whether to enable streaming output (default: True)
-        strategy: Preselected compression strategy; if None, prompt the user interactively
+    参数:
+        enable_streaming: 是否启用流式输出（默认: True）
+        strategy: 预选的压缩策略；为 None 时交互式询问用户
     """
     print_banner()
 
-    # Check configuration
+    # 检查配置
     if not Config.validate():
         print(f"\n{Fore.RED}Configuration validation failed!{Style.RESET_ALL}")
         print("\nPlease set up your .env file with:")
@@ -80,17 +80,17 @@ def run_demo(enable_streaming=True, strategy: CompressionStrategy = None):
         print("  SERPER_API_KEY=your_api_key_here (optional, will use mock data)")
         sys.exit(1)
 
-    # Select strategy (interactively unless one was passed on the command line)
+    # 选择策略（命令行未指定时走交互式选择）
     if strategy is None:
         strategy = select_strategy()
     
     print(f"\n{Fore.CYAN}Selected: {strategy.value}{Style.RESET_ALL}")
     
-    # Display streaming status
+    # 展示流式输出状态
     streaming_status = "ENABLED" if enable_streaming else "DISABLED"
     print(f"{Fore.YELLOW}Streaming output: {streaming_status}{Style.RESET_ALL}")
     
-    # Create agent
+    # 创建 Agent
     print(f"\n{Fore.YELLOW}Initializing agent...{Style.RESET_ALL}")
     agent = ResearchAgent(
         api_key=Config.resolve_llm()[0],
@@ -104,10 +104,10 @@ def run_demo(enable_streaming=True, strategy: CompressionStrategy = None):
     print("-" * 70)
     
     try:
-        # Execute research
+        # 执行研究
         result = agent.execute_research(max_iterations=Config.MAX_ITERATIONS)
         
-        # Print results
+        # 打印结果
         print("\n" + "="*70)
         print(f"{Fore.GREEN}RESEARCH COMPLETE{Style.RESET_ALL}")
         print("="*70)
@@ -120,7 +120,7 @@ def run_demo(enable_streaming=True, strategy: CompressionStrategy = None):
             if result.get('error'):
                 print(f"Error: {result['error']}")
         
-        # Print statistics
+        # 打印统计信息
         trajectory = result.get('trajectory')
         if trajectory:
             print(f"\n{Fore.CYAN}📊 Statistics:{Style.RESET_ALL}")
@@ -131,7 +131,7 @@ def run_demo(enable_streaming=True, strategy: CompressionStrategy = None):
             print(f"    - Prompt Tokens: {trajectory.prompt_tokens_used:,}")
             print(f"    - Completion Tokens: {trajectory.completion_tokens_used:,}")
             
-            # Calculate compression stats
+            # 计算压缩统计
             if trajectory.tool_calls:
                 total_original = 0
                 total_compressed = 0
@@ -146,17 +146,17 @@ def run_demo(enable_streaming=True, strategy: CompressionStrategy = None):
                     print(f"  Compression Ratio: {ratio:.1%}")
                     print(f"  Space Saved: {total_original - total_compressed:,} chars")
         
-        # Follow-up question demo (for citation strategy)
+        # 追问演示（针对带引用的策略）
         if strategy == CompressionStrategy.CONTEXT_AWARE_CITATIONS and result.get('success'):
             print(f"\n{Fore.YELLOW}This strategy supports follow-up questions!{Style.RESET_ALL}")
             follow_up = input("\nAsk a follow-up question (or press Enter to skip): ")
             
             if follow_up:
                 print(f"\n{Fore.CYAN}Processing follow-up...{Style.RESET_ALL}")
-                # Add follow-up to conversation
+                # 把追问加入对话
                 agent.conversation_history.append({"role": "user", "content": follow_up})
                 
-                # Get response (simplified for demo)
+                # 获取响应（演示用简化版）
                 messages = agent.conversation_history.copy()
                 
                 if enable_streaming:
@@ -175,8 +175,8 @@ def run_demo(enable_streaming=True, strategy: CompressionStrategy = None):
 
 
 def main():
-    """Main entry point"""
-    # Parse command line arguments
+    """主入口"""
+    # 解析命令行参数
     parser = argparse.ArgumentParser(
         prog="main.py",
         description="上下文压缩策略交互式演示：针对“追踪 OpenAI 联合创始人现状”这一研究任务，"
@@ -206,14 +206,14 @@ def main():
     if args.model:
         Config.MODEL_NAME = args.model
 
-    # Determine streaming preference
+    # 确定是否启用流式输出
     enable_streaming = not args.no_streaming
     preset_strategy = STRATEGY_CHOICES[args.strategy] if args.strategy else None
 
     try:
         run_demo(enable_streaming=enable_streaming, strategy=preset_strategy)
 
-        # Ask if user wants to try another strategy
+        # 询问是否尝试其他策略
         while True:
             again = input(f"\n{Fore.GREEN}Try another strategy? (y/n): {Style.RESET_ALL}")
             if again.lower() == 'y':

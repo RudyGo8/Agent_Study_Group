@@ -1,4 +1,4 @@
-"""Tests for CLI parsing, offline dispatch, and JSON output."""
+"""CLI 参数解析、离线分发与 JSON 输出的测试。"""
 
 import json
 

@@ -1,4 +1,4 @@
-"""Tests for the deterministic offline ReAct demonstration."""
+"""确定性离线 ReAct 演示的测试。"""
 
 from agent import run_offline_demo
 

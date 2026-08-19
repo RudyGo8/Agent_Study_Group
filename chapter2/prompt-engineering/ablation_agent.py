@@ -1,6 +1,6 @@
 """
-Custom Agent for Ablation Study
-Extends ToolCallingAgent to support tone modifications
+消融实验专用 Agent
+扩展 ToolCallingAgent 以支持语气风格修改
 """
 
 import json
@@ -19,13 +19,13 @@ from tau_bench.types import SolveResult, Action, RESPOND_ACTION_NAME
 
 
 def completion_token_limit(model: str) -> int:
-    """Return enough output budget for reasoning models to emit an action."""
+    """为思考型模型预留足够的输出预算，确保它能给出动作。"""
     return 8192 if "kimi-k3" in str(model).lower() else 4096
 
 
 class AblationAgent(Agent):
     """
-    Agent that supports tone modifications for ablation studies
+    支持语气风格修改的消融实验 Agent
     """
     
     def __init__(
@@ -39,15 +39,15 @@ class AblationAgent(Agent):
         seed: Optional[int] = None,
     ):
         """
-        Initialize the ablation agent
-        
-        Args:
-            tools_info: Information about available tools
-            wiki: Wiki/system prompt text (may have tone modifications already applied)
-            model: Model name
-            provider: Model provider
-            temperature: Sampling temperature
-            verbose: Whether to show detailed output (default: True)
+        初始化消融实验 Agent
+
+        参数:
+            tools_info: 可用工具的信息
+            wiki: Wiki/系统提示词文本（可能已应用语气修改）
+            model: 模型名
+            provider: 模型提供商
+            temperature: 采样温度
+            verbose: 是否显示详细输出（默认: True）
         """
         self.tools_info = tools_info
         self.wiki = wiki
@@ -61,15 +61,15 @@ class AblationAgent(Agent):
         self, env: Env, task_index: Optional[int] = None, max_num_steps: int = 30
     ) -> SolveResult:
         """
-        Solve a task with potential tone modifications
-        
-        Args:
-            env: The environment
-            task_index: Optional task index
-            max_num_steps: Maximum number of steps
-        
-        Returns:
-            SolveResult with the outcome
+        求解一个任务（可能带语气修改）
+
+        参数:
+            env: 环境
+            task_index: 可选的任务索引
+            max_num_steps: 最大步数
+
+        返回:
+            包含执行结果的 SolveResult
         """
         if self.verbose:
             print(f"\n{'='*80}")
@@ -77,7 +77,7 @@ class AblationAgent(Agent):
             print(f"{'='*80}")
             print(f"\n📜 SYSTEM PROMPT (Wiki) - {len(self.wiki)} characters:")
             print("─"*40)
-            # Show first 500 chars of wiki to see tone modifications
+            # 只展示 wiki 前 500 字符，便于查看语气修改
             if len(self.wiki) > 500:
                 print(self.wiki[:500])
                 print(f"... [{len(self.wiki) - 500} more characters]")
@@ -101,7 +101,7 @@ class AblationAgent(Agent):
             print(obs)
             print(f"{'─'*40}")
         
-        # Initialize messages
+        # 初始化消息
         messages: List[Dict[str, Any]] = [
             {"role": "system", "content": self.wiki},
             {"role": "user", "content": obs},
@@ -113,14 +113,14 @@ class AblationAgent(Agent):
                 print(f"📍 STEP {step + 1}/{max_num_steps}")
                 print(f"{'━'*80}")
             
-            # Debug: Print request details
-            if self.verbose:  # Show full API request details when verbose
+            # 调试：打印请求详情
+            if self.verbose:  # verbose 时展示完整 API 请求详情
                 print(f"\n{'='*60}")
                 print(f"🚀 API CALL #{step + 1} to {self.provider} / {self.model}")
                 print(f"{'='*60}")
                 print(f"📤 SENDING {len(messages)} messages:")
                 print("\n" + "─"*50)
-                for i, msg in enumerate(messages):  # Show ALL messages
+                for i, msg in enumerate(messages):  # 展示全部消息
                     role = msg.get('role', 'unknown')
                     content = msg.get('content', '')
                     print(f"\n📨 Message [{i+1}] - Role: {role.upper()}")
@@ -149,16 +149,14 @@ class AblationAgent(Agent):
                     print("─"*50)
                 print("="*60)
             
-            # Get completion from model
+            # 调用模型获取补全
             try:
-                # Prepare completion kwargs
-                # Kimi K3 can spend most of a 4K completion budget on hidden
-                # reasoning in the longer Tau-Bench tasks and then return an
-                # empty visible message with no tool call.  That is not a
-                # usable Agent action and caused the otherwise complete 60-cell
-                # campaign to fail at the simulator boundary.  Reserve the same
-                # reasoning headroom used by the paired Kimi user simulator;
-                # ordinary non-reasoning models retain the historical limit.
+                # 准备补全参数
+                # Kimi K3 在较长的 Tau-Bench 任务上可能把 4K 补全预算的大头
+                # 花在隐藏思考上，然后返回一条无内容也无工具调用的空消息。
+                # 这不是可用的 Agent 动作，曾让本已基本完成的 60 格实验
+                # 在模拟器边界处失败。这里预留与配套 Kimi 用户模拟器相同的
+                # 思考余量；普通非思考模型仍沿用历史限额。
                 completion_limit = completion_token_limit(self.model)
                 completion_kwargs = {
                     "messages": messages,
@@ -175,7 +173,7 @@ class AblationAgent(Agent):
                 if requested_seed is not None:
                     completion_kwargs["seed"] = requested_seed
                 
-                # Add reasoning_effort for gpt-5 to minimize thinking tokens
+                # 为 gpt-5 加 reasoning_effort，尽量减少思考 token
                 if "gpt-5" in self.model:
                     completion_kwargs["extra_body"] = {"reasoning_effort": "low"}
                     if self.verbose:
@@ -222,22 +220,22 @@ class AblationAgent(Agent):
                     },
                 })
                 
-                # Debug: Print response
-                if self.verbose:  # Show full API response details when verbose
+                # 调试：打印响应
+                if self.verbose:  # verbose 时展示完整 API 响应详情
                     print(f"\n📥 RESPONSE received:")
                     print("─"*50)
                     if res.choices[0].message.content:
                         print("📝 Response Content:")
                         print("─"*50)
-                        print(res.choices[0].message.content)  # Show FULL content
+                        print(res.choices[0].message.content)  # 展示完整内容
                         print("─"*50)
                     if hasattr(res.choices[0].message, 'tool_calls') and res.choices[0].message.tool_calls:
                         print(f"\n🔧 Tool calls: {len(res.choices[0].message.tool_calls)} tool(s) called")
-                        for idx, tc in enumerate(res.choices[0].message.tool_calls):  # Show ALL tool calls
+                        for idx, tc in enumerate(res.choices[0].message.tool_calls):  # 展示全部工具调用
                             print(f"\n  Tool Call [{idx+1}]:")
                             print(f"    - Function: {tc.function.name}")
                             print(f"    - Arguments (FULL):")
-                            print(f"      {tc.function.arguments}")  # Show FULL arguments
+                            print(f"      {tc.function.arguments}")  # 展示完整参数
                     print(f"{'='*60}\n")
             except Exception as e:
                 if "requested_at" in locals() and (
@@ -265,9 +263,9 @@ class AblationAgent(Agent):
                     "message": str(e),
                     "traceback": traceback.format_exc(),
                 }
-                # Return a scored failure with every accepted receipt retained.
-                # Raising here made the outer runner discard the complete
-                # in-memory trajectory and all calls made before a late error.
+                # 返回一个计 0 分的失败结果，同时保留所有已确认的调用回执。
+                # 之前在这里直接抛异常会让外层 runner 丢弃完整的内存轨迹
+                # 以及晚期错误发生前已完成的全部调用。
                 reward = 0.0
                 break
             
@@ -276,7 +274,7 @@ class AblationAgent(Agent):
             if cost is not None:
                 total_cost += cost
             
-            # Show assistant response if verbose
+            # verbose 时展示 assistant 响应
             if self.verbose:
                 print(f"\n🤖 Assistant Response:")
                 print(f"{'─'*40}")
@@ -299,12 +297,12 @@ class AblationAgent(Agent):
                 print(f"{'─'*40}")
             
             
-            # Convert message to action
+            # 把消息转换为动作
             action = message_to_action(next_message)
             if action.name != RESPOND_ACTION_NAME:
                 tool_call_count += 1
             
-            # Step in environment
+            # 在环境中执行一步
             env_response = env.step(action)
             if action.name != RESPOND_ACTION_NAME and str(
                 env_response.observation
@@ -313,7 +311,7 @@ class AblationAgent(Agent):
             reward = env_response.reward
             info = {**info, **env_response.info.model_dump()}
             
-            # Show environment response if verbose
+            # verbose 时展示环境响应
             if self.verbose:
                 print(f"\n🌍 Environment Response:")
                 print(f"{'─'*40}")
@@ -328,9 +326,9 @@ class AblationAgent(Agent):
                 print(f"  Done: {env_response.done}")
                 print(f"{'─'*40}")
             
-            # Update messages based on action type
+            # 按动作类型更新消息
             if action.name != RESPOND_ACTION_NAME:
-                # Tool call - limit to first tool call
+                # 工具调用 —— 只保留第一个工具调用
                 next_message["tool_calls"] = next_message["tool_calls"][:1]
                 messages.extend(
                     [
@@ -344,7 +342,7 @@ class AblationAgent(Agent):
                     ]
                 )
             else:
-                # Response to user
+                # 回复用户
                 messages.extend(
                     [
                         next_message,
@@ -352,7 +350,7 @@ class AblationAgent(Agent):
                     ]
                 )
             
-            # Check if done
+            # 检查是否结束
             if env_response.done:
                 if self.verbose:
                     if reward == 1:

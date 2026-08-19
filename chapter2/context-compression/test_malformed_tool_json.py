@@ -1,12 +1,12 @@
 """
-Malformed tool-argument JSON must not abort execute_research or cause real dispatch to raise TypeError.
+非法的工具参数 JSON 不得中断 execute_research，也不得让真实分发路径抛出 TypeError。
 """
 import sys
 import types
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# Optional deps used at import time by web_tools.
+# web_tools 导入时用到的可选依赖。
 sys.modules.setdefault("html2text", types.ModuleType("html2text"))
 sys.modules.setdefault("dotenv", types.SimpleNamespace(load_dotenv=lambda: None))
 
@@ -37,7 +37,7 @@ def test_execute_research_survives_malformed_tool_arguments_json():
         "type": "function",
         "function": {
             "name": "search_web",
-            "arguments": '{"query": "openai",}',  # trailing comma
+            "arguments": '{"query": "openai",}',  # 尾随逗号
         },
     }
     bad_call_fetch = {
@@ -45,7 +45,7 @@ def test_execute_research_survives_malformed_tool_arguments_json():
         "type": "function",
         "function": {
             "name": "fetch_webpage",
-            "arguments": '{"url": "https://example.com",}',  # malformed JSON
+            "arguments": '{"url": "https://example.com",}',  # 非法 JSON
         },
     }
     tool_msg = {"role": "assistant", "content": "searching", "tool_calls": [bad_call_search, bad_call_fetch]}
@@ -53,7 +53,7 @@ def test_execute_research_survives_malformed_tool_arguments_json():
 
     agent._non_streaming_response = MagicMock(side_effect=[tool_msg, final_msg])
 
-    # Do NOT mock _execute_tool, let real dispatch run over missing query/url arguments
+    # 不要 mock _execute_tool，让真实分发在缺失 query/url 参数的情况下运行
     result = agent.execute_research(max_iterations=3)
 
     assert result.get("error") is None
@@ -63,7 +63,7 @@ def test_execute_research_survives_malformed_tool_arguments_json():
 
 def test_execute_research_survives_non_dict_and_invalid_bytes_tool_arguments():
     """
-    Non-dict JSON structures (lists, numbers) and invalid UTF-8 bytes must normalize to {} and not raise.
+    非字典 JSON 结构（列表、数字）和非法 UTF-8 字节必须归一化为 {} 且不抛异常。
     """
     with patch("agent.Config.resolve_llm", return_value=("k", "http://x", "m")), \
          patch("agent.OpenAI"), \
@@ -105,7 +105,7 @@ def test_execute_research_survives_non_dict_and_invalid_bytes_tool_arguments():
 
 def test_execute_research_survives_tool_execution_exceptions():
     """
-    Tool execution exceptions in search_web or fetch_webpage must return error dicts with compressed=None and not abort loop.
+    search_web 或 fetch_webpage 执行抛异常时必须返回错误字典（compressed=None），且不得中断循环。
     """
     with patch("agent.Config.resolve_llm", return_value=("k", "http://x", "m")), \
          patch("agent.OpenAI"), \

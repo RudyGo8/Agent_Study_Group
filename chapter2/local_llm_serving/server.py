@@ -1,5 +1,5 @@
 """
-vLLM Server Launcher for Qwen3 with Tool Calling Support
+带工具调用支持的 Qwen3 vLLM 服务端启动器
 """
 
 import os
@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class VLLMServer:
-    """Manager for vLLM server process"""
+    """vLLM 服务端进程管理器"""
     
     def __init__(self, config: dict = None):
-        """Initialize server manager with configuration"""
+        """按配置初始化服务端管理器"""
         self.config = config or VLLM_SERVER_CONFIG
         self.process = None
         self.server_url = f"http://{self.config['host']}:{self.config['port']}"
     
     def _build_command(self) -> list:
-        """Build vLLM server command with arguments"""
+        """构建带参数的 vLLM 服务端启动命令"""
         cmd = [
             sys.executable, "-m", "vllm.entrypoints.openai.api_server",
             "--model", self.config["model"],
@@ -33,7 +33,7 @@ class VLLMServer:
             "--host", self.config["host"],
         ]
         
-        # Add tool-specific arguments
+        # 追加工具相关参数
         if self.config.get("enable_auto_tool_choice"):
             cmd.append("--enable-auto-tool-choice")
         
@@ -43,7 +43,7 @@ class VLLMServer:
         if self.config.get("chat_template"):
             cmd.extend(["--chat-template", self.config["chat_template"]])
         
-        # Add performance arguments
+        # 追加性能相关参数
         if self.config.get("max_model_len"):
             cmd.extend(["--max-model-len", str(self.config["max_model_len"])])
         
@@ -56,7 +56,7 @@ class VLLMServer:
         if self.config.get("enforce_eager"):
             cmd.append("--enforce-eager")
         
-        # Add tensor parallel size if multiple GPUs
+        # 多 GPU 时追加 tensor parallel size
         if self.config.get("tensor_parallel_size"):
             cmd.extend(["--tensor-parallel-size", str(self.config["tensor_parallel_size"])])
         
@@ -64,25 +64,25 @@ class VLLMServer:
     
     def start(self, wait_for_ready: bool = True, timeout: int = 120):
         """
-        Start the vLLM server
-        
+        启动 vLLM 服务端
+
         Args:
-            wait_for_ready: Wait for server to be ready
-            timeout: Maximum time to wait for server startup
+            wait_for_ready: 是否等待服务端就绪
+            timeout: 等待服务端启动的最长时间
         """
         if self.is_running():
             logger.info("vLLM server is already running")
             return
         
-        # Create logs directory
+        # 创建日志目录
         log_dir = Path("logs")
         log_dir.mkdir(exist_ok=True)
         
-        # Build command
+        # 构建命令
         cmd = self._build_command()
         logger.info(f"Starting vLLM server with command: {' '.join(cmd)}")
         
-        # Start server process
+        # 启动服务端进程
         log_file = log_dir / "vllm_server.log"
         with open(log_file, "w") as f:
             self.process = subprocess.Popen(
@@ -99,7 +99,7 @@ class VLLMServer:
             self._wait_for_ready(timeout)
     
     def _wait_for_ready(self, timeout: int = 120):
-        """Wait for server to be ready"""
+        """等待服务端就绪"""
         start_time = time.time()
         health_url = f"{self.server_url}/health"
         
@@ -111,7 +111,7 @@ class VLLMServer:
                 if response.status_code == 200:
                     logger.info("vLLM server is ready!")
                     
-                    # Test model availability
+                    # 验证模型可用性
                     models_url = f"{self.server_url}/v1/models"
                     models_response = requests.get(models_url)
                     if models_response.status_code == 200:
@@ -121,7 +121,7 @@ class VLLMServer:
             except requests.exceptions.RequestException:
                 pass
             
-            # Check if process is still running
+            # 检查进程是否仍在运行
             if self.process and self.process.poll() is not None:
                 raise RuntimeError(f"vLLM server process died with code: {self.process.returncode}")
             
@@ -130,7 +130,7 @@ class VLLMServer:
         raise TimeoutError(f"vLLM server did not start within {timeout} seconds")
     
     def stop(self):
-        """Stop the vLLM server"""
+        """停止 vLLM 服务端"""
         if self.process:
             logger.info("Stopping vLLM server...")
             self.process.terminate()
@@ -145,15 +145,15 @@ class VLLMServer:
             logger.info("vLLM server stopped")
     
     def is_running(self) -> bool:
-        """Check if server is running"""
+        """检查服务端是否在运行"""
         if not self.process:
             return False
         
-        # Check if process is still alive
+        # 检查进程是否存活
         if self.process.poll() is not None:
             return False
         
-        # Try to connect to health endpoint
+        # 尝试访问健康检查端点
         try:
             response = requests.get(f"{self.server_url}/health", timeout=1)
             return response.status_code == 200
@@ -161,7 +161,7 @@ class VLLMServer:
             return False
     
     def restart(self):
-        """Restart the server"""
+        """重启服务端"""
         logger.info("Restarting vLLM server...")
         self.stop()
         time.sleep(2)
@@ -170,8 +170,8 @@ class VLLMServer:
 
 def download_model_from_modelscope():
     """
-    Download Qwen3-0.6B model from ModelScope
-    This is optional - vLLM can download from HuggingFace automatically
+    从 ModelScope 下载 Qwen3-0.6B 模型
+    可选步骤——vLLM 也能自动从 HuggingFace 下载
     """
     try:
         from modelscope import snapshot_download
@@ -189,7 +189,7 @@ def download_model_from_modelscope():
 
 
 def main():
-    """Main function to start vLLM server"""
+    """启动 vLLM 服务端的主函数"""
     import argparse
     
     parser = argparse.ArgumentParser(description="Start vLLM server with Qwen3 model")
@@ -204,13 +204,13 @@ def main():
     
     args = parser.parse_args()
     
-    # Download model if requested
+    # 按需先下载模型
     if args.download:
         model_path = download_model_from_modelscope()
         if model_path:
             VLLM_SERVER_CONFIG["model"] = model_path
     
-    # Override config with command line arguments
+    # 用命令行参数覆盖配置
     if args.model:
         VLLM_SERVER_CONFIG["model"] = args.model
     if args.port:
@@ -218,7 +218,7 @@ def main():
     if args.host:
         VLLM_SERVER_CONFIG["host"] = args.host
     
-    # Create and start server
+    # 创建并启动服务端
     server = VLLMServer(VLLM_SERVER_CONFIG)
     
     try:
@@ -226,7 +226,7 @@ def main():
         logger.info(f"vLLM server is running at {server.server_url}")
         logger.info("Press Ctrl+C to stop the server")
         
-        # Keep the server running
+        # 维持服务端运行
         while True:
             time.sleep(1)
             if not server.is_running():

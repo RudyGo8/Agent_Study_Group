@@ -1,5 +1,5 @@
 """
-Ablation utilities for prompt engineering experiments
+提示工程实验的消融工具函数
 """
 
 import random
@@ -10,13 +10,13 @@ import copy
 
 
 class ToneStyle(Enum):
-    """Different tone styles for the agent"""
+    """Agent 的不同语气风格"""
     DEFAULT = "default"
     TRUMP = "trump"
     CASUAL = "casual"
 
 
-# Tone style instructions
+# 语气风格指令
 TONE_INSTRUCTIONS = {
     ToneStyle.TRUMP: """
 You must communicate in the distinctive style of Donald Trump. This means:
@@ -54,27 +54,27 @@ Example responses:
 - Instead of "There's an error", say "Oops! 😅 Looks like we hit a little snag, but no worries! Let me fix that for you real quick! 💪"
 """,
     
-    ToneStyle.DEFAULT: ""  # No modification for default
+    ToneStyle.DEFAULT: ""  # default 不做任何修改
 }
 
 
 def apply_tone_modification(text: str, tone_style: ToneStyle) -> str:
     """
-    Apply tone modification to text (wiki or system prompt)
-    
-    Args:
-        text: Original text
-        tone_style: The tone style to apply
-    
-    Returns:
-        Modified text with tone instructions prepended
+    对文本（wiki 或系统提示词）应用语气修改
+
+    参数:
+        text: 原始文本
+        tone_style: 要应用的语气风格
+
+    返回:
+        在开头拼接了语气指令的文本
     """
     if tone_style == ToneStyle.DEFAULT:
         return text
     
     tone_instruction = TONE_INSTRUCTIONS[tone_style]
     
-    # Add tone instruction to the beginning of the text
+    # 把语气指令加到文本开头
     if text:
         return f"{tone_instruction}\n\n---ORIGINAL INSTRUCTIONS---\n\n{text}"
     else:
@@ -83,18 +83,18 @@ def apply_tone_modification(text: str, tone_style: ToneStyle) -> str:
 
 def load_randomized_wiki(env: str) -> str:
     """
-    Load pre-generated randomized wiki for the specified environment
-    
-    Args:
-        env: Environment name ('airline' or 'retail')
-    
-    Returns:
-        Pre-randomized wiki text
+    加载指定环境预先生成的随机化 wiki
+
+    参数:
+        env: 环境名（'airline' 或 'retail'）
+
+    返回:
+        预先随机化好的 wiki 文本
     """
     import os
     from pathlib import Path
     
-    # Get the directory where this script is located
+    # 取本脚本所在目录
     script_dir = Path(__file__).parent
     
     if env == "airline":
@@ -113,49 +113,49 @@ def load_randomized_wiki(env: str) -> str:
 
 def remove_descriptions_recursive(obj: Any) -> Any:
     """
-    Recursively remove all description fields from a nested object
-    
-    Args:
-        obj: The object to process
-    
-    Returns:
-        Object with all descriptions removed
+    递归移除嵌套对象中的所有 description 字段
+
+    参数:
+        obj: 待处理对象
+
+    返回:
+        移除全部 description 后的对象
     """
     if isinstance(obj, dict):
         result = {}
         for key, value in obj.items():
             if key == "description":
-                # Remove description by setting to empty string
+                # 把 description 置为空字符串以达到移除效果
                 result[key] = ""
             else:
-                # Recursively process nested structures
+                # 递归处理嵌套结构
                 result[key] = remove_descriptions_recursive(value)
         return result
     elif isinstance(obj, list):
-        # Process each item in the list
+        # 逐项处理列表
         return [remove_descriptions_recursive(item) for item in obj]
     else:
-        # Return primitive values as-is
+        # 原始值原样返回
         return obj
 
 
 def remove_tool_descriptions(tools_info: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    Remove descriptions from tools and their parameters (including nested structures)
-    
-    Args:
-        tools_info: Original tools information
-    
-    Returns:
-        Tools information with all descriptions removed
+    移除工具及其参数（含嵌套结构）的描述
+
+    参数:
+        tools_info: 原始工具信息
+
+    返回:
+        移除全部描述后的工具信息
     """
     modified_tools = []
-    
+
     for tool in tools_info:
-        # Deep copy to avoid modifying original
+        # 深拷贝，避免改动原始对象
         modified_tool = copy.deepcopy(tool)
-        
-        # Recursively remove all descriptions
+
+        # 递归移除所有 description
         modified_tool = remove_descriptions_recursive(modified_tool)
         
         modified_tools.append(modified_tool)

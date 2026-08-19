@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
-Test the code_interpreter tool with the agent
+测试 Agent 的 code_interpreter 工具
 """
 
 import os
 from agent import ContextAwareAgent, ContextMode
 
 def test_code_interpreter():
-    """Test code interpreter integration"""
-    
+    """测试 code interpreter 集成"""
+
     print("\n" + "="*60)
     print("🧪 CODE INTERPRETER TEST")
     print("="*60)
-    
-    # Check API key
+
+    # 检查 API Key
     api_key = os.getenv("SILICONFLOW_API_KEY")
     if not api_key:
         print("⚠️ No API key set, using mock test")
-        # Test just the tool directly
+        # 只直接测试工具本身
         from agent import ToolRegistry
         tools = ToolRegistry()
         
@@ -65,7 +65,7 @@ result = {
         
         return
     
-    # Test with full agent
+    # 用完整 Agent 测试
     agent = ContextAwareAgent(api_key, ContextMode.FULL)
     
     task = """
@@ -95,7 +95,7 @@ result = {
     print(f"\nSuccess: {result.get('success', False)}")
     print(f"Tool calls made: {len(result['trajectory'].tool_calls)}")
     
-    # Check if code_interpreter was used
+    # 检查是否用到了 code_interpreter
     code_interpreter_used = any(
         tc.tool_name == 'code_interpreter' 
         for tc in result['trajectory'].tool_calls
@@ -103,7 +103,7 @@ result = {
     
     if code_interpreter_used:
         print("✅ Code interpreter was used!")
-        # Show the code that was executed
+        # 展示实际执行的代码
         for tc in result['trajectory'].tool_calls:
             if tc.tool_name == 'code_interpreter':
                 print("\nExecuted code:")

@@ -1,20 +1,20 @@
 """
-Configuration for vLLM Tool Calling Demo
+vLLM 工具调用演示的配置
 """
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables
+# 加载环境变量
 load_dotenv()
 
-# Model Configuration
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen3-0.6B")  # Can use ModelScope path or HuggingFace
-MODEL_PATH = os.getenv("MODEL_PATH", None)  # Optional: local model path
+# 模型配置
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen3-0.6B")  # 可填 ModelScope 路径或 HuggingFace
+MODEL_PATH = os.getenv("MODEL_PATH", None)  # 可选：本地模型路径
 VLLM_PORT = int(os.getenv("VLLM_PORT", 8000))
 VLLM_HOST = os.getenv("VLLM_HOST", "localhost")
 
-# vLLM Server Configuration
+# vLLM 服务端配置
 VLLM_SERVER_CONFIG = {
     "model": MODEL_NAME,
     "port": VLLM_PORT,
@@ -24,18 +24,18 @@ VLLM_SERVER_CONFIG = {
     "max_model_len": 8192,
     "gpu_memory_utilization": 0.9,
     "dtype": "auto",
-    "enforce_eager": False,  # Set to True if you encounter issues
+    "enforce_eager": False,  # 遇到问题时可改为 True
 }
 
-# OpenAI Client Configuration (for connecting to vLLM)
+# OpenAI 客户端配置（用于连接 vLLM）
 OPENAI_API_BASE = f"http://{VLLM_HOST}:{VLLM_PORT}/v1"
-OPENAI_API_KEY = "EMPTY"  # vLLM doesn't require a real key
+OPENAI_API_KEY = "EMPTY"  # vLLM 不需要真实 key
 
-# Tool Configuration
+# 工具配置
 ENABLE_WEATHER_TOOL = True
 ENABLE_CALCULATOR_TOOL = True
 ENABLE_SEARCH_TOOL = True
 
-# Logging
+# 日志
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = Path("logs") / "vllm_tool_demo.log"

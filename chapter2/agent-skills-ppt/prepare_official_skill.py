@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch and verify the pinned official Anthropic PPTX Skill (no reimplementation)."""
+"""拉取并校验固定版本（pinned）的 Anthropic 官方 PPTX Skill（不做重新实现）。"""
 
 from __future__ import annotations
 

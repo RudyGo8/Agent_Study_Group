@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test script to demonstrate TTFT tracking across iterations
-Shows how cache usage improves response times
+演示跨迭代 TTFT 追踪的测试脚本
+展示缓存如何改善响应时间
 """
 
 import os
@@ -13,9 +13,9 @@ add_project_root()
 from agent import KVCacheAgent, KVCacheMode
 
 def test_ttft_tracking():
-    """Test and display TTFT tracking across iterations"""
+    """测试并展示各次迭代的 TTFT 追踪"""
     
-    # Get API key
+    # 获取 API key
     api_key = os.getenv("MOONSHOT_API_KEY")
     if not api_key:
         print("❌ Please set MOONSHOT_API_KEY environment variable")
@@ -24,7 +24,7 @@ def test_ttft_tracking():
     print("📊 TTFT Tracking Demonstration")
     print("="*60)
     
-    # Task that requires multiple iterations
+    # 需要多轮迭代的任务
     task = """Analyze the chapter1/context directory:
     1. Find all Python files
     2. Read the agent.py file (first 100 lines)
@@ -34,7 +34,7 @@ def test_ttft_tracking():
     print(f"Task: {task[:100]}...")
     print("="*60)
     
-    # Test with correct implementation (should show cache benefits)
+    # 用正确实现测试（应体现缓存收益）
     print("\n✅ CORRECT Implementation (with KV cache):")
     print("-"*40)
     
@@ -42,23 +42,23 @@ def test_ttft_tracking():
         api_key=api_key,
         mode=KVCacheMode.CORRECT,
         root_dir="../..",
-        verbose=False  # Set to True to see detailed logs
+        verbose=False  # 设为 True 可查看详细日志
     )
     
     result = agent.execute_task(task, max_iterations=10)
     metrics = result["metrics"]
     
-    # Display TTFT progression
+    # 展示 TTFT 变化
     print(f"Iterations completed: {result['iterations']}")
     print(f"Tool calls made: {len(result['tool_calls'])}")
     print(f"\nTTFT per iteration:")
     
     for i, ttft in enumerate(metrics.ttft_per_iteration, 1):
-        bar_length = int(ttft * 10)  # Visual bar representation
+        bar_length = int(ttft * 10)  # 可视化条形
         bar = "█" * min(bar_length, 50)
         print(f"  Iter {i:2d}: {ttft:6.3f}s {bar}")
     
-    # Calculate statistics
+    # 计算统计值
     if len(metrics.ttft_per_iteration) > 1:
         first = metrics.ttft_per_iteration[0]
         last = metrics.ttft_per_iteration[-1]
@@ -73,7 +73,7 @@ def test_ttft_tracking():
         print(f"  • Speed improvement:  {(first - last) / first * 100:.1f}%")
         print(f"  • Cached tokens:      {metrics.cached_tokens:,}")
     
-    # Compare with dynamic system prompt (no cache benefits)
+    # 与动态系统提示词对比（无缓存收益）
     print("\n" + "="*60)
     print("❌ DYNAMIC SYSTEM Implementation (breaks KV cache):")
     print("-"*40)
@@ -109,7 +109,7 @@ def test_ttft_tracking():
         print(f"  • Speed improvement:  {(first2 - last2) / first2 * 100:.1f}% (minimal)")
         print(f"  • Cached tokens:      {metrics2.cached_tokens:,} (should be 0)")
     
-    # Comparison
+    # 对比
     print("\n" + "="*60)
     print("🔬 COMPARISON:")
     print("-"*40)

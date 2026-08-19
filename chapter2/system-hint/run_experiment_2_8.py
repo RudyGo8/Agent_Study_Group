@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the frozen, real Kimi K3 campaign for Chapter 2 Experiment 2-9."""
+"""运行第 2 章实验 2-9 冻结的真实 Kimi K3 实验批次（campaign）。"""
 
 from __future__ import annotations
 
@@ -771,10 +771,9 @@ def summarize(protocol: dict, protocol_hash: str, run_dir: Path, rows: list[dict
         if "todo_list" in features:
             checks.append("TODO LIST:" in raw_requests and "rewrite_todo_list" in raw_requests)
         if "detailed_errors" in features:
-            # The detailed exception is emitted by the audited tool, so it is
-            # evidence in the tool-event/result channel rather than in the
-            # request that preceded the failure.  Requiring it in the request
-            # incorrectly rejected real runs whose tool protocol was valid.
+            # 详细异常由受审计的工具发出，因此证据在工具事件/结果
+            # 通道里，而不在失败之前的那次请求中。若要求它出现在请求里，
+            # 会误拒工具协议合法的真实运行。
             raw_trace = raw_requests + raw_events
             error_was_triggered = any(
                 event.get("name") == "read_document" and not event.get("ok")

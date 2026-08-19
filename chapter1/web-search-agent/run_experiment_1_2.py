@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run Experiment 1-2 through Kimi K3's official Formula web-search tool."""
+"""通过 Kimi K3 官方 Formula 搜索工具运行实验 1-2。"""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def response_ids(turns: List[Dict[str, Any]]) -> List[str]:
 
 
 def fiber_ids(turns: List[Dict[str, Any]]) -> List[str]:
-    """Return only real, succeeded Formula Fiber receipts."""
+    """只返回真实且成功的 Formula Fiber 回执。"""
     return [
         turn.get("response", {}).get("id")
         for turn in turns
@@ -186,8 +186,8 @@ def run_once(model: str, timeout: float) -> Dict[str, Any]:
     key = os.getenv("MOONSHOT_API_KEY") or os.getenv("KIMI_API_KEY")
     if not key:
         raise RuntimeError("MOONSHOT_API_KEY or KIMI_API_KEY is required")
-    # The SDK retries transport failures; experiment-level retries below are
-    # reserved for Moonshot's explicit transient engine-overload response.
+    # SDK 会自行重试传输层失败；下面的实验级重试只针对 Moonshot
+    # 明确返回的瞬时引擎过载响应。
     os.environ["SEARCH_TIMEOUT"] = str(timeout)
     agent = WebSearchAgent(api_key=key, model=model, verbose=True)
     answer = agent.search_and_answer(QUESTION, max_iterations=8)
@@ -231,10 +231,9 @@ def main() -> int:
         if attempt == args.attempts:
             run = candidate
             break
-        # Kimi K3 can occasionally stop after a tool round, and Formula Fibers
-        # can transiently overload.  Both
-        # are honest failed attempts; retry the whole independent run and keep
-        # every failed API trace in the final evidence.
+        # Kimi K3 偶尔会在一轮工具调用后提前停止，Formula Fiber 也可能
+        # 瞬时过载。这两类都算如实记录的失败尝试：重试整个独立运行，
+        # 并把每次失败的 API 轨迹都保留在最终证据中。
         time.sleep(2**attempt)
     assert run is not None
 

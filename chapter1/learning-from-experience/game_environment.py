@@ -1,6 +1,6 @@
 """
-Text-based treasure hunt game with hidden mechanics.
-Inspired by Shunyu Yao's insights on reasoning and generalization in AI.
+带隐藏机制的文字寻宝游戏。
+灵感来自 Shunyu Yao 关于 AI 推理与泛化的观点。
 """
 
 import random
@@ -38,27 +38,26 @@ class Room:
 
 class TreasureHuntGame:
     """
-    A text-based game with hidden mechanics that agents must discover:
-    1. Certain colored keys open corresponding colored doors
-    2. Guards block access to treasures and require specific weapons
-    3. Some items combine to create new items (hidden crafting)
-    4. Potions provide temporary abilities
+    一个带隐藏机制的文字游戏，智能体必须自行发现这些机制：
+    1. 特定颜色的钥匙打开对应颜色的门
+    2. 守卫挡住通往宝藏的路，需要特定武器才能击败
+    3. 某些物品可以组合成新物品（隐藏的合成机制）
+    4. 药水提供临时能力
     """
-    
+
     def __init__(self, seed: int = None, stochastic: bool = False):
         """
-        Initialize the game environment.
-        
+        初始化游戏环境。
+
         Args:
-            seed: Random seed for reproducibility
-            stochastic: If True, adds random elements to the game
+            seed: 随机种子，用于复现
+            stochastic: 若为 True，则向游戏加入随机要素
         """
-        # NOTE: do not call random.seed() here. reset() re-runs __init__ once per
-        # episode with a fresh 14-bit seed, and the learning agents draw their
-        # exploration from the *global* random module -- reseeding it would pin
-        # that stream to one of only 10001 states per episode and make whole
-        # episodes repeat verbatim. The env's own randomness is self-contained
-        # in self.random_state below, which is still seeded from `seed`.
+        # NOTE: 不要在这里调用 random.seed()。reset() 每局都会用一个全新的
+        # 14 位种子重新执行 __init__，而学习型智能体的探索动作取自
+        # *全局* random 模块——在这里重置种子会把该随机流每局钉死在
+        # 仅有的 10001 个状态之一上，导致整局过程逐字重复。环境自身的
+        # 随机性独立封装在下面的 self.random_state 里，它仍由 `seed` 播种。
         self.stochastic = stochastic
         self.random_state = random.Random(seed) if stochastic else None
         
@@ -67,12 +66,12 @@ class TreasureHuntGame:
         self.inventory = []
         self.score = 0
         self.moves = 0
-        self.max_moves = 50  # Reduced for faster episodes
+        self.max_moves = 50  # 已调低以加快每局节奏
         self.game_over = False
         self.victory = False
         self.active_effects = {}
-        
-        # Hidden mechanics (not revealed to agents initially)
+
+        # 隐藏机制（初始不向智能体透露）
         self.color_key_mapping = {
             "red key": "red door",
             "blue key": "blue door",
@@ -91,9 +90,9 @@ class TreasureHuntGame:
         self._initialize_world()
     
     def _initialize_world(self):
-        """Create the game world with rooms and items - simplified for better learning."""
-        
-        # Create a simpler world that's easier to learn but still demonstrates the concepts
+        """创建包含房间与物品的游戏世界——已简化以便于学习。"""
+
+        # 构建一个更易学习、但仍能演示相关概念的简化世界
         self.rooms["entrance"] = Room(
             name="entrance",
             description="You stand in a dimly lit entrance hall. Stone walls echo your footsteps.",
@@ -141,7 +140,7 @@ class TreasureHuntGame:
         self.current_room = self.rooms["entrance"]
     
     def get_state_description(self) -> str:
-        """Get a natural language description of the current game state."""
+        """返回当前游戏状态的自然语言描述。"""
         desc = []
         desc.append(f"\n=== Room: {self.current_room.name.replace('_', ' ').title()} ===")
         desc.append(self.current_room.description)
@@ -170,14 +169,14 @@ class TreasureHuntGame:
         return "\n".join(desc)
     
     def get_available_actions(self) -> List[str]:
-        """Get list of available actions in current state."""
+        """返回当前状态下可用的动作列表。"""
         actions = []
-        
-        # Movement actions
+
+        # 移动动作
         for direction in self.current_room.exits.keys():
             actions.append(f"go {direction}")
-        
-        # Item actions
+
+        # 物品动作
         for item in self.current_room.items:
             actions.append(f"take {item.name}")
         
@@ -185,17 +184,17 @@ class TreasureHuntGame:
             actions.append(f"use {item.name}")
             actions.append(f"drop {item.name}")
         
-        # Combat actions
+        # 战斗动作
         if self.current_room.has_guard and not self.current_room.guard_defeated:
             for item in self.inventory:
                 if item.item_type == ItemType.WEAPON:
                     actions.append(f"attack with {item.name}")
-        
-        # Special actions
+
+        # 特殊动作
         actions.append("look around")
         actions.append("check inventory")
-        
-        # Crafting (if player has discovered it)
+
+        # 合成（玩家发现该机制后可尝试）
         if len(self.inventory) >= 2:
             actions.append("try crafting")
         
@@ -203,34 +202,34 @@ class TreasureHuntGame:
     
     def execute_action(self, action: str) -> Tuple[str, float, bool]:
         """
-        Execute an action and return (feedback, reward, done).
+        执行一个动作，返回 (feedback, reward, done)。
         """
         if self.game_over:
             return "Game is already over.", 0, True
-        
+
         self.moves += 1
         action = action.lower().strip()
-        # The Nth move must still execute, so the limit is enforced after
-        # the action is dispatched (and also on the fumble early-return,
-        # which previously bypassed it and let episodes run past the cap).
+        # 第 N 步仍须执行，因此步数上限在动作分发之后再强制检查
+        # （失误提前返回的分支同样要检查——此前该分支绕过了上限，
+        # 一局可以超出步数封顶继续进行）。
         out_of_moves = self.moves >= self.max_moves
 
-        # Base reward with stochastic variation
+        # 基础奖励，随机模式下带扰动
         if self.stochastic:
-            # Add small random variation to rewards
+            # 给奖励加小幅随机扰动
             reward = -0.5 + self.random_state.uniform(-0.1, 0.1)
 
-            # Small chance of action failure in stochastic mode
-            if self.random_state.random() < 0.03:  # 3% chance
+            # 随机模式下动作有小概率失误
+            if self.random_state.random() < 0.03:  # 3% 概率
                 if out_of_moves:
                     self.game_over = True
                     return ("You fumble — and you've run out of moves! Game over.",
                             reward - 10, True)
                 return "You fumble and need to try again.", reward - 0.2, False
         else:
-            reward = -0.5  # Negative reward for each move to encourage efficiency
+            reward = -0.5  # 每步给负奖励，鼓励高效行动
 
-        # Parse action
+        # 解析动作
         if action.startswith("go "):
             direction = action[3:]
             result, move_reward = self._move(direction)
@@ -273,15 +272,14 @@ class TreasureHuntGame:
             result = f"Unknown action: {action}"
             reward -= 1
         
-        # Check victory condition
+        # 检查胜利条件
         if self._check_victory():
             self.victory = True
             self.game_over = True
             reward += 100
             result += "\n\n🎉 VICTORY! You've collected the dragon's treasure!"
 
-        # Enforce the move limit after the action executed: a winning move
-        # on the last allowed step still counts as a victory.
+        # 动作执行完毕后再强制步数上限：在最后一步打出制胜动作仍算胜利。
         if not self.game_over and out_of_moves:
             self.game_over = True
             reward -= 10
@@ -290,49 +288,49 @@ class TreasureHuntGame:
         return result, reward, self.game_over
     
     def _move(self, direction: str) -> Tuple[str, float]:
-        """Move to another room."""
+        """移动到另一个房间。"""
         if direction not in self.current_room.exits:
             return f"You can't go {direction} from here.", -1
-        
-        # Check if locked
+
+        # 检查是否上锁
         if direction in self.current_room.locked_exits:
             required_key = self.current_room.locked_exits[direction]
             if not any(item.name == required_key for item in self.inventory):
                 return f"The {direction} exit is locked. You need a {required_key}.", -0.5
             else:
-                # Unlock and move
+                # 解锁并移动
                 del self.current_room.locked_exits[direction]
                 room_name = self.current_room.exits[direction]
                 self.current_room = self.rooms[room_name]
                 return f"You unlock the door with the {required_key} and move {direction}.", 5
-        
-        # Check for guard
+
+        # 检查守卫
         if self.current_room.has_guard and not self.current_room.guard_defeated:
             return "A guard blocks your way! You must defeat them first.", -1
-        
-        # Move to new room
+
+        # 移动到新房间
         room_name = self.current_room.exits[direction]
         self.current_room = self.rooms[room_name]
         return f"You move {direction} to the {self.current_room.name}.", 1
     
     def _take_item(self, item_name: str) -> Tuple[str, float]:
-        """Pick up an item."""
+        """拾取物品。"""
         for item in self.current_room.items:
             if item.name.lower() == item_name.lower():
                 self.current_room.items.remove(item)
                 self.inventory.append(item)
-                
-                # Reward based on item type
+
+                # 按物品类型给奖励
                 if item.item_type == ItemType.TREASURE:
-                    reward = 100  # Big reward for getting the treasure!
+                    reward = 100  # 拿到宝藏给大奖励！
                 elif item.item_type == ItemType.KEY:
                     reward = 5
                 elif item.item_type == ItemType.WEAPON:
                     reward = 3
                 else:
                     reward = 2
-                
-                # Add stochastic variation
+
+                # 加随机扰动
                 if self.stochastic:
                     reward += self.random_state.uniform(-0.5, 0.5)
                     
@@ -345,7 +343,7 @@ class TreasureHuntGame:
         return f"There's no {item_name} here.", penalty
     
     def _drop_item(self, item_name: str) -> str:
-        """Drop an item."""
+        """丢弃物品。"""
         for item in self.inventory:
             if item.name.lower() == item_name.lower():
                 self.inventory.remove(item)
@@ -355,7 +353,7 @@ class TreasureHuntGame:
         return f"You don't have a {item_name}."
     
     def _use_item(self, item_name: str) -> Tuple[str, float]:
-        """Use an item."""
+        """使用物品。"""
         for item in self.inventory:
             if item.name.lower() == item_name.lower():
                 if item.item_type == ItemType.POTION:
@@ -367,7 +365,7 @@ class TreasureHuntGame:
                         return "You feel a surge of power! Your attacks will be stronger.", 5
                     
                 elif item.item_type == ItemType.KEY:
-                    # Keys are used automatically when moving
+                    # 钥匙在移动时自动使用
                     return f"The {item.name} will be used automatically when needed.", 0
                     
                 else:
@@ -376,7 +374,7 @@ class TreasureHuntGame:
         return f"You don't have a {item_name}.", -0.5
     
     def _attack(self, weapon_name: str) -> Tuple[str, float]:
-        """Attack with a weapon."""
+        """用武器攻击。"""
         if not self.current_room.has_guard or self.current_room.guard_defeated:
             return "There's nothing to attack here.", -1
         
@@ -392,22 +390,22 @@ class TreasureHuntGame:
         if weapon.item_type != ItemType.WEAPON:
             return f"The {weapon_name} is not a weapon!", -1
         
-        # Check weapon effectiveness (hidden mechanic)
-        # In our simplified game, the guard in guard_room is a "strong guard"
+        # 检查武器克制关系（隐藏机制）
+        # 在简化版游戏里，guard_room 中的守卫是 "strong guard"
         guard_type = "strong guard"
-        
+
         if weapon.name in self.weapon_effectiveness:
             if guard_type in self.weapon_effectiveness[weapon.name]:
-                # In stochastic mode, add combat variations
+                # 随机模式下加入战斗变化
                 if self.stochastic:
                     roll = self.random_state.random()
-                    if roll < 0.1:  # 10% critical hit
+                    if roll < 0.1:  # 10% 概率暴击
                         self.current_room.guard_defeated = True
                         return f"Critical hit! You defeat the {guard_type} with your {weapon.name}!", 30
-                    elif roll < 0.95:  # 85% normal success
+                    elif roll < 0.95:  # 85% 概率普通命中
                         self.current_room.guard_defeated = True
                         return f"You defeat the {guard_type} with your {weapon.name}!", 20
-                    else:  # 5% glancing blow
+                    else:  # 5% 概率攻击擦过
                         return f"Your attack glances off! The {guard_type} is still standing.", -0.5
                 else:
                     self.current_room.guard_defeated = True
@@ -421,19 +419,19 @@ class TreasureHuntGame:
         return f"Your {weapon.name} doesn't seem to work.", -1
     
     def _try_crafting(self) -> Tuple[str, float]:
-        """Try to craft items (hidden mechanic)."""
+        """尝试合成物品（隐藏机制）。"""
         if len(self.inventory) < 2:
             return "You need at least two items to craft.", -0.5
-        
-        # Check all possible combinations
+
+        # 检查所有可能的组合
         inventory_names = [item.name for item in self.inventory]
-        
+
         for recipe, result in self.crafting_recipes.items():
             if recipe.issubset(set(inventory_names)):
-                # In stochastic mode, crafting might have variations
+                # 随机模式下合成可能有变化
                 if self.stochastic:
-                    if self.random_state.random() < 0.9:  # 90% success rate
-                        # Craft the item
+                    if self.random_state.random() < 0.9:  # 90% 成功率
+                        # 合成物品
                         for ingredient in recipe:
                             for item in self.inventory[:]:
                                 if item.name == ingredient:
@@ -445,10 +443,10 @@ class TreasureHuntGame:
                         reward = 10 + self.random_state.uniform(-1, 2)
                         return f"You successfully craft a {result}!", reward
                     else:
-                        # 10% chance of crafting mishap (items not consumed)
+                        # 10% 概率合成失手（材料不消耗）
                         return "The crafting attempt fizzles. Try again!", -0.2
                 else:
-                    # Deterministic crafting
+                    # 确定性合成
                     for ingredient in recipe:
                         for item in self.inventory[:]:
                             if item.name == ingredient:
@@ -457,7 +455,7 @@ class TreasureHuntGame:
                     
                     new_item = self._create_item(result)
                     self.inventory.append(new_item)
-                    return f"You successfully craft a {result}!", 10  # Good reward for discovering crafting
+                    return f"You successfully craft a {result}!", 10  # 发现合成机制给不错的奖励
         
         penalty = -0.5
         if self.stochastic:
@@ -466,7 +464,7 @@ class TreasureHuntGame:
         return "These items don't combine into anything useful.", penalty
     
     def _create_item(self, item_name: str) -> Item:
-        """Create an item by name."""
+        """按名称创建物品。"""
         if item_name == "silver sword":
             return Item("silver sword", ItemType.WEAPON, "A gleaming silver blade")
         elif item_name == "magic staff":
@@ -475,21 +473,21 @@ class TreasureHuntGame:
             return Item(item_name, ItemType.TOOL, "A crafted item")
     
     def _check_victory(self) -> bool:
-        """Check if the player has won."""
+        """检查玩家是否获胜。"""
         for item in self.inventory:
             if item.name == "dragon's treasure":
                 return True
         return False
     
     def reset(self, seed: int = None) -> str:
-        """Reset the game to initial state."""
+        """将游戏重置到初始状态。"""
         if seed is None:
             seed = random.randint(0, 10000)
         self.__init__(seed=seed, stochastic=self.stochastic)
         return self.get_state_description()
     
     def get_hidden_rules(self) -> str:
-        """Return the hidden game rules (for debugging/analysis)."""
+        """返回隐藏的游戏规则（供调试/分析用）。"""
         rules = []
         rules.append("Hidden Game Mechanics (Simplified Version):")
         rules.append("\n1. To win the game:")

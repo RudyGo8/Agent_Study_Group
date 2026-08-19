@@ -1,4 +1,4 @@
-"""Unit tests for ReAct formatting, tools, and the agent loop."""
+"""ReAct 格式化、工具与 Agent 循环的单元测试。"""
 
 from unittest.mock import Mock
 
@@ -20,7 +20,7 @@ class FakeResponse:
 
 
 def build_agent(*choices):
-    """Create an Agent without constructing a real OpenAI client."""
+    """创建一个不构造真实 OpenAI 客户端的 Agent。"""
     instance = WebSearchAgent.__new__(WebSearchAgent)
     instance.verbose = False
     instance.using_openrouter = False
@@ -233,8 +233,8 @@ def test_agent_loop_returns_a_readable_error():
 
 
 def test_agent_loop_marks_truncated_empty_answer(make_choice):
-    """finish_reason=length with empty content must not masquerade as
-    the misleading 'couldn't get enough info' response."""
+    """finish_reason=length 且 content 为空时，不能伪装成
+    具有误导性的“无法获取足够信息”响应。"""
     instance = build_agent(make_choice(finish_reason="length", content=""))
 
     answer = instance.search_and_answer("question")
@@ -245,8 +245,8 @@ def test_agent_loop_marks_truncated_empty_answer(make_choice):
 
 
 def test_agent_loop_marks_truncated_partial_answer(make_choice):
-    """A partial answer cut off by max_tokens is returned WITH a truncation
-    marker, never presented as a complete answer."""
+    """被 max_tokens 截断的部分答案必须带截断标记返回，
+    绝不当作完整答案呈现。"""
     instance = build_agent(
         make_choice(finish_reason="length", content="部分答案，被截")
     )
@@ -255,21 +255,21 @@ def test_agent_loop_marks_truncated_partial_answer(make_choice):
 
     assert answer.startswith("部分答案，被截")
     assert "截断" in answer
-    # conversation_history retains the truncation marker (stores final, not the
-    # bare partial), so get_conversation_history() doesn't lose the semantics.
+    # conversation_history 保留了截断标记（存的是 final 而非裸的部分答案），
+    # 这样 get_conversation_history() 就不会丢失截断语义。
     assert instance.conversation_history[-1]["role"] == "assistant"
     assert "截断" in instance.conversation_history[-1]["content"]
 
 
 def test_agent_loop_survives_malformed_tool_arguments_json(make_choice):
-    """Slightly invalid tool JSON must not abort the ReAct loop."""
+    """轻微非法的工具 JSON 不能让 ReAct 循环中断。"""
     from types import SimpleNamespace
 
     bad_call = SimpleNamespace(
         id="call-bad",
         function=SimpleNamespace(
             name="web_search",
-            arguments='{"query": "moonshot",}',  # trailing comma
+            arguments='{"query": "moonshot",}',  # 尾部逗号
         ),
     )
     tool_choice = make_choice(finish_reason="tool_calls", tool_calls=[bad_call])

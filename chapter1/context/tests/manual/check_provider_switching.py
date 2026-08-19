@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify provider switching functionality
+验证提供商切换功能的测试脚本
 """
 
 import os
@@ -13,17 +13,17 @@ from dotenv import load_dotenv
 from agent import ContextAwareAgent, ContextMode
 from config import Config
 
-# Load environment variables
+# 加载环境变量
 load_dotenv()
 
 def test_provider_switching():
-    """Test switching between different providers"""
+    """测试在不同提供商之间切换"""
     print("🧪 Testing Provider Switching")
     print("=" * 50)
     
     providers_to_test = []
     
-    # Check which providers have API keys configured
+    # 检查哪些提供商配置了 API Key
     if os.getenv("DASHSCOPE_API_KEY"):
         providers_to_test.append(("dashscope", os.getenv("DASHSCOPE_API_KEY")))
         print("✅ Alibaba Cloud Model Studio API key found")
@@ -66,12 +66,12 @@ def test_provider_switching():
     print(f"\nTesting {len(providers_to_test)} provider(s)...")
     print("-" * 50)
     
-    # Test each available provider
+    # 逐个测试可用的提供商
     for provider_name, api_key in providers_to_test:
         print(f"\n📌 Testing {provider_name.upper()}")
-        
+
         try:
-            # Create agent with provider
+            # 用该提供商创建 Agent
             agent = ContextAwareAgent(
                 api_key=api_key,
                 provider=provider_name,
@@ -79,7 +79,7 @@ def test_provider_switching():
                 verbose=False
             )
             
-            # Get default model from config
+            # 从配置获取默认模型
             default_model = Config.get_default_model(provider_name)
             
             print(f"  Provider: {agent.provider}")
@@ -87,7 +87,7 @@ def test_provider_switching():
             print(f"  Expected: {default_model}")
             print(f"  Base URL: {agent.client.base_url}")
             
-            # Test with a simple query
+            # 用简单查询测试
             query = "What is 5 + 3?"
             print(f"  Testing query: {query}")
             
@@ -105,7 +105,7 @@ def test_provider_switching():
     print("\n" + "=" * 50)
     print("Provider switching test complete!")
     
-    # Show summary
+    # 展示汇总
     print("\n📊 Summary:")
     print(f"  Providers tested: {len(providers_to_test)}")
     print("  Available providers include: dashscope (qwen/bailian), siliconflow, doubao, kimi, moonshot, deepseek")

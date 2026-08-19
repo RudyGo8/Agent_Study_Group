@@ -1,4 +1,4 @@
-"""Focused tests for fragmented structured tool calls in VLLMToolAgent.chat_stream."""
+"""针对 VLLMToolAgent.chat_stream 中分片结构化工具调用的专项测试。"""
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock

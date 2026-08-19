@@ -1,5 +1,5 @@
 """
-Web tools for searching and fetching web pages
+用于网页搜索与抓取的网络工具
 """
 
 import json
@@ -14,47 +14,47 @@ from urllib.parse import urlparse, urljoin
 import time
 from config import Config
 
-# Configure logging
+# 配置日志
 logging.basicConfig(level=logging.INFO, format=Config.LOG_FORMAT)
 logger = logging.getLogger(__name__)
 
 
 class WebTools:
-    """Tools for web search and page fetching"""
+    """网页搜索与页面抓取工具"""
     
     def __init__(self):
-        """Initialize web tools"""
+        """初始化网络工具"""
         self.serper_api_key = Config.SERPER_API_KEY
         self.html_converter = html2text.HTML2Text()
         self.html_converter.ignore_links = False
         self.html_converter.ignore_images = True
         self.html_converter.ignore_emphasis = False
-        self.html_converter.body_width = 0  # Don't wrap lines
+        self.html_converter.body_width = 0  # 不自动换行
         self.html_converter.single_line_break = True
         
-        # Cache for fetched pages to avoid redundant fetches
+        # 已抓取页面的缓存，避免重复抓取
         self.page_cache = {}
     
     def search_web(self, query: str, num_results: int = 5) -> Dict[str, Any]:
         """
-        Search the web using Serper API
-        
-        Args:
-            query: Search query
-            num_results: Number of results to return
-            
-        Returns:
-            Dictionary containing search results with crawled content
+        使用 Serper API 搜索网页
+
+        参数:
+            query: 搜索查询
+            num_results: 返回的结果数量
+
+        返回:
+            包含搜索结果（含抓取正文）的字典
         """
         try:
             if not self.serper_api_key:
-                # Fallback to mock results for demo
+                # 演示时回退到模拟结果
                 logger.warning("No Serper API key, using mock results")
                 return self._get_mock_search_results(query)
             
             logger.info(f"Searching web for: {query}")
             
-            # Call Serper API
+            # 调用 Serper API
             headers = {
                 'X-API-KEY': self.serper_api_key,
                 'Content-Type': 'application/json'
@@ -78,12 +78,12 @@ class WebTools:
             
             data = response.json()
             
-            # Process organic results
+            # 处理自然搜索结果
             results = []
             organic_results = data.get('organic', [])[:num_results]
             
             for result in organic_results:
-                # Fetch and convert each page
+                # 抓取并转换每个页面
                 url = result.get('link', '')
                 if url:
                     page_content = self.fetch_webpage(url)
@@ -97,7 +97,7 @@ class WebTools:
                         'fetch_success': page_content.get('success', False)
                     })
                     
-                    # Small delay to be respectful
+                    # 稍作延迟，礼貌起见
                     time.sleep(0.5)
             
             return {
@@ -113,23 +113,23 @@ class WebTools:
     
     def fetch_webpage(self, url: str) -> Dict[str, Any]:
         """
-        Fetch a webpage and convert HTML to text
-        
-        Args:
-            url: URL of the webpage to fetch
-            
-        Returns:
-            Dictionary containing the converted text content
+        抓取网页并把 HTML 转成文本
+
+        参数:
+            url: 待抓取网页的 URL
+
+        返回:
+            包含转换后文本内容的字典
         """
         try:
-            # Check cache first
+            # 先查缓存
             if url in self.page_cache:
                 logger.info(f"Using cached content for: {url}")
                 return self.page_cache[url]
             
             logger.info(f"Fetching webpage: {url}")
             
-            # Fetch the page
+            # 抓取页面
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
@@ -137,27 +137,27 @@ class WebTools:
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             
-            # Parse HTML
+            # 解析 HTML
             soup = BeautifulSoup(response.text, 'lxml')
             
-            # Remove script and style elements
+            # 移除 script、style 等元素
             for script in soup(["script", "style", "nav", "footer", "header"]):
                 script.decompose()
             
-            # Convert to text
+            # 转为文本
             text_content = self.html_converter.handle(str(soup))
             
-            # Clean up the text
+            # 清理文本
             lines = text_content.split('\n')
             cleaned_lines = []
             for line in lines:
                 line = line.strip()
-                if line and not line.startswith('#'):  # Remove empty lines and navigation markers
+                if line and not line.startswith('#'):  # 去掉空行和导航标记
                     cleaned_lines.append(line)
             
             cleaned_text = '\n'.join(cleaned_lines)
             
-            # Truncate if too long
+            # 过长时截断
             if len(cleaned_text) > Config.MAX_WEBPAGE_LENGTH:
                 cleaned_text = cleaned_text[:Config.MAX_WEBPAGE_LENGTH] + "\n\n[Content truncated...]"
             
@@ -177,7 +177,7 @@ class WebTools:
                 'timestamp': time.time()
             }
             
-            # Cache the result
+            # 缓存结果
             self.page_cache[url] = result
             
             return result
@@ -195,22 +195,22 @@ class WebTools:
                 'timestamp': time.time()
             }
             
-            # Cache even failed results to avoid retrying
+            # 失败的结果也缓存，避免反复重试
             self.page_cache[url] = error_result
             
             return error_result
     
     def _get_mock_search_results(self, query: str) -> Dict[str, Any]:
         """
-        Get mock search results for testing without API key
-        
-        Args:
-            query: Search query
-            
-        Returns:
-            Mock search results
+        无 API Key 时返回用于测试的模拟搜索结果
+
+        参数:
+            query: 搜索查询
+
+        返回:
+            模拟搜索结果
         """
-        # Mock results for OpenAI co-founders
+        # OpenAI 联合创始人的模拟结果
         mock_data = {
             "openai": [
                 {
@@ -261,7 +261,7 @@ Additional early members:
             ]
         }
         
-        # Find matching mock data
+        # 查找匹配的模拟数据
         query_lower = query.lower()
         for key in mock_data:
             if key in query_lower:
@@ -284,7 +284,7 @@ Additional early members:
                     'mock': True
                 }
         
-        # Default mock result
+        # 默认模拟结果
         return {
             'query': query,
             'num_results': 1,
@@ -301,6 +301,6 @@ Additional early members:
         }
     
     def clear_cache(self):
-        """Clear the page cache"""
+        """清空页面缓存"""
         self.page_cache.clear()
         logger.info("Page cache cleared")

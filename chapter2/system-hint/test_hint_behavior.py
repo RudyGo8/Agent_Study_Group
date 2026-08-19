@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Test script to demonstrate that system hints are added as user messages
-temporarily before sending to LLM, but not stored in conversation history.
+测试脚本，演示并验证：system hint 只在发送给 LLM 前临时作为
+user 消息附加，不会存入对话历史。
 """
 
 import os
@@ -9,13 +9,13 @@ import json
 from agent import SystemHintAgent, SystemHintConfig
 
 def test_hint_behavior():
-    """Test and demonstrate the system hint behavior"""
+    """测试并演示 system hint 的行为"""
     api_key = os.getenv("KIMI_API_KEY")
     if not api_key:
         print("❌ Please set KIMI_API_KEY environment variable")
         return
     
-    # Create agent with system hints enabled
+    # 创建启用 system hint 的 Agent
     config = SystemHintConfig(
         enable_timestamps=True,
         enable_system_state=True,
@@ -31,19 +31,19 @@ def test_hint_behavior():
         verbose=False
     )
     
-    # Execute a simple task
+    # 执行一个简单任务
     task = "Create a file called test.txt with content 'Testing hint behavior'"
     result = agent.execute_task(task, max_iterations=5)
     
     if result['success']:
         print("✅ Task completed successfully\n")
     
-    # Analyze the conversation history
+    # 分析对话历史
     print("=" * 60)
     print("CONVERSATION HISTORY ANALYSIS")
     print("=" * 60)
     
-    # Load the saved trajectory
+    # 加载已保存的轨迹
     with open("test_hint_trajectory.json", 'r') as f:
         trajectory = json.load(f)
     
@@ -56,7 +56,7 @@ def test_hint_behavior():
         role = msg['role']
         content = msg.get('content', '')
         
-        # Check if content contains system hints
+        # 检查内容是否包含 system hint
         has_system_state = 'SYSTEM STATE' in content
         has_todo_list = 'CURRENT TASKS' in content
         
@@ -70,12 +70,12 @@ def test_hint_behavior():
         if has_system_state or has_todo_list:
             print(f"   ⚠️ Contains system hints: System State={has_system_state}, TODO List={has_todo_list}")
     
-    # Summary
+    # 总结
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
     
-    # Check if any messages contain system hints
+    # 检查是否有消息包含 system hint
     hints_in_history = any(
         'SYSTEM STATE' in msg.get('content', '') or 
         'CURRENT TASKS' in msg.get('content', '')
@@ -89,7 +89,7 @@ def test_hint_behavior():
         print("   System hints are added as temporary user messages before LLM calls")
         print("   but are NOT stored in the conversation history.")
     
-    # Clean up test files
+    # 清理测试文件
     if os.path.exists("test.txt"):
         os.remove("test.txt")
     

@@ -1,6 +1,6 @@
 """
-Sample tools for demonstrating tool calling functionality with attention visualization
-Based on local_llm_serving/tools.py
+用于演示工具调用与注意力可视化的示例工具集
+基于 local_llm_serving/tools.py
 """
 import json
 import math
@@ -13,14 +13,14 @@ import requests
 
 
 class ToolRegistry:
-    """Registry for managing available tools"""
+    """管理可用工具的注册表"""
     
     def __init__(self):
         self.tools = {}
         self._register_default_tools()
     
     def _register_default_tools(self):
-        """Register default tools from local_llm_serving"""
+        """注册来自 local_llm_serving 的默认工具"""
         self.register_tool(
             name="get_current_temperature",
             function=self.get_current_temperature,
@@ -100,7 +100,7 @@ class ToolRegistry:
         )
 
     def register_tool(self, name: str, function: callable, description: str, parameters: Dict):
-        """Register a new tool"""
+        """注册新工具"""
         self.tools[name] = {
             "function": function,
             "description": description,
@@ -108,7 +108,7 @@ class ToolRegistry:
         }
     
     def get_tool_schemas(self) -> List[Dict]:
-        """Get OpenAI-compatible tool schemas"""
+        """获取 OpenAI 兼容的工具 schema"""
         schemas = []
         for name, tool in self.tools.items():
             schemas.append({
@@ -122,7 +122,7 @@ class ToolRegistry:
         return schemas
     
     def get_tools_prompt(self) -> str:
-        """Get formatted prompt describing available tools in Qwen3 format"""
+        """获取按 Qwen3 格式描述可用工具的提示词"""
         tools_json = json.dumps(self.get_tool_schemas(), indent=2)
         
         return f"""# Tools
@@ -144,7 +144,7 @@ When you need to use a tool, generate the appropriate tool call.
 After receiving tool results, use them to provide a comprehensive answer to the user."""
     
     def execute_tool(self, name: str, arguments: Dict[str, Any]) -> str:
-        """Execute a tool by name with given arguments"""
+        """按名称执行工具并传入参数"""
         if name not in self.tools:
             return json.dumps({"error": f"Tool '{name}' not found"})
         
@@ -154,15 +154,15 @@ After receiving tool results, use them to provide a comprehensive answer to the 
         except Exception as e:
             return json.dumps({"error": str(e)})
     
-    # Tool implementations from local_llm_serving
+    # 工具实现来自 local_llm_serving
     @staticmethod
     def get_current_temperature(location: str, unit: str = "celsius") -> Dict:
         """
-        Get current temperature using Open-Meteo free weather API
-        No API key required - https://open-meteo.com/
+        使用 Open-Meteo 免费天气 API 获取当前气温
+        无需 API key - https://open-meteo.com/
         """
         try:
-            # First, geocode the location to get coordinates
+            # 先对地点做地理编码，获取坐标
             geocoding_url = "https://geocoding-api.open-meteo.com/v1/search"
             geo_params = {
                 "name": location,
@@ -181,16 +181,16 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                     "timestamp": datetime.now().isoformat()
                 }
             
-            # Get coordinates from first result
+            # 从第一个结果取坐标
             result = geo_data["results"][0]
             latitude = result["latitude"]
             longitude = result["longitude"]
             location_name = f"{result.get('name', location)}, {result.get('country', '')}"
             
-            # Get current weather from Open-Meteo
+            # 从 Open-Meteo 获取当前天气
             weather_url = "https://api.open-meteo.com/v1/forecast"
             
-            # Determine temperature unit
+            # 确定温度单位
             temp_unit = "fahrenheit" if unit.lower() == "fahrenheit" else "celsius"
             
             weather_params = {
@@ -213,7 +213,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             
             current = weather_data["current"]
             
-            # Map weather codes to conditions
+            # 将天气代码映射为天气状况
             weather_codes = {
                 0: "clear sky",
                 1: "mainly clear", 2: "partly cloudy", 3: "overcast",
@@ -246,11 +246,11 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             }
             
         except requests.RequestException as e:
-            # Fallback to simulated data if API fails
+            # API 失败时回退到模拟数据
             import logging
             logging.warning(f"Open-Meteo API error: {e}. Using simulated data.")
             
-            # Simulated fallback
+            # 模拟兜底数据
             base_temp = 20 + random.uniform(-10, 10)
             
             if unit == "fahrenheit":
@@ -278,12 +278,12 @@ After receiving tool results, use them to provide a comprehensive answer to the 
     @staticmethod
     def get_current_time(timezone: str = "UTC") -> Dict:
         """
-        Get current date and time in specified timezone using zoneinfo (Python 3.9+)
+        使用 zoneinfo（Python 3.9+）获取指定时区的当前日期时间
         """
         from datetime import datetime
         from zoneinfo import ZoneInfo
         
-        # Common abbreviation mappings to IANA timezone names
+        # 常见缩写到 IANA 时区名的映射
         timezone_aliases = {
             "EST": "America/New_York",
             "EDT": "America/New_York",
@@ -305,7 +305,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             "HKT": "Asia/Hong_Kong",
         }
         
-        # Convert abbreviation to IANA name if needed
+        # 必要时把缩写转换为 IANA 名称
         tz_name = timezone_aliases.get(timezone.upper(), timezone)
         
         try:
@@ -322,7 +322,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                 "timestamp": current_time.isoformat()
             }
         except Exception as e:
-            # Fallback to UTC if timezone not found
+            # 找不到时区时回退到 UTC
             try:
                 tz_utc = ZoneInfo("UTC")
                 current_time = datetime.now(tz_utc)
@@ -347,13 +347,13 @@ After receiving tool results, use them to provide a comprehensive answer to the 
     @staticmethod
     def convert_currency(amount: float, from_currency: str, to_currency: str) -> Dict:
         """
-        Convert currency using live exchange rates (simulated)
+        按实时汇率换算货币（模拟）
         """
-        # Normalize currency codes
+        # 归一化货币代码
         from_currency = from_currency.upper().replace("S$", "SGD").replace("$", "USD")
         to_currency = to_currency.upper().replace("S$", "SGD").replace("$", "USD")
         
-        # Simulated exchange rates (in production, use real API)
+        # 模拟汇率（生产环境应使用真实 API）
         exchange_rates = {
             "USD": 1.0,
             "EUR": 0.92,
@@ -372,7 +372,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
         if from_currency not in exchange_rates or to_currency not in exchange_rates:
             return {"error": f"Unsupported currency: {from_currency} or {to_currency}"}
         
-        # Convert to USD first, then to target currency
+        # 先换成 USD，再换到目标货币
         usd_amount = amount / exchange_rates[from_currency]
         converted_amount = usd_amount * exchange_rates[to_currency]
         
@@ -388,42 +388,42 @@ After receiving tool results, use them to provide a comprehensive answer to the 
     @staticmethod
     def code_interpreter(code: str) -> Dict:
         """
-        Execute Python code directly without restrictions
+        直接执行 Python 代码，不加限制
         """
         try:
-            # Strip markdown code blocks and other formatting
+            # 去除 markdown 代码块及其他格式
             import re
             
-            # Remove ```python or ```py or ``` blocks
+            # 去除 ```python、```py 或 ``` 代码块
             code = re.sub(r'^```(?:python|py)?\s*\n', '', code.strip())
             code = re.sub(r'\n```\s*$', '', code)
             code = re.sub(r'^```\s*', '', code)
             code = re.sub(r'\s*```$', '', code)
             
-            # Also strip any leading/trailing whitespace
+            # 同时去掉首尾空白
             code = code.strip()
             
-            # Create namespace with full access
+            # 创建具有完整访问权的命名空间
             namespace = {}
             
-            # Capture output
+            # 捕获输出
             output_buffer = io.StringIO()
             
             with contextlib.redirect_stdout(output_buffer):
-                # Execute the code directly
+                # 直接执行代码
                 exec(code, namespace)
             
-            # Get output
+            # 获取输出
             printed_output = output_buffer.getvalue()
             
-            # Try to get result from common variable names
+            # 尝试从常见变量名取结果
             result = None
             for var_name in ['result', 'answer', 'output', 'value', 'total', 'sum', 'interest', 'A']:
                 if var_name in namespace:
                     result = namespace[var_name]
                     break
             
-            # Get all user-defined variables
+            # 获取全部用户定义的变量
             variables = {
                 k: str(v) for k, v in namespace.items()
                 if not k.startswith('__') and not callable(v)
@@ -441,7 +441,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
 
 
 def format_tool_response(tool_name: str, tool_result: str) -> Dict:
-    """Format tool response for the chat model"""
+    """为聊天模型格式化工具响应"""
     return {
         "role": "tool",
         "name": tool_name,

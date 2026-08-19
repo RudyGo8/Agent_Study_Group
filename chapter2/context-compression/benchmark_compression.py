@@ -1,9 +1,9 @@
 """
-Context Compression Benchmark Module.
+上下文压缩基准测试模块。
 
-Systematically benchmarks Summary, Truncation, Key-Sentence, and Observation-Filtering
-compression strategies on long-context tasks. Measures compression ratio, Time-to-First-Token (TTFT),
-token cost savings, and downstream QA retention accuracy.
+在长上下文任务上系统评测摘要（Summary）、截断（Truncation）、关键句（Key-Sentence）
+与观察过滤（Observation-Filtering）四种压缩策略。度量压缩率、首 token 延迟（TTFT）、
+token 成本节省比例，以及下游问答的保留准确率。
 """
 
 import math
@@ -14,9 +14,9 @@ from typing import Any, Dict, List, Optional, Union, Tuple
 
 
 def count_tokens(text: str) -> int:
-    """Estimate token count for a given text string.
-    
-    Uses tiktoken if available, with a reliable character/word-based fallback.
+    """估算一段文本的 token 数。
+
+    优先使用 tiktoken，不可用时回退到基于字符/词数的可靠估算。
     """
     if not text:
         return 0
@@ -28,7 +28,7 @@ def count_tokens(text: str) -> int:
             encoding = tiktoken.get_encoding("cl100k_base")
         return len(encoding.encode(text))
     except Exception:
-        # Fallback estimation: ~4 chars per token or ~0.75 words per token
+        # 回退估算：约 4 字符/token 或约 0.75 词/token
         words = len(text.split())
         chars = len(text)
         return max(1, int((words * 1.3 + chars / 4) / 2))
@@ -36,17 +36,17 @@ def count_tokens(text: str) -> int:
 
 @dataclass
 class StrategyMetrics:
-    """Performance metrics for a context compression strategy."""
+    """一种上下文压缩策略的性能指标。"""
     strategy: str
     original_tokens: int
     compressed_tokens: int
     compression_ratio: float  # compressed_tokens / original_tokens
-    ttft_ms: float            # Time to first token in milliseconds
-    token_cost_savings: float # Cost savings ratio (0.0 to 1.0)
-    qa_retention_accuracy: float # Downstream QA accuracy (0.0 to 1.0)
+    ttft_ms: float            # 首 token 延迟（毫秒）
+    token_cost_savings: float # 成本节省比例（0.0 到 1.0）
+    qa_retention_accuracy: float # 下游问答准确率（0.0 到 1.0）
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert metrics to a standard dictionary representation."""
+        """把指标转成标准字典表示。"""
         return {
             "strategy": self.strategy,
             "original_tokens": self.original_tokens,
@@ -59,7 +59,7 @@ class StrategyMetrics:
 
 
 class ContextCompressionBenchmark:
-    """Benchmark harness for evaluating context compression strategies."""
+    """评测上下文压缩策略的基准测试框架。"""
 
     STRATEGIES = ["summary", "truncation", "key_sentence", "observation_filtering"]
 
@@ -70,14 +70,14 @@ class ContextCompressionBenchmark:
         token_cost_per_1k: float = 0.0015,
         target_max_tokens: int = 500,
     ):
-        """Initialize the benchmark suite with configurable performance parameters."""
+        """初始化基准测试套件，性能参数可配置。"""
         self.base_ttft_ms = base_ttft_ms
         self.per_token_ttft_ms = per_token_ttft_ms
         self.token_cost_per_1k = token_cost_per_1k
         self.target_max_tokens = target_max_tokens
 
     def compress_summary(self, context: str, query: str = "") -> str:
-        """Summary Strategy: Condenses context into key abstract points."""
+        """摘要策略：把上下文浓缩为关键要点。"""
         if not context:
             return ""
         sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', context) if s.strip()]
@@ -85,7 +85,7 @@ class ContextCompressionBenchmark:
             return context
         if len(sentences) <= 3:
             return context
-        # Extract beginning, middle, and end sentences to form a concise summary
+        # 取开头、中间、结尾的句子组成简短摘要
         step = max(1, len(sentences) // 3)
         summary_sentences = [sentences[0]]
         if step < len(sentences):
@@ -95,7 +95,7 @@ class ContextCompressionBenchmark:
         return " ".join(summary_sentences)
 
     def compress_truncation(self, context: str, max_tokens: Optional[int] = None) -> str:
-        """Truncation Strategy: Slices context to fit within strict token limits."""
+        """截断策略：按严格的 token 上限切分上下文。"""
         if not context:
             return ""
         limit = self.target_max_tokens if max_tokens is None else max_tokens
@@ -103,15 +103,15 @@ class ContextCompressionBenchmark:
             return ""
         words = context.split()
         if not words:
-            # No whitespace-separated words (e.g. CJK text): truncate by characters.
-            # CJK characters are roughly 1-2 tokens each, so use a conservative 1:1 ratio.
+            # 没有按空白分隔的词（如中文文本）：按字符数截断。
+            # 一个 CJK 字符约折合 1-2 个 token，保守按 1:1 处理。
             return context[:limit]
-        # Estimate max words corresponding to limit tokens (~0.75 words per token)
+        # 按 token 上限估算最大词数（约 0.75 词/token）
         max_words = max(1, int(limit * 0.75))
         truncated_words = words[:max_words]
         return " ".join(truncated_words)
     def compress_key_sentence(self, context: str, query: str = "") -> str:
-        """Key-Sentence Strategy: Retains sentences with high query term match/relevance."""
+        """关键句策略：保留与查询词匹配度高、相关性强的句子。"""
         if not context:
             return ""
         query = query or ""
@@ -119,7 +119,7 @@ class ContextCompressionBenchmark:
         if not sentences:
             return context
         if not query:
-            # Fallback to sentence length / position scoring if query is empty
+            # 查询为空时，回退到按句长/位置打分
             scored = sorted(enumerate(sentences), key=lambda x: len(x[1]), reverse=True)
             top_indices = sorted([idx for idx, _ in scored[:max(1, len(sentences) // 2)]])
             return " ".join([sentences[i] for i in top_indices])
@@ -131,24 +131,24 @@ class ContextCompressionBenchmark:
             overlap = len(query_terms.intersection(sentence_terms))
             scored_sentences.append((overlap, idx, sentence))
 
-        # Sort by overlap descending, then by original position
+        # 按重叠度降序，再按原始位置排序
         scored_sentences.sort(key=lambda x: (-x[0], x[1]))
-        # Keep top half of sentences or those with overlap > 0
+        # 保留得分靠前的一半句子
         keep_count = max(1, math.ceil(len(sentences) * 0.5))
         selected = scored_sentences[:keep_count]
-        # Sort selected back into original context order
+        # 把选中的句子按原上下文顺序排回
         selected.sort(key=lambda x: x[1])
         return " ".join([s[2] for s in selected])
 
     def compress_observation_filtering(self, context: str) -> str:
-        """Observation-Filtering Strategy: Removes verbose system output, logs, hex, and JSON blobs."""
+        """观察过滤策略：移除冗长的系统输出、日志、十六进制串和 JSON 数据块。"""
         if not context:
             return ""
         lines = context.splitlines()
         filtered_lines = []
         for line in lines:
             stripped = line.strip()
-            # Filter out JSON-like blobs, long hex hashes, trace logs, or repetitive debug markers
+            # 过滤类 JSON 数据块、长十六进制哈希、trace 日志或重复的调试标记
             if (
                 re.match(r'^\s*[\{\[\}\]].*$', stripped) or
                 re.search(r'\b[0-9a-fA-F]{32,64}\b', stripped) or
@@ -161,7 +161,7 @@ class ContextCompressionBenchmark:
         return result if result else context
 
     def compress(self, strategy: str, context: str, query: str = "") -> str:
-        """Apply a specific compression strategy to a given context string."""
+        """对给定上下文字符串应用指定压缩策略。"""
         strat = strategy.lower().replace("-", "_")
         if strat == "summary":
             return self.compress_summary(context, query)
@@ -175,7 +175,7 @@ class ContextCompressionBenchmark:
             raise ValueError(f"Unknown compression strategy: {strategy}")
 
     def evaluate_retention(self, compressed_text: str, task: Union[str, Dict[str, Any]]) -> Optional[float]:
-        """Evaluate downstream QA retention accuracy on compressed context."""
+        """评估压缩后上下文在下游问答中的保留准确率。"""
         compressed_text = compressed_text or ""
         task = task or ""
         query = task if isinstance(task, str) else (task.get("query", "") if isinstance(task, dict) else "")
@@ -184,20 +184,20 @@ class ContextCompressionBenchmark:
             query = ""
         if expected is None:
             expected = ""
-        # Only score against the expected answer, not the query.
-        # Using query words as fallback inflates scores because the question
-        # text often survives compression even when the answer is deleted.
+        # 只对照期望答案打分，不用查询词。
+        # 若回退用查询词，得分会虚高：即使答案被压缩删掉，
+        # 问题文本也往往还在。
         target_text = expected.strip()
         target_tokens = set(re.findall(r'\w+', target_text.lower()))
 
         if not target_tokens:
-            # No expected answer to check against: cannot evaluate retention.
+            # 没有期望答案可对照：无法评估保留率。
             return None
             
         compressed_tokens = set(re.findall(r'\w+', compressed_text.lower()))
         matched = target_tokens.intersection(compressed_tokens)
         
-        # Calculate recall accuracy
+        # 计算召回准确率
         accuracy = len(matched) / len(target_tokens)
         return min(1.0, max(0.0, accuracy))
 
@@ -207,7 +207,7 @@ class ContextCompressionBenchmark:
         contexts: List[str],
         tasks: List[Union[str, Dict[str, Any]]],
     ) -> StrategyMetrics:
-        """Benchmark a single compression strategy over multiple contexts and tasks."""
+        """在多组上下文与任务上评测单个压缩策略。"""
         total_orig_tokens = 0
         total_comp_tokens = 0
         total_retention_acc = 0.0
@@ -248,10 +248,10 @@ class ContextCompressionBenchmark:
             ratio = avg_comp_tokens / avg_orig_tokens
             savings = max(0.0, 1.0 - ratio)
 
-        # Simulate TTFT: Base TTFT + processing time + prefill latency based on compressed tokens
+        # 模拟 TTFT：基础 TTFT + 处理耗时 + 按压缩后 token 数估算的 prefill 延迟
         simulated_ttft = self.base_ttft_ms + (avg_comp_tokens * self.per_token_ttft_ms) + (elapsed_ms / max(1, sample_count))
 
-        # Format normalized strategy key
+        # 规范化策略名
         strat_key = strategy.lower().replace("-", "_")
 
         return StrategyMetrics(
@@ -269,16 +269,16 @@ class ContextCompressionBenchmark:
         contexts: Union[str, List[Union[str, Dict[str, Any]]]],
         tasks: Union[str, List[Union[str, Dict[str, Any]]]],
     ) -> Dict[str, Any]:
-        """Run systematic benchmark across all compression strategies.
-        
-        Args:
-            contexts: Single context string, dict, or list of context strings/dicts.
-            tasks: Single task/query string, dict, or list of tasks/queries.
-            
-        Returns:
-            Comparative metrics dictionary mapping strategy names to performance metrics dicts.
+        """对所有压缩策略做系统性基准测试。
+
+        参数:
+            contexts: 单个上下文字符串、字典，或二者组成的列表。
+            tasks: 单个任务/查询字符串、字典，或二者组成的列表。
+
+        返回:
+            以策略名为键、性能指标字典为值的对比指标字典。
         """
-        # Standardize contexts into list of text strings
+        # 把上下文统一成文本字符串列表
         if isinstance(contexts, (str, dict)):
             raw_contexts = [contexts]
         else:
@@ -292,14 +292,14 @@ class ContextCompressionBenchmark:
                 content = c.get("content")
                 if content is None:
                     content = c.get("text")
-                # Use the extracted content, or empty string if none found.
-                # Falling back to str(c) would treat the raw dict repr as
-                # context text, producing nonsensical benchmark metrics.
+                # 用提取到的 content，找不到就置空字符串。
+                # 若回退到 str(c)，会把原始字典的 repr 当成上下文
+                # 文本，得出无意义的基准指标。
                 normalized_contexts.append(content if content is not None else "")
             else:
                 normalized_contexts.append(str(c))
 
-        # Standardize tasks into list of queries/task objects
+        # 把任务统一成查询/任务对象列表
         if isinstance(tasks, (str, dict)):
             normalized_tasks = [tasks]
         else:
@@ -326,14 +326,14 @@ def run_benchmark(
     contexts: Union[str, List[Union[str, Dict[str, Any]]]],
     tasks: Union[str, List[Union[str, Dict[str, Any]]]],
 ) -> Dict[str, Any]:
-    """Module-level entrypoint for executing the compression benchmark.
-    
-    Args:
-        contexts: Input contexts (strings or dicts).
-        tasks: Downstream QA tasks or queries.
-        
-    Returns:
-        Dictionary of comparative performance metrics per compression strategy.
+    """执行压缩基准测试的模块级入口。
+
+    参数:
+        contexts: 输入上下文（字符串或字典）。
+        tasks: 下游问答任务或查询。
+
+    返回:
+        每种压缩策略的对比性能指标字典。
     """
     benchmark = ContextCompressionBenchmark()
     return benchmark.run_benchmark(contexts, tasks)

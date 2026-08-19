@@ -1,9 +1,9 @@
-"""Exact GPT-5.6 Responses API agent for Experiment 1-3.
+"""实验 1-3 的 GPT-5.6 Responses API 精确实现。
 
-The previous companion sent Responses-style hosted tools to Chat Completions
-through a proxy and then reported an empty ``tool_calls`` list.  This module
-uses the actual ``/v1/responses`` protocol and preserves its typed output items
-(``web_search_call``, ``code_interpreter_call``, messages, and citations).
+此前的配套实现把 Responses 风格的托管工具经代理转发到 Chat
+Completions，结果只拿到空的 ``tool_calls`` 列表。本模块直接使用
+``/v1/responses`` 协议，并保留其带类型的输出项（``web_search_call``、
+``code_interpreter_call``、消息和引用）。
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class GPT5NativeAgent:
-    """GPT-5.6 Sol with OpenAI-hosted web search and Python tools."""
+    """使用 OpenAI 托管 web search 与 Python 工具的 GPT-5.6 Sol Agent。"""
 
     def __init__(
         self,
@@ -64,9 +64,9 @@ code_interpreter 实际执行，不得口算或声称运行了代码。"""
 
     def _tools(self) -> List[Dict[str, Any]]:
         if self.provider == "dashscope":
-            # Exact structures from the Alibaba Model Studio Responses API guides.
+            # 结构严格取自阿里云 Model Studio Responses API 指南。
             return [{"type": "web_search"}, {"type": "code_interpreter"}]
-        # Exact structures from the official OpenAI Responses API guides.
+        # 结构严格取自 OpenAI 官方 Responses API 指南。
         return [
             {"type": "web_search", "search_context_size": "medium"},
             {
@@ -97,9 +97,9 @@ code_interpreter 实际执行，不得口算或声称运行了代码。"""
             "input": input_text,
         }
         if self.provider == "dashscope":
-            # DashScope runs thinking natively and has no reasoning.effort or
-            # text.verbosity knobs; its gateway also drops non-streaming
-            # requests that stay silent for ~60s, so streaming is mandatory.
+            # DashScope 原生开启思考，没有 reasoning.effort 和
+            # text.verbosity 两个参数；其网关还会掐断静默约 60 秒的
+            # 非流式请求，因此必须使用流式。
             request["stream"] = True
         else:
             request["reasoning"] = {"effort": reasoning_effort}
@@ -161,8 +161,8 @@ code_interpreter 实际执行，不得口算或声称运行了代码。"""
                         "container_file_citation",
                     }:
                         citations.append(annotation)
-            # DashScope reports sources on the web_search_call item itself
-            # instead of url_citation annotations; normalize them here.
+            # DashScope 把来源直接挂在 web_search_call 项上，而不是
+            # url_citation 注解；在这里统一归一化。
             if item.get("type") == "web_search_call":
                 action = item.get("action")
                 if isinstance(action, dict):
@@ -177,11 +177,10 @@ code_interpreter 实际执行，不得口算或声称运行了代码。"""
     def _post_responses(
         self, request: Dict[str, Any]
     ) -> tuple[int, Dict[str, Any], Optional[Dict[str, int]]]:
-        """Send one Responses request and return (status, body, stream_events).
+        """发送一次 Responses 请求，返回 (状态码, 响应体, 流事件统计)。
 
-        DashScope requires streaming; the final ``response.completed`` event
-        carries the same response object the non-streaming API returns, so both
-        paths converge on an identical shape.
+        DashScope 要求流式；最终的 ``response.completed`` 事件携带的
+        响应对象与非流式 API 返回的一致，两条路径最终形状相同。
         """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -242,10 +241,10 @@ code_interpreter 实际执行，不得口算或声称运行了代码。"""
         dry_run: bool = False,
         background: bool = False,
     ) -> Dict[str, Any]:
-        """Create one Responses API turn and retain its complete trace.
+        """执行一轮 Responses API 调用并保留完整轨迹。
 
-        ``temperature`` remains in the signature for legacy callers, but is not
-        sent: GPT-5.6 reasoning requests use ``reasoning.effort`` instead.
+        ``temperature`` 仅为兼容旧调用方保留在签名中，实际不会发送：
+        GPT-5.6 推理请求改用 ``reasoning.effort``。
         """
         request = self._build_responses_request(
             user_request,
@@ -377,7 +376,7 @@ code_interpreter 实际执行，不得口算或声称运行了代码。"""
 
 
 class GPT5AgentChain:
-    """Sequential Responses turns linked with ``previous_response_id``."""
+    """用 ``previous_response_id`` 串联的多轮 Responses 调用链。"""
 
     def __init__(self, agent: GPT5NativeAgent):
         self.agent = agent

@@ -1,6 +1,6 @@
 """
-Main entry point for GPT-5 Native Tools Agent
-Interactive CLI for using web_search and code_interpreter tools
+GPT-5 原生工具 Agent 的主入口
+使用 web_search 和 code_interpreter 工具的交互式 CLI
 """
 
 import sys
@@ -11,7 +11,7 @@ from agent import GPT5NativeAgent, GPT5AgentChain
 from config import Config
 import argparse
 
-# Set up logging
+# 配置日志
 logging.basicConfig(
     level=getattr(logging, Config.LOG_LEVEL),
     format=Config.LOG_FORMAT
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class InteractiveCLI:
-    """Interactive command-line interface for GPT-5 Agent"""
+    """GPT-5 Agent 的交互式命令行界面"""
     
     def __init__(self, backend: str = None, model: str = None):
-        """Initialize the CLI"""
+        """初始化 CLI"""
         if not Config.validate(backend):
             raise ValueError("Invalid configuration. Please check your .env file")
         api_key, base_url, resolved_model = Config.resolve(backend, model)
@@ -50,10 +50,10 @@ class InteractiveCLI:
         
         self.use_tools = True
         self.tool_choice = "auto"
-        self.reasoning_effort = "low"  # Default reasoning effort
+        self.reasoning_effort = "low"  # 默认推理力度
     
     def show_help(self):
-        """Display help information"""
+        """显示帮助信息"""
         help_text = """
 Commands:                                              
   /help     - Show this help message                    
@@ -82,12 +82,12 @@ Examples:
         print(help_text)
     
     def clear_history(self):
-        """Clear conversation history"""
+        """清空对话历史"""
         self.agent.clear_history()
         print("✅ Conversation history cleared")
     
     def show_history(self):
-        """Display conversation history"""
+        """显示对话历史"""
         history = self.agent.get_history()
         if not history:
             print("📭 No conversation history")
@@ -105,13 +105,13 @@ Examples:
         print("="*60)
     
     def toggle_tools(self):
-        """Toggle tool usage on/off"""
+        """切换工具启用状态"""
         self.use_tools = not self.use_tools
         status = "enabled" if self.use_tools else "disabled"
         print(f"🔧 Tools {status}")
     
     def search_mode(self):
-        """Enter web search mode"""
+        """进入网页搜索模式"""
         print("\n🔍 Web Search Mode")
         print("Enter your search query (or 'back' to return):")
         
@@ -123,7 +123,7 @@ Examples:
         self._process_request(request, force_tools=True)
     
     def code_mode(self):
-        """Enter code interpreter mode"""
+        """进入代码解释器模式"""
         print("\n💻 Code Interpreter Mode")
         print("Enter your code or computational request (or 'back' to return):")
         
@@ -135,7 +135,7 @@ Examples:
         self._process_request(enhanced_request, force_tools=True)
     
     def analyze_mode(self):
-        """Combined search and analysis mode"""
+        """搜索 + 分析组合模式"""
         print("\n🔬 Search & Analyze Mode")
         print("Enter topic to research and analyze (or 'back' to return):")
         
@@ -154,7 +154,7 @@ Examples:
         self._display_result(result)
     
     def show_config(self):
-        """Display current configuration"""
+        """显示当前配置"""
         Config.display()
         print(f"\nCurrent Settings:")
         print(f"  Tools Enabled: {self.use_tools}")
@@ -162,7 +162,7 @@ Examples:
         print(f"  Reasoning Effort: {self.reasoning_effort}")
     
     def set_reasoning_effort(self):
-        """Set the reasoning effort level"""
+        """设置推理力度"""
         print("\n🧠 Set Reasoning Effort")
         print("Options: low, medium, high")
         print(f"Current: {self.reasoning_effort}")
@@ -175,17 +175,17 @@ Examples:
             print(f"❌ Invalid effort level. Must be low, medium, or high")
     
     def exit_cli(self):
-        """Exit the application"""
+        """退出程序"""
         print("\n👋 Goodbye!")
         sys.exit(0)
     
     def _process_request(self, request: str, force_tools: bool = False):
         """
-        Process a user request
+        处理一条用户请求
         
-        Args:
-            request: User request
-            force_tools: Force tool usage regardless of settings
+        参数:
+            request: 用户请求
+            force_tools: 无论当前设置如何都强制使用工具
         """
         use_tools = force_tools or self.use_tools
         
@@ -202,28 +202,28 @@ Examples:
     
     def _display_result(self, result: dict):
         """
-        Display the result of a request
+        展示请求结果
         
-        Args:
-            result: Result dictionary from agent
+        参数:
+            result: Agent 返回的结果字典
         """
         print("\n" + "="*60)
         
         if result["success"]:
-            # Display tool usage
+            # 展示工具使用情况
             if result["tool_calls"]:
                 print("🔧 Tools Used:")
                 for tool in result["tool_calls"]:
                     print(f"  • {tool.get('type', 'unknown_tool')}")
                 print()
             
-            # Display response
+            # 展示回复
             print("📝 Response:")
             print("-"*60)
             print(result["response"])
             print("-"*60)
             
-            # Display token usage
+            # 展示 token 用量
             if result.get("usage"):
                 usage = result["usage"]
                 total = usage.get("total_tokens", 0)
@@ -235,7 +235,7 @@ Examples:
         print("="*60)
     
     def run(self):
-        """Run the interactive CLI"""
+        """运行交互式 CLI"""
         print("\n" + "="*60)
         print("     🤖 GPT-5 Native Tools Agent")
         print(f"     Responses API backend: {self.backend}")
@@ -251,7 +251,7 @@ Examples:
                 if not user_input:
                     continue
                 
-                # Check for commands
+                # 检查是否为命令
                 if user_input.startswith("/"):
                     command = user_input.split()[0].lower()
                     if command in self.commands:
@@ -260,7 +260,7 @@ Examples:
                         print(f"❌ Unknown command: {command}")
                         print("Type /help for available commands")
                 else:
-                    # Process as regular request
+                    # 作为普通请求处理
                     self._process_request(user_input)
                     
             except KeyboardInterrupt:

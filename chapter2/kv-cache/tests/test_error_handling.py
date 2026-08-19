@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""Offline regressions for local tool error handling."""
+"""本地工具错误处理的离线回归测试。"""
 
 from agent import LocalFileTools
 
 def test_error_handling():
-    """Test that local tools return structured errors instead of raising."""
+    """验证本地工具返回结构化错误而非抛异常。"""
 
     print("🧪 Testing Error Handling in Tool Execution")
     print("="*60)
 
-    # Test local tools directly first
+    # 先直接测试本地工具
     print("\n1️⃣ Testing direct tool error handling:")
     tools = LocalFileTools(root_dir="../..")
 
-    # Test with invalid arguments
+    # 测试非法参数
     print("   Testing read_file with extra 'limit' parameter...")
-    # The tool should ignore the extra parameter
+    # 工具应忽略多余参数
     result = tools.read_file("chapter1/context/README.md")
     print(f"   Result: {'✓ Success' if result.get('success') else '✗ Error'}")
     assert result.get("success") is True
 
-    # Test with non-existent file
+    # 测试不存在的文件
     print("   Testing read_file with non-existent file...")
     result = tools.read_file("non_existent_file.txt")
     print(f"   Result: {'✓ Error handled' if not result.get('success') else '✗ Unexpected success'}")
@@ -28,7 +28,7 @@ def test_error_handling():
     assert result.get("success") is False
     assert "File not found" in result.get("error", "")
 
-    # Test security boundary
+    # 测试安全边界
     print("   Testing security boundary...")
     result = tools.read_file("../../../../etc/passwd")
     print(f"   Result: {'✓ Access denied' if 'Access denied' in result.get('error', '') else '✗ Security issue'}")

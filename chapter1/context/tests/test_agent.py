@@ -1,45 +1,45 @@
 #!/usr/bin/env python3
 """
-Test script for Context-Aware Agent
-Validates installation and basic functionality
+上下文感知 Agent 的测试脚本
+验证安装与基础功能
 """
 
-import sys
 from agent import ContextAwareAgent, ContextMode, ToolRegistry
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 
 class TestToolRegistry(unittest.TestCase):
-    """Test the tool registry functions"""
-    
+    """测试工具注册表的各个函数"""
+
     def test_calculator(self):
-        """Test calculator tool"""
+        """测试计算器工具"""
         tools = ToolRegistry()
-        
-        # Basic arithmetic
+
+        # 基础算术
         result = tools.calculate("2 + 2")
         self.assertEqual(result["result"], 4)
-        
-        # Complex expression
+
+        # 复杂表达式
         result = tools.calculate("(10 * 5) + (20 / 4)")
         self.assertEqual(result["result"], 55.0)
-        
-        # With math functions
+
+        # 带数学函数
         result = tools.calculate("sqrt(16) + abs(-5)")
         self.assertEqual(result["result"], 9.0)
-        
+
     def test_currency_converter(self):
-        """Test currency conversion tool"""
+        """测试货币换算工具"""
         tools = ToolRegistry()
-        
-        # USD to EUR
+
+        # USD 换算成 EUR
         result = tools.convert_currency(100, "USD", "EUR")
         self.assertIn("converted_amount", result)
         self.assertIn("exchange_rate", result)
         self.assertGreater(result["converted_amount"], 0)
-        
-        # Currency symbol normalization (US$, S$, A$, C$, $)
+
+        # 货币符号归一化（US$、S$、A$、C$、$）
         result_us = tools.convert_currency(100, "US$", "EUR")
         self.assertEqual(result_us["from_currency"], "USD")
         self.assertEqual(result_us["converted_amount"], 92.0)
@@ -55,7 +55,7 @@ class TestToolRegistry(unittest.TestCase):
         result_c = tools.convert_currency(100, "C$", "USD")
         self.assertEqual(result_c["from_currency"], "CAD")
         self.assertIn("converted_amount", result_c)
-        # Invalid currency
+        # 无效货币
         result = tools.convert_currency(100, "XXX", "YYY")
         self.assertIn("error", result)
         result_invalid_s = tools.convert_currency(100, "S$INVALID", "USD")
@@ -63,11 +63,11 @@ class TestToolRegistry(unittest.TestCase):
 
     def test_convert_currency_string_and_formatted_amounts(self):
         """
-        Prove that convert_currency accepts string and formatted numeric amounts.
-        
-        LLM tool calls frequently pass numeric arguments as strings (e.g., "100", "$1,000.00").
-        Previously, passing a string raised a TypeError during float division. This test locks
-        out regressions by asserting that numeric strings and formatted currency strings convert correctly.
+        验证 convert_currency 能接受字符串和带格式的数字金额。
+
+        LLM 的工具调用常把数字参数传成字符串（如 "100"、"$1,000.00"）。
+        以前传字符串会在浮点除法时抛 TypeError。本测试断言数字字符串和
+        带格式货币字符串都能正确换算，以锁定该行为、防止回归。
         """
         tools = ToolRegistry()
         result_str = tools.convert_currency("100", "USD", "EUR")
@@ -96,210 +96,140 @@ class TestToolRegistry(unittest.TestCase):
         self.assertIn("error", result_invalid_str)
     
     def test_pdf_parser_structure(self):
-        """Test PDF parser structure (without actual PDF)"""
+        """测试 PDF 解析器的结构（不依赖真实 PDF）"""
         tools = ToolRegistry()
-        
-        # Test with invalid URL (should handle gracefully)
+
+        # 用无效 URL 测试（应优雅处理而不是崩溃）
         result = tools.parse_pdf("http://invalid-url-for-testing.com/test.pdf")
         self.assertIn("error", result)
 
 
 class TestContextModes(unittest.TestCase):
-    """Test different context modes"""
-    
+    """测试不同的上下文模式"""
+
     @patch.dict('os.environ', {'SILICONFLOW_API_KEY': 'test_key'})
     def setUp(self):
-        """Set up test fixtures"""
+        """准备测试夹具"""
         self.api_key = "test_key"
-    
+
     def test_context_mode_initialization(self):
-        """Test agent initialization with different context modes"""
+        """测试用不同上下文模式初始化 Agent"""
         for mode in ContextMode:
             agent = ContextAwareAgent(self.api_key, mode)
             self.assertEqual(agent.context_mode, mode)
             self.assertEqual(agent.trajectory.context_mode, mode)
     
-    def test_context_building(self):
-        """Test context building for different modes"""
-        # Full context mode
-        agent = ContextAwareAgent(self.api_key, ContextMode.FULL)
-        agent.trajectory.reasoning_steps = ["Step 1", "Step 2"]
-        agent.trajectory.tool_calls.append(
-            MagicMock(tool_name="test", arguments={}, result={"test": "result"})
+    def test_message_preparation_by_mode(self):
+        """消融作用在真正发给模型的消息列表上（_prepare_messages_for_api）"""
+
+        def prepared(mode):
+            agent = ContextAwareAgent(self.api_key, mode)
+            # 模拟 execute_task 已运行一轮后的历史形态：
+            # system + user 任务 + assistant 决策 + tool 结果 + 新 user 消息
+            agent.conversation_history += [
+                {"role": "user", "content": "task"},
+                {
+                    "role": "assistant",
+                    "content": "plan",
+                    "reasoning_content": "thinking",
+                    "tool_calls": [],
+                },
+                {"role": "tool", "tool_call_id": "call-1", "content": "4"},
+                {"role": "user", "content": "go on"},
+            ]
+            return agent._prepare_messages_for_api()
+
+        # Full 模式发送完整轨迹
+        full = prepared(ContextMode.FULL)
+        self.assertEqual(
+            [m["role"] for m in full],
+            ["system", "user", "assistant", "tool", "user"],
         )
-        
-        context = agent._build_context()
-        self.assertIn("Previous Reasoning Steps", context)
-        self.assertIn("Tool Call History", context)
-        
-        # No reasoning mode
-        agent_no_reasoning = ContextAwareAgent(self.api_key, ContextMode.NO_REASONING)
-        agent_no_reasoning.trajectory.reasoning_steps = ["Step 1"]
-        context = agent_no_reasoning._build_context()
-        self.assertNotIn("Previous Reasoning Steps", context)
-        
-        # No history mode
-        agent_no_history = ContextAwareAgent(self.api_key, ContextMode.NO_HISTORY)
-        agent_no_history.trajectory.tool_calls.append(
-            MagicMock(tool_name="test", arguments={}, result={"test": "result"})
+        # 保留思考过程
+        self.assertEqual(full[2]["reasoning_content"], "thinking")
+
+        # No history 模式只保留静态系统提示词和最新用户任务
+        no_history = prepared(ContextMode.NO_HISTORY)
+        self.assertEqual([m["role"] for m in no_history], ["system", "user"])
+
+    def test_no_reasoning_strips_reasoning_content(self):
+        """No reasoning 模式在消息写回历史前剥离 reasoning_content"""
+        agent = ContextAwareAgent(self.api_key, ContextMode.NO_REASONING)
+        message = SimpleNamespace(
+            model_dump=lambda: {
+                "role": "assistant",
+                "content": "ok",
+                "reasoning_content": "secret",
+            }
         )
-        context = agent_no_history._build_context()
-        self.assertEqual(context, "")
+        msg = agent._prepare_assistant_message(message)
+        self.assertNotIn("reasoning_content", msg)
+        self.assertEqual(msg["content"], "ok")
 
 
 class TestAblationScenarios(unittest.TestCase):
-    """Test ablation scenarios"""
-    
+    """测试消融场景"""
+
     def test_tool_execution(self):
-        """Test tool execution"""
+        """测试工具执行"""
         agent = ContextAwareAgent("test_key", ContextMode.FULL)
-        
-        # Test calculator execution
+
+        # 测试计算器执行
         result = agent._execute_tool("calculate", {"expression": "2 + 2"})
         self.assertEqual(result["result"], 4)
-        
-        # Test unknown tool
+
+        # 测试未知工具
         result = agent._execute_tool("unknown_tool", {})
         self.assertIn("error", result)
-    
+
     def test_trajectory_reset(self):
-        """Test trajectory reset"""
+        """测试轨迹重置"""
         agent = ContextAwareAgent("test_key", ContextMode.FULL)
-        
-        # Add some data to trajectory
+
+        # 向轨迹添加一些数据
         agent.trajectory.reasoning_steps.append("Test step")
         agent.trajectory.tool_calls.append(
             MagicMock(tool_name="test", arguments={})
         )
-        
-        # Reset
+
+        # 重置
         agent.reset()
-        
-        # Check if cleared
+
+        # 检查是否已清空
         self.assertEqual(len(agent.trajectory.reasoning_steps), 0)
         self.assertEqual(len(agent.trajectory.tool_calls), 0)
         self.assertEqual(agent.trajectory.context_mode, ContextMode.FULL)
 
 
 def run_integration_test():
-    """Run a simple integration test"""
-    print("\n" + "="*60)
-    print("INTEGRATION TEST")
-    print("="*60)
-    
-    # Check if API key is available
+    """对真实提供商跑一个简单的集成测试（需要 API Key）。"""
     import os
+
     api_key = os.getenv("SILICONFLOW_API_KEY")
-    
     if not api_key:
         print("⚠️ Skipping integration test (no API key found)")
         print("Set SILICONFLOW_API_KEY to run integration tests")
         return False
-    
-    print("✅ API key found, running integration test...")
-    
+
+    agent = ContextAwareAgent(api_key, ContextMode.FULL)
+    simple_task = "Calculate: What is 15% of $2500? Then convert the result to EUR."
+    print(f"\nTest task: {simple_task}")
+
     try:
-        # Create agent
-        agent = ContextAwareAgent(api_key, ContextMode.FULL)
-        
-        # Simple task that doesn't require external PDFs
-        simple_task = "Calculate: What is 15% of $2500? Then convert the result to EUR."
-        
-        print(f"\nTest task: {simple_task}")
-        print("Running...")
-        
-        # Execute with timeout
-        import signal
-        
-        def timeout_handler(signum, frame):
-            raise TimeoutError("Integration test timed out")
-        
-        # Set 30 second timeout
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(30)
-        
-        try:
-            result = agent.execute_task(simple_task, max_iterations=3)
-            signal.alarm(0)  # Cancel alarm
-            
-            print("\n✅ Integration test completed!")
-            print(f"Success: {result.get('success', False)}")
-            print(f"Tool calls: {len(result['trajectory'].tool_calls)}")
-            
-            if result.get('final_answer'):
-                print(f"Answer preview: {result['final_answer'][:100]}...")
-            
-            return True
-            
-        except TimeoutError:
-            print("❌ Integration test timed out")
-            return False
-            
+        result = agent.execute_task(simple_task, max_iterations=3)
+        print("\n✅ Integration test completed!")
+        print(f"Completed: {result.get('completed', False)}")
+        print(f"Tool calls: {len(result['trajectory'].tool_calls)}")
+
+        if result.get('final_answer'):
+            print(f"Answer preview: {result['final_answer'][:100]}...")
+
+        return True
     except Exception as e:
         print(f"❌ Integration test failed: {str(e)}")
         return False
 
 
-def main():
-    """Main test runner"""
-    print("\n" + "="*60)
-    print("CONTEXT-AWARE AGENT TEST SUITE")
-    print("="*60)
-    
-    # Run unit tests
-    print("\n📋 Running unit tests...")
-    
-    # Create test suite
-    loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-    
-    # Add test cases
-    suite.addTests(loader.loadTestsFromTestCase(TestToolRegistry))
-    suite.addTests(loader.loadTestsFromTestCase(TestContextModes))
-    suite.addTests(loader.loadTestsFromTestCase(TestAblationScenarios))
-    
-    # Run tests
-    runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
-    
-    # Summary
-    print("\n" + "="*60)
-    print("UNIT TEST SUMMARY")
-    print("="*60)
-    print(f"Tests run: {result.testsRun}")
-    print(f"Failures: {len(result.failures)}")
-    print(f"Errors: {len(result.errors)}")
-    
-    if result.wasSuccessful():
-        print("✅ All unit tests passed!")
-    else:
-        print("❌ Some tests failed")
-        sys.exit(1)
-    
-    # Run integration test if possible
-    print("\n" + "="*60)
-    integration_success = run_integration_test()
-    
-    # Final summary
-    print("\n" + "="*60)
-    print("FINAL TEST SUMMARY")
-    print("="*60)
-    
-    if result.wasSuccessful():
-        print("✅ Unit tests: PASSED")
-    else:
-        print("❌ Unit tests: FAILED")
-    
-    if integration_success:
-        print("✅ Integration test: PASSED")
-    else:
-        print("⚠️ Integration test: SKIPPED or FAILED")
-    
-    print("\n🎉 Testing complete!")
-    print("="*60 + "\n")
-    
-    return 0 if result.wasSuccessful() else 1
-
-
 if __name__ == "__main__":
-    sys.exit(main())
+    # 单元测试；如需真实 API 集成测试，显式调用 run_integration_test()
+    unittest.main(verbosity=2)

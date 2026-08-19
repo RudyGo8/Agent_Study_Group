@@ -99,13 +99,13 @@ def test_summarize_arm_separates_completion_from_task_success():
         ContextMode.NO_TOOL_CALLS,
         _arm_result("I cannot compute the exchange rates without tools."),
         elapsed=0.1,
+        max_iterations=5,
     )
 
-    # The model did return a terminal response, but it did not complete the
-    # canonical financial task. A mode-independent evaluator must preserve
-    # that distinction instead of forcing the mode to fail.
+    # 模型确实返回了终止响应，但并没有完成标准财务任务。与模式无关的
+    # 评估器必须保留这一区别，而不是强行判该模式失败。
     assert result["completed"] is True
-    assert result["success"] is True  # compatibility alias
+    assert result["success"] is True  # 兼容别名
     assert result["task_success"] is False
     assert result["behavior"]["canonical_answer_correct"] is False
 
@@ -116,10 +116,11 @@ def test_summarize_arm_accepts_correct_answer_even_in_an_ablated_arm():
         ContextMode.NO_TOOL_RESULTS,
         _arm_result(answer, mode=ContextMode.NO_TOOL_RESULTS),
         elapsed=0.1,
+        max_iterations=5,
     )
 
-    # Correctness is an observed task result. The experiment may separately
-    # report that tool feedback was hidden; it must not manufacture failure.
+    # 正确性是观察到的任务结果。实验可以另行报告工具反馈被隐藏，
+    # 但不能凭空制造失败。
     assert result["completed"] is True
     assert result["task_success"] is True
     assert result["behavior"]["canonical_answer_correct"] is True

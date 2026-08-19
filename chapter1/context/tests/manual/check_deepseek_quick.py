@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick smoke test for DeepSeek provider (deepseek-v4-flash).
+DeepSeek 提供商（deepseek-v4-flash）的快速冒烟测试。
 """
 
 import os

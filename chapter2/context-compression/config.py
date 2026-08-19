@@ -1,19 +1,19 @@
 """
-Configuration module for Context Compression Experiment
+上下文压缩实验的配置模块
 """
 
 import os
 from typing import Optional
 from dotenv import load_dotenv
 
-# Load environment variables
+# 加载环境变量
 load_dotenv()
 
 
 class Config:
-    """Configuration settings for the context compression experiment"""
-    
-    # API Configuration
+    """上下文压缩实验的配置项"""
+
+    # API 配置
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "kimi").lower()
     LLM_PROVIDER = {"qwen": "dashscope", "bailian": "dashscope"}.get(
         LLM_PROVIDER, LLM_PROVIDER
@@ -25,46 +25,46 @@ class Config:
     MOONSHOT_API_KEY: str = os.getenv("MOONSHOT_API_KEY", "")
     MOONSHOT_BASE_URL: str = "https://api.moonshot.cn/v1"
 
-    # Universal fallback: 当 MOONSHOT_API_KEY 缺失但设置了 OPENROUTER_API_KEY 时，
+    # 通用兜底：当 MOONSHOT_API_KEY 缺失但设置了 OPENROUTER_API_KEY 时，
     # 自动改走 OpenRouter（kimi-* 模型名映射为 moonshotai/kimi-k2）。
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
     
     SERPER_API_KEY: str = os.getenv("SERPER_API_KEY", "")
     SERPER_BASE_URL: str = "https://google.serper.dev"
     
-    # Model Configuration
+    # 模型配置
     MODEL_NAME: str = os.getenv(
         "MODEL_NAME", "qwen3.7-plus" if LLM_PROVIDER == "dashscope" else "kimi-k3"
     )
     MODEL_TEMPERATURE: float = float(os.getenv("MODEL_TEMPERATURE", "0.3"))
     MODEL_MAX_TOKENS: int = int(os.getenv("MODEL_MAX_TOKENS", "8192"))
     
-    # Agent Configuration
+    # Agent 配置
     MAX_ITERATIONS: int = int(os.getenv("MAX_ITERATIONS", "50"))
     ENABLE_VERBOSE: bool = os.getenv("ENABLE_VERBOSE", "false").lower() == "true"
     
-    # Compression Configuration
+    # 压缩配置
     MAX_WEBPAGE_LENGTH: int = int(os.getenv("MAX_WEBPAGE_LENGTH", "50000"))
     SUMMARY_MAX_TOKENS: int = int(os.getenv("SUMMARY_MAX_TOKENS", "500"))
     
-    # Context Window Configuration
-    CONTEXT_WINDOW_SIZE: int = 128000  # 128K context budget for the compression demo (K3 supports up to 1M)
-    
-    # Logging Configuration
+    # 上下文窗口配置
+    CONTEXT_WINDOW_SIZE: int = 128000  # 压缩演示的 128K 上下文预算（K3 最高支持 1M）
+
+    # 日志配置
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT: str = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
     
-    # File paths
+    # 文件路径
     RESULTS_DIR: str = "results"
     CACHE_DIR: str = "cache"
     
     @classmethod
     def validate(cls) -> bool:
         """
-        Validate required configuration
-        
-        Returns:
-            True if configuration is valid
+        校验必需的配置
+
+        返回:
+            配置有效时返回 True
         """
         try:
             cls.resolve_llm()
@@ -81,10 +81,10 @@ class Config:
     
     @classmethod
     def resolve_llm(cls):
-        """Return ``(api_key, base_url, model)`` for the configured provider.
+        """返回配置提供商对应的 ``(api_key, base_url, model)``。
 
-        Computed at call time so a runtime override of ``Config.MODEL_NAME``
-        (e.g. via ``--model``) is respected.
+        调用时才计算，这样运行期对 ``Config.MODEL_NAME`` 的覆盖
+        （例如通过 ``--model``）能生效。
 
         端点、接受的 key 变量与模型名映射由 agentbook 的 provider 注册表统一
         维护。此处保持三元组返回值：调用方按 3 个字段解包，测试也按这个形状
@@ -97,13 +97,13 @@ class Config:
 
     @classmethod
     def create_directories(cls):
-        """Create necessary directories if they don't exist"""
+        """必要时创建所需目录"""
         os.makedirs(cls.RESULTS_DIR, exist_ok=True)
         os.makedirs(cls.CACHE_DIR, exist_ok=True)
     
     @classmethod
     def print_config(cls):
-        """Print current configuration (hiding sensitive data)"""
+        """打印当前配置（隐藏敏感信息）"""
         print("\n" + "="*50)
         print("CONFIGURATION")
         print("="*50)

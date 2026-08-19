@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Fail-closed validator for the real agent-runtime + official PPTX Skill run.
+"""「真实 agent 运行时 + 官方 PPTX Skill」运行结果的 fail-closed 校验器。
 
-Supports both accepted runtimes: Claude Code (claude_stream.jsonl) and Kimi
-Code CLI (kimi_stream.jsonl). The artifact gates are identical; only the
-stream parsing and run-success gate are runtime-specific.
+支持两种认可的运行时：Claude Code（claude_stream.jsonl）和 Kimi Code CLI
+（kimi_stream.jsonl）。产物门槛完全一致，只有流解析和运行成功判定这两处
+与运行时相关。
 """
 
 from __future__ import annotations
@@ -48,11 +48,11 @@ def parse_stream(path: Path) -> tuple[list[dict], str]:
 
 
 def collect_tool_calls(events: list[dict]) -> list[dict]:
-    """Normalize tool calls across runtime stream formats.
+    """把不同运行时流格式中的工具调用归一化。
 
-    Claude Code emits ``assistant`` events whose message content contains
-    ``tool_use`` blocks; Kimi Code CLI emits ``assistant`` events with an
-    OpenAI-style ``tool_calls`` list.
+    Claude Code 的 ``assistant`` 事件在 message content 里携带 ``tool_use``
+    块；Kimi Code CLI 的 ``assistant`` 事件则携带 OpenAI 风格的 ``tool_calls``
+    列表。
     """
     calls = []
     for event in events:
@@ -189,16 +189,16 @@ def validate(run_dir: Path) -> dict:
         "results": any(term in slide_text for term in ("result", "bleu", "translation")),
         "conclusion": any(term in slide_text for term in ("conclusion", "takeaway", "summary")),
     }
-    # Progressive-disclosure evidence must come from what the agent actually
-    # did (tool calls and tool results), not merely from the prompt text.
+    # 渐进式披露的证据必须来自 Agent 实际做了什么（工具调用与工具结果），
+    # 而不能只看 prompt 文本本身。
     if runtime == "kimi":
         skill_calls = [
             call for call in tool_calls
             if call["name"] == "Skill" and '"pptx"' in call["arguments"].lower().replace(" ", "")
         ]
         pptx_skill_invoked = bool(skill_calls)
-        # Kimi's Skill tool loads the complete SKILL.md inline by construction;
-        # require the load to have succeeded in the recorded tool result.
+        # Kimi 的 Skill 工具按其实现会把完整 SKILL.md 内联加载；
+        # 这里要求记录的工具结果显示该加载确实成功。
         skill_md_loaded = pptx_skill_invoked and 'skill "pptx" loaded' in values_as_text.lower()
     else:
         pptx_skill_invoked = (

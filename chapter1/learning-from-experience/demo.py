@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Interactive demo to play the game manually or watch agents play.
+交互式演示：手动游玩本游戏，或观看智能体游玩。
 """
 
 import os
@@ -9,10 +9,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# 从 .env 文件加载环境变量
 load_dotenv()
 
-# Add parent directory to path for imports
+# 把父目录加入 sys.path 以便导入
 sys.path.append(str(Path(__file__).parent))
 
 from game_environment import TreasureHuntGame
@@ -21,7 +21,7 @@ from llm_agent import LLMAgent
 
 
 def play_manual():
-    """Let the user play the game manually."""
+    """让用户手动游玩游戏。"""
     print("\n" + "="*60)
     print("MANUAL PLAY MODE")
     print("="*60)
@@ -38,20 +38,20 @@ def play_manual():
         for i, action in enumerate(actions, 1):
             print(f"  {i}. {action}")
         
-        # Get user input
+        # 获取用户输入
         choice = input("\nEnter action number or type custom action: ").strip()
-        
-        # Parse input
+
+        # 解析输入
         if choice.isdigit() and 1 <= int(choice) <= len(actions):
             action = actions[int(choice) - 1]
         else:
             action = choice
         
-        # Execute action
+        # 执行动作
         feedback, reward, done = game.execute_action(action)
         print(f"\nFeedback: {feedback}")
         print(f"Reward: {reward:.2f}")
-    
+
     if game.victory:
         print("\n🎉 CONGRATULATIONS! You won!")
     else:
@@ -61,12 +61,12 @@ def play_manual():
 
 
 def watch_rl_agent():
-    """Watch a trained RL agent play."""
+    """观看训练好的 RL 智能体游玩。"""
     print("\n" + "="*60)
     print("WATCHING Q-LEARNING AGENT")
     print("="*60)
     
-    # Check if trained agent exists
+    # 检查是否已有训练好的智能体存档
     agent_path = Path("results") / "rl_agent_demo.pkl"
     
     agent = QLearningAgent()
@@ -81,11 +81,11 @@ def watch_rl_agent():
         game = TreasureHuntGame()
         agent.train(num_episodes=2000, verbose=True)
         
-        # Save for future use
+        # 保存以便下次复用
         agent_path.parent.mkdir(exist_ok=True)
         agent.save(agent_path)
-    
-    # Watch agent play
+
+    # 观看智能体游玩
     print("\nWatching agent play...")
     game = TreasureHuntGame()
     total_reward = 0
@@ -117,12 +117,12 @@ def watch_rl_agent():
 
 
 def watch_llm_agent():
-    """Watch an LLM agent play with reasoning."""
+    """观看带推理过程的 LLM 智能体游玩。"""
     print("\n" + "="*60)
     print("WATCHING LLM AGENT (with reasoning)")
     print("="*60)
     
-    # Check API key
+    # 检查 API key
     provider = os.getenv("LLM_PROVIDER", "moonshot").lower()
     api_key = os.getenv("DASHSCOPE_API_KEY") if provider in {"dashscope", "qwen", "bailian"} else os.getenv("MOONSHOT_API_KEY")
     if not api_key and not os.getenv("OPENROUTER_API_KEY"):
@@ -135,14 +135,14 @@ def watch_llm_agent():
     
     agent = LLMAgent(api_key=api_key, provider=provider)
     
-    # Load experiences if available
+    # 如有历史经验则加载
     exp_path = Path("results") / "llm_experiences_demo.json"
     if exp_path.exists():
         print("Loading previous experiences...")
         agent.load_experiences(exp_path)
         print(f"Loaded {len(agent.experiences)} experiences")
     
-    # Play one episode with verbose output
+    # 以详细输出模式游玩一局
     print("\nWatching LLM agent play with reasoning...")
     print("(The agent will explain its thought process)\n")
     
@@ -158,13 +158,13 @@ def watch_llm_agent():
     print(f"Steps taken: {steps}")
     print(f"API calls made: {agent.api_calls}")
     
-    # Save experiences
+    # 保存经验
     exp_path.parent.mkdir(exist_ok=True)
     agent.save_experiences(exp_path)
 
 
 def show_hidden_rules():
-    """Reveal the hidden game mechanics."""
+    """揭示游戏的隐藏机制。"""
     print("\n" + "="*60)
     print("HIDDEN GAME MECHANICS (SPOILERS!)")
     print("="*60)
@@ -178,7 +178,7 @@ def show_hidden_rules():
 
 
 def main():
-    """Main menu for the demo."""
+    """演示主菜单。"""
     while True:
         print("\n" + "="*70)
         print("LEARNING FROM EXPERIENCE DEMO")

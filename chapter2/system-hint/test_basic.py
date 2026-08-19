@@ -1,5 +1,5 @@
 """
-Basic test to verify System-Hint Agent functionality
+验证 System-Hint Agent 基础功能的测试
 """
 
 import os
@@ -10,10 +10,10 @@ import pytest
 from agent import SystemHintAgent, SystemHintConfig, TodoStatus
 
 def test_basic_functionality():
-    """Test basic agent functionality without API calls"""
+    """测试 Agent 基础功能（不调用 API）"""
     print("Testing System-Hint Agent components...")
     
-    # Test configuration
+    # 测试配置
     config = SystemHintConfig(
         enable_timestamps=True,
         enable_tool_counter=True,
@@ -23,10 +23,10 @@ def test_basic_functionality():
     )
     print("✅ Configuration created successfully")
     
-    # Test agent initialization (without API key for basic test)
+    # 测试 Agent 初始化（基础测试不使用真实 API Key）
     try:
         agent = SystemHintAgent(
-            api_key="test-key",  # Dummy key for initialization test
+            api_key="test-key",  # 初始化测试用的占位 Key
             provider="kimi",
             config=config,
             verbose=False
@@ -36,31 +36,31 @@ def test_basic_functionality():
         print(f"❌ Agent initialization failed: {e}")
         return False
     
-    # Test tool implementations (without API calls)
+    # 测试工具实现（不调用 API）
     print("\nTesting tool implementations:")
     
-    # Test file operations
+    # 测试文件操作
     test_file = "test_output.txt"
     try:
-        # Test write_file
+        # 测试 write_file
         result = agent._tool_write_file(test_file, "Test content")
         assert result["success"]
         print("✅ write_file tool works")
         
-        # Test read_file
+        # 测试 read_file
         result = agent._tool_read_file(test_file)
         assert result["success"]
         assert "Test content" in result["content"]
         print("✅ read_file tool works")
         
         
-        # Clean up
+        # 清理
         os.remove(test_file)
         
     except Exception as e:
         print(f"❌ File operation test failed: {e}")
     
-    # Test code interpreter
+    # 测试代码解释器
     try:
         result = agent._tool_code_interpreter("result = 2 + 2")
         assert result["success"]
@@ -69,15 +69,15 @@ def test_basic_functionality():
     except Exception as e:
         print(f"❌ Code interpreter test failed: {e}")
     
-    # Test TODO list operations
+    # 测试 TODO 列表操作
     try:
-        # Test rewrite_todo_list
+        # 测试 rewrite_todo_list
         result = agent._tool_rewrite_todo_list(["Task 1", "Task 2", "Task 3"])
         assert result["success"]
         assert result["new_items"] == 3
         print("✅ rewrite_todo_list tool works")
         
-        # Test update_todo_status
+        # 测试 update_todo_status
         result = agent._tool_update_todo_status([
             {"id": 1, "status": "completed"},
             {"id": 2, "status": "in_progress"}
@@ -86,7 +86,7 @@ def test_basic_functionality():
         assert result["updated_items"] == 2
         print("✅ update_todo_status tool works")
         
-        # Verify TODO list state
+        # 校验 TODO 列表状态
         assert len(agent.todo_list) == 3
         assert agent.todo_list[0].status == TodoStatus.COMPLETED
         assert agent.todo_list[1].status == TodoStatus.IN_PROGRESS
@@ -95,7 +95,7 @@ def test_basic_functionality():
     except Exception as e:
         print(f"❌ TODO list test failed: {e}")
     
-    # Test system state
+    # 测试系统状态
     try:
         state = agent._get_system_state()
         assert "Current Time:" in state
@@ -105,9 +105,9 @@ def test_basic_functionality():
     except Exception as e:
         print(f"❌ System state test failed: {e}")
     
-    # Test error handling
+    # 测试错误处理
     try:
-        # This should fail and generate detailed error
+        # 这里应当失败并生成详细错误
         result = agent._tool_read_file("/nonexistent/file.txt")
     except Exception as e:
         error_detail = agent._get_detailed_error(e, "read_file", {"file_path": "/nonexistent/file.txt"})
@@ -119,7 +119,7 @@ def test_basic_functionality():
     return True
 
 def test_command_execution():
-    """Test command execution tool"""
+    """测试命令执行工具"""
     print("\nTesting command execution:")
     
     config = SystemHintConfig(enable_detailed_errors=True)
@@ -131,17 +131,17 @@ def test_command_execution():
     )
     
     try:
-        # Test simple command
+        # 测试简单命令
         result = agent._tool_execute_command("echo 'Hello, World!'")
         assert result["success"]
         assert "Hello, World!" in result["output"]
         print("✅ Command execution works")
         
-        # Test directory change
+        # 测试目录切换
         original_dir = agent.current_directory
         result = agent._tool_execute_command("cd /tmp")
         assert agent.current_directory == "/tmp"
-        agent.current_directory = original_dir  # Restore
+        agent.current_directory = original_dir  # 恢复
         print("✅ Directory tracking works")
         
     except Exception as e:
@@ -150,12 +150,12 @@ def test_command_execution():
     return True
 def test_read_file_empty_file_line_range():
     """
-    Prove that line-based read_file on empty (0-line) files succeeds with empty content.
+    证明对空文件（0 行）按行 read_file 会以空内容成功返回。
     
-    When an LLM agent requested line-based reads (e.g., begin_line=1, number_lines=10) on an
-    empty file, start_line (0) was compared against total_lines (0) with >=, causing the tool to
-    return an error stating begin_line 1 is beyond file length. This test locks out regressions
-    by asserting that line-based reads on empty files return success=True and content="".
+    此前当 LLM Agent 请求按行读取空文件（如 begin_line=1、number_lines=10）时，
+    start_line（0）用 >= 与 total_lines（0）比较，导致工具返回
+    "begin_line 1 超出文件长度" 的错误。本测试断言空文件的按行读取
+    返回 success=True 且 content=""，防止回归。
     """
     config = SystemHintConfig(enable_detailed_errors=True)
     agent = SystemHintAgent(api_key="test-key", provider="kimi", config=config, verbose=False)
@@ -171,7 +171,7 @@ def test_read_file_empty_file_line_range():
 
 
 def test_read_file_rejects_invalid_line_arguments(tmp_path):
-    """Invalid schema inputs must not silently become a read from line one."""
+    """非法的参数类型不得静默变成从第一行读取。"""
     config = SystemHintConfig(enable_detailed_errors=True)
     agent = SystemHintAgent(api_key="test-key", provider="kimi", config=config, verbose=False)
     agent.current_directory = str(tmp_path)
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     print("  System-Hint Agent Component Tests")
     print("="*60)
     
-    # Run basic tests
+    # 运行基础测试
     if test_basic_functionality():
         test_command_execution()
         test_read_file_empty_file_line_range()

@@ -10,14 +10,14 @@ load_dotenv()
 
 from dotenv import load_dotenv
 
-# Read the nearest .env, searching upward from the working directory, so a
-# single file at the repository root serves every chapter.
+# 从工作目录向上查找最近的 .env 并加载，让仓库根目录的
+# 单个文件即可服务所有章节。
 load_dotenv()
 
 
-# Provider resolution lives in the shared agentbook package so every chapter
-# stays consistent; see agentbook/providers.py. The fallback keeps this
-# experiment runnable from a checkout where agentbook is not installed.
+# 提供商解析逻辑放在共享的 agentbook 包里，保证各章一致；
+# 见 agentbook/providers.py。下面的回退保证在未安装 agentbook
+# 的检出目录中也能运行本实验。
 try:
     from agentbook.providers import (
         SUPPORTED_PROVIDERS,
@@ -25,7 +25,7 @@ try:
         resolve_backend,
         resolve_llm_backend,
     )
-except ImportError:  # pragma: no cover - exercised only without the package
+except ImportError:  # pragma: no cover - 仅在未安装 agentbook 包时执行
     import sys as _sys
 
     _sys.path.insert(

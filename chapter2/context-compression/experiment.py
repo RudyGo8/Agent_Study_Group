@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Context Compression Strategies Comparison Experiment
+上下文压缩策略对比实验
 """
 
 import os
@@ -18,11 +18,11 @@ from config import Config
 from agent import ResearchAgent
 from compression_strategies import CompressionStrategy
 
-# Initialize colorama for colored output
+# 初始化 colorama 以支持彩色输出
 init(autoreset=True)
 
 
-# Short CLI aliases -> compression strategy (order matches the book's 实验 2-10)
+# CLI 简短别名 -> 压缩策略（顺序与书中实验 2-10 一致）
 STRATEGY_CHOICES = {
     "no_compression": CompressionStrategy.NO_COMPRESSION,
     "individual": CompressionStrategy.NON_CONTEXT_AWARE_INDIVIDUAL,
@@ -36,26 +36,26 @@ ALL_STRATEGIES = list(STRATEGY_CHOICES.values())
 
 
 class ExperimentRunner:
-    """Runs experiments comparing different compression strategies"""
+    """运行对比不同压缩策略的实验"""
     
     def __init__(self, api_key: str, results_file: Optional[str] = None,
                  enable_streaming: bool = False):
         """
-        Initialize the experiment runner
+        初始化实验运行器
 
-        Args:
-            api_key: API key for Kimi/Moonshot
-            results_file: Optional explicit path for the results JSON (default: results/experiment_TIMESTAMP.json)
-            enable_streaming: Stream compression/model output to the console during the run
+        参数:
+            api_key: Kimi/Moonshot 的 API Key
+            results_file: 结果 JSON 的显式路径（可选，默认 results/experiment_<时间戳>.json）
+            enable_streaming: 运行期间把压缩/模型输出流式打印到控制台
         """
         self.api_key = api_key
         self.results = []
         self.enable_streaming = enable_streaming
 
-        # Create results directory
+        # 创建结果目录
         Config.create_directories()
 
-        # Results file
+        # 结果文件
         if results_file:
             self.results_file = results_file
             parent = os.path.dirname(self.results_file)
@@ -67,40 +67,40 @@ class ExperimentRunner:
 
     def run_single_strategy(self, strategy: CompressionStrategy, verbose: bool = False) -> Dict[str, Any]:
         """
-        Run experiment with a single compression strategy
-        
-        Args:
-            strategy: Compression strategy to test
-            verbose: Enable verbose output
-            
-        Returns:
-            Experiment results
+        用单一压缩策略运行实验
+
+        参数:
+            strategy: 待测试的压缩策略
+            verbose: 启用详细输出
+
+        返回:
+            实验结果
         """
         print(f"\n{Fore.CYAN}{'='*70}")
         print(f"{Fore.CYAN}Testing Strategy: {Fore.YELLOW}{strategy.value}")
         print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
         
-        # Create agent with the strategy
+        # 用该策略创建 Agent
         agent = ResearchAgent(
             api_key=self.api_key,
             compression_strategy=strategy,
             verbose=verbose,
-            enable_streaming=self.enable_streaming  # Off by default for cleaner experiment output
+            enable_streaming=self.enable_streaming  # 默认关闭，让实验输出更整洁
         )
         
         start_time = time.time()
         
         try:
-            # Execute the research task
+            # 执行研究任务
             result = agent.execute_research(max_iterations=Config.MAX_ITERATIONS)
             
             end_time = time.time()
             execution_time = end_time - start_time
             
-            # Analyze results
+            # 分析结果
             trajectory = result.get('trajectory')
             
-            # Calculate metrics
+            # 计算指标
             metrics = {
                 'strategy': strategy.value,
                 'success': result.get('success', False),
@@ -113,7 +113,7 @@ class ExperimentRunner:
                 'final_answer_length': len(result.get('final_answer', '')) if result.get('final_answer') else 0
             }
             
-            # Calculate compression ratios
+            # 计算压缩率
             if trajectory and trajectory.tool_calls:
                 total_original = 0
                 total_compressed = 0
@@ -123,7 +123,7 @@ class ExperimentRunner:
                         total_original += call.compressed_result.original_length
                         total_compressed += call.compressed_result.compressed_length
                     elif call.result and call.tool_name == 'search_web':
-                        # No compression - count full size
+                        # 未压缩 —— 按完整大小计入
                         content = json.dumps(call.result)
                         total_original += len(content)
                         total_compressed += len(content)
@@ -137,10 +137,10 @@ class ExperimentRunner:
                     metrics['total_original_size'] = 0
                     metrics['total_compressed_size'] = 0
             
-            # Print summary
+            # 打印摘要
             self._print_summary(metrics)
             
-            # Store full result
+            # 保存完整结果
             full_result = {
                 'metrics': metrics,
                 'final_answer': result.get('final_answer'),
@@ -163,7 +163,7 @@ class ExperimentRunner:
             }
     
     def _print_summary(self, metrics: Dict[str, Any]):
-        """Print a summary of the metrics"""
+        """打印指标摘要"""
         print(f"\n{Fore.GREEN}📊 Results Summary:{Style.RESET_ALL}")
         print(f"  Success: {self._format_bool(metrics['success'])}")
         print(f"  Iterations: {metrics['iterations']}")
@@ -183,14 +183,14 @@ class ExperimentRunner:
             print(f"  {Fore.RED}Error: {metrics['error'][:100]}...{Style.RESET_ALL}")
     
     def _format_bool(self, value: bool) -> str:
-        """Format boolean value with color"""
+        """给布尔值着色并格式化"""
         if value:
             return f"{Fore.GREEN}✓ Yes{Style.RESET_ALL}"
         else:
             return f"{Fore.RED}✗ No{Style.RESET_ALL}"
     
     def run_all_strategies(self, strategies: Optional[List[CompressionStrategy]] = None) -> None:
-        """Run experiments for the given compression strategies (default: all six)"""
+        """对给定压缩策略运行实验（默认全部 6 种）"""
         if strategies is None:
             strategies = list(ALL_STRATEGIES)
 
@@ -200,34 +200,34 @@ class ExperimentRunner:
         print(f"\nTesting {len(strategies)} compression strategies...")
         print(f"Task: Research current affiliations of OpenAI co-founders")
         
-        # Run each strategy
+        # 逐个运行策略
         for strategy in tqdm(strategies, desc="Running experiments"):
             result = self.run_single_strategy(strategy)
             self.results.append(result)
             
-            # Save intermediate results
+            # 保存中间结果
             self._save_results()
             
-            # Small delay between experiments
+            # 实验之间稍作延迟
             time.sleep(2)
         
-        # Print final comparison
+        # 打印最终对比
         self._print_comparison()
     
     def _save_results(self):
-        """Save results to JSON file"""
+        """把结果保存为 JSON 文件"""
         with open(self.results_file, 'w') as f:
             json.dump(self.results, f, indent=2, default=str)
         
         print(f"\n💾 Results saved to: {self.results_file}")
     
     def _print_comparison(self):
-        """Print comparison table of all strategies"""
+        """打印所有策略的对比表"""
         print(f"\n{Fore.MAGENTA}{'='*70}")
         print(f"{Fore.MAGENTA}FINAL COMPARISON")
         print(f"{Fore.MAGENTA}{'='*70}{Style.RESET_ALL}")
         
-        # Create comparison table
+        # 生成对比表
         print(f"\n{'Strategy':<38} {'Success':<9} {'Time':<9} {'Tokens':<11} {'Compress':<10} {'Overflows':<10}")
         print("-" * 90)
 
@@ -240,17 +240,17 @@ class ExperimentRunner:
             compress = f"{metrics.get('compression_ratio', 1.0):.1%}" if 'compression_ratio' in metrics else "N/A"
             overflows = str(metrics.get('context_overflows', 0))
 
-            # Color code success
+            # 用颜色标识成功与否
             color = Fore.GREEN if metrics['success'] else Fore.RED
             print(f"{color}{strategy:<38} {success:<9} {time_str:<9} {tokens:<11} {compress:<10} {overflows:<10}{Style.RESET_ALL}")
 
         print("\n" + "="*90)
         
-        # Analysis summary
+        # 分析小结
         self._print_analysis()
     
     def _print_analysis(self):
-        """Print analysis of the results"""
+        """打印结果分析"""
         print(f"\n{Fore.CYAN}📈 Analysis:{Style.RESET_ALL}")
         
         successful = [r for r in self.results if r['metrics']['success']]
@@ -259,7 +259,7 @@ class ExperimentRunner:
         print(f"\n  Successful Strategies: {len(successful)}/{len(self.results)}")
         
         if successful:
-            # Find best performing
+            # 找出表现最好的
             fastest = min(successful, key=lambda x: x['metrics']['execution_time'])
             most_efficient = min(successful, key=lambda x: x['metrics'].get('total_compressed_size', float('inf')))
             
@@ -269,12 +269,12 @@ class ExperimentRunner:
         if failed:
             print(f"\n  Failed Strategies:")
             for r in failed:
-                # error may be present-but-None when a strategy fails by hitting the
-                # iteration cap (rather than raising), so coalesce before slicing.
+                # 策略因达到迭代上限（而非抛异常）而失败时，error 可能
+                # 存在但为 None，切片前先做合并处理。
                 err = r['metrics'].get('error') or 'No final answer within max iterations'
                 print(f"    - {r['metrics']['strategy']}: {err[:50]}...")
         
-        # Key findings
+        # 主要发现
         print(f"\n{Fore.CYAN}🔍 Key Findings:{Style.RESET_ALL}")
         print("  1. No Compression: Expected to fail with context overflow ✓")
         print("  2. Non-Context-Aware: May lose important context details")
@@ -327,7 +327,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main():
-    """Main entry point"""
+    """主入口"""
     parser = build_parser()
     args = parser.parse_args()
 
@@ -337,19 +337,19 @@ def main():
             print(f"  {alias:<16} -> {strat.value}")
         return
 
-    # Apply CLI overrides onto the shared Config
+    # 把命令行参数覆盖到共享的 Config
     if args.model:
         Config.MODEL_NAME = args.model
     if args.max_iterations is not None:
         Config.MAX_ITERATIONS = args.max_iterations
 
-    # Resolve which strategies to run
+    # 确定要运行的策略
     if args.strategy:
         strategies = [STRATEGY_CHOICES[name] for name in args.strategy]
     else:
         strategies = list(ALL_STRATEGIES)
 
-    # Check configuration
+    # 检查配置
     if not Config.validate():
         print(f"\n{Fore.RED}Configuration validation failed!{Style.RESET_ALL}")
         print("\nPlease set up your .env file with:")
@@ -357,17 +357,17 @@ def main():
         print("  SERPER_API_KEY=your_api_key_here (optional)")
         sys.exit(1)
 
-    # Print configuration
+    # 打印配置
     Config.print_config()
 
-    # Create runner
+    # 创建运行器
     runner = ExperimentRunner(
         Config.MOONSHOT_API_KEY,
         results_file=args.output,
         enable_streaming=args.streaming,
     )
 
-    # Run experiments
+    # 运行实验
     try:
         runner.run_all_strategies(strategies)
         print(f"\n{Fore.GREEN}✅ Experiment completed successfully!{Style.RESET_ALL}")

@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 def _reasoning_safe_temperature(model, requested=1.0):
-    """Reasoning models (Kimi K3, GPT-5, ...) only accept temperature=1.
-    Return 1 for those; otherwise the requested value so non-reasoning
-    providers (Doubao, DeepSeek, older Moonshot) are unchanged."""
+    """思考型模型（Kimi K3、GPT-5 等）只接受 temperature=1。
+    对这类模型返回 1；否则返回请求值，保持非思考型提供商
+    （Doubao、DeepSeek、旧版 Moonshot）行为不变。"""
     m = str(model or "").lower().replace("/", "-")
     return 1 if ("kimi-k3" in m or "gpt-5" in m) else requested
 
@@ -55,15 +55,13 @@ def format_trace_step(step: Dict[str, Any], max_len: int = 500) -> str:
 
 def search_impl(arguments: Dict[str, Any]) -> Any:
     """
-    When using the search tool provided by Moonshot AI, you just need to return the arguments as they are,
-    without any additional processing logic.
- 
-    But if you want to use other models and keep the internet search functionality, you just need to modify 
-    the implementation here (for example, calling search and fetching web page content), the function signature 
-    remains the same and still works.
- 
-    This ensures maximum compatibility, allowing you to switch between different models without making 
-    destructive changes to the code.
+    使用 Moonshot AI 提供的搜索工具时，直接原样返回参数即可，
+    无需任何额外的处理逻辑。
+
+    如果想换用其他模型并保留联网搜索功能，只需修改这里的实现
+    （例如调用搜索并抓取网页内容），函数签名保持不变，整体依然可用。
+
+    这样保证了最大兼容性：切换不同模型时无需对代码做破坏性改动。
     """
     return arguments
 
@@ -130,9 +128,9 @@ class WebSearchAgent:
         self.conversation_history = []
         # ReAct 轨迹：按顺序记录每一步的思考/行动/观察，便于展示与调试
         self.trace: List[Dict[str, Any]] = []
-        # Credential-free provider requests/responses for Experiment 1-2
-        # acceptance.  Search IDs in tool arguments are intentionally retained:
-        # they prove that Moonshot's hosted built-in tool actually executed.
+        # 不含凭据的提供商请求/响应，用于实验 1-2 的验收。
+        # 工具参数中的搜索 ID 被刻意保留：它们能证明 Moonshot
+        # 托管的内置工具确实执行过。
         self.api_turns: List[Dict[str, Any]] = []
         self.formula_uri = "moonshot/web-search:latest"
         self._formula_tools: Optional[List[Dict[str, Any]]] = None
@@ -148,7 +146,7 @@ class WebSearchAgent:
             print(format_trace_step(step))
         
     def _get_tools(self) -> List[Dict[str, Any]]:
-        """Fetch and cache Kimi's authoritative Formula declaration."""
+        """获取并缓存 Kimi 官方的 Formula 声明。"""
         if getattr(self, "using_openrouter", False):
             return []
         if self._formula_tools is not None:
@@ -211,7 +209,7 @@ class WebSearchAgent:
         return tools
 
     def _execute_formula(self, name: str, raw_arguments: str) -> str:
-        """Execute one Kimi Formula Fiber exactly as the model requested."""
+        """严格按模型请求原样执行一次 Kimi Formula Fiber。"""
         if self.using_openrouter:
             raise RuntimeError("Kimi Formula tools are unavailable on OpenRouter")
 
@@ -364,7 +362,7 @@ class WebSearchAgent:
         # 重置 ReAct 轨迹
         self.trace = []
         self.api_turns = []
-        # Each independent question keeps its own real declaration receipt.
+        # 每个独立问题都保留自己的真实声明回执。
         self._formula_tools = None
         logger.info("开始调用 Kimi 搜索工具...")
 
@@ -418,8 +416,8 @@ class WebSearchAgent:
                                 tool_call.function.arguments or "{}"
                             )
                         except json.JSONDecodeError:
-                            # Models sometimes emit slightly invalid JSON; match
-                            # chapter4 async-agent and keep the ReAct loop alive.
+                            # 模型偶尔会输出轻微非法的 JSON；与第 4 章
+                            # async-agent 保持一致，保住 ReAct 循环不中断。
                             tool_call_arguments = {}
                             logger.warning(
                                 "工具参数不是合法 JSON，已按空对象继续: %r",
@@ -432,9 +430,8 @@ class WebSearchAgent:
                                     "tool": tool_call_name, "args": tool_call_arguments})
 
                         if tool_call_name == "web_search":
-                            # Formula requires the original serialized
-                            # arguments, even though the parsed copy above is
-                            # retained for a readable ReAct trace.
+                            # Formula 要求原始的序列化参数；上面解析出的
+                            # 副本只是为了生成可读的 ReAct 轨迹。
                             tool_result = self._execute_formula(
                                 tool_call_name,
                                 tool_call.function.arguments or "{}",
@@ -512,7 +509,7 @@ class WebSearchAgent:
         return self.trace
 
     def get_api_turns(self) -> List[Dict[str, Any]]:
-        """Return detached real-provider evidence for the latest question."""
+        """返回最近一次问题的真实提供商证据（深拷贝副本）。"""
         return json.loads(json.dumps(self.api_turns, ensure_ascii=False, default=str))
     
     def set_temperature(self, temperature: float):

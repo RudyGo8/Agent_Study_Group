@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Utility to view saved trajectory files
-Usage: python view_trajectory.py [trajectory_file]
+查看已保存轨迹文件的小工具
+用法: python view_trajectory.py [trajectory_file]
 """
 
 import json
@@ -10,7 +10,7 @@ from pathlib import Path
 from datetime import datetime
 
 def format_time(iso_string):
-    """Convert ISO timestamp to readable format"""
+    """把 ISO 时间戳转换为易读格式"""
     try:
         dt = datetime.fromisoformat(iso_string.replace('Z', '+00:00'))
         return dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -18,7 +18,7 @@ def format_time(iso_string):
         return iso_string
 
 def view_trajectory(file_path="trajectory.json"):
-    """View trajectory file with formatted output"""
+    """查看轨迹文件并格式化输出"""
     try:
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -39,7 +39,7 @@ def view_trajectory(file_path="trajectory.json"):
         else:
             print(f"\n⚠️ Task Not Completed")
         
-        # Show tool calls breakdown
+        # 展示工具调用分布
         if data['tool_calls']:
             print("\n📊 Tool Usage Summary:")
             tool_counts = {}
@@ -50,7 +50,7 @@ def view_trajectory(file_path="trajectory.json"):
             for tool, count in tool_counts.items():
                 print(f"  - {tool}: {count} call(s)")
         
-        # Show TODO list if present
+        # 若存在则展示 TODO 列表
         if data['todo_list']:
             print("\n📋 TODO List:")
             for item in data['todo_list']:
@@ -62,7 +62,7 @@ def view_trajectory(file_path="trajectory.json"):
                 }.get(item['status'], '❓')
                 print(f"  [{item['id']}] {status_symbol} {item['content']}")
         
-        # Show conversation snippets
+        # 展示对话片段
         print("\n💬 Conversation Highlights:")
         for i, msg in enumerate(data['conversation_history'][:5], 1):
             role = msg['role']

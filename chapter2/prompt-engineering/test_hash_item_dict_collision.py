@@ -8,7 +8,7 @@ from tau_bench.model_utils.api.cache import (
 
 
 class SameReprKey:
-    """Hashable key whose representation intentionally carries no identity."""
+    """可哈希键，其 repr 刻意不携带任何身份信息。"""
 
     def __init__(self, value):
         self.value = value
@@ -33,35 +33,35 @@ def clear_cache():
 
 
 def test_hash_item_dict_different_values():
-    """Different values under one key must not share a canonical identity."""
+    """同一键名下的不同值不能共享同一规范化身份。"""
     dict1 = {"a": 1}
     dict2 = {"a": 2}
     assert hash_item(dict1) != hash_item(dict2)
 
 
 def test_hash_item_dict_different_key_value_pairs():
-    """Reassigning values across keys must change dictionary identity."""
+    """键值互换后字典身份必须改变。"""
     dict1 = {"a": 1, "b": 2}
     dict2 = {"a": 2, "b": 1}
     assert hash_item(dict1) != hash_item(dict2)
 
 
 def test_hash_item_dict_nested_different_values():
-    """Differences in recursively nested values must remain observable."""
+    """递归嵌套值中的差异必须仍可被观察到。"""
     dict1 = {"a": {"items": [1, {"value": "first"}]}}
     dict2 = {"a": {"items": [1, {"value": "second"}]}}
     assert hash_item(dict1) != hash_item(dict2)
 
 
 def test_hash_item_dict_heterogeneous_keys_is_order_independent():
-    """Mixed key types must normalize independently of insertion order."""
+    """混合类型的键做规范化时必须与插入顺序无关。"""
     dict1 = {1: "integer", "1": "string", (1,): "tuple"}
     dict2 = {(1,): "tuple", "1": "string", 1: "integer"}
     assert hash_item(dict1) == hash_item(dict2)
 
 
 def test_cache_dict_same_repr_keys_is_order_independent():
-    """Equal dictionaries deduplicate even when the key sort identities collide."""
+    """即使键的排序身份冲突，相等的字典仍会去重。"""
     calls = 0
     first_key = SameReprKey("first")
     second_key = SameReprKey("second")
@@ -82,7 +82,7 @@ def test_cache_dict_same_repr_keys_is_order_independent():
 
 
 def test_hash_item_set_same_repr_members_is_order_independent():
-    """Equal sets normalize identically when member sort identities collide."""
+    """即使成员的排序身份冲突，相等的集合仍规范化为同一结果。"""
     first = SameReprKey("first")
     second = SameReprKey("second")
     set1 = {first, second}
@@ -93,7 +93,7 @@ def test_hash_item_set_same_repr_members_is_order_independent():
 
 
 def test_hash_item_dict_distinguishes_heterogeneous_key_types():
-    """Textually similar keys of different types must not collide."""
+    """文本上相似但类型不同的键不能发生碰撞。"""
     assert hash_item({1: "value"}) != hash_item({"1": "value"})
 
 
@@ -106,12 +106,12 @@ def test_hash_item_dict_distinguishes_heterogeneous_key_types():
     ],
 )
 def test_hash_item_preserves_container_type(item1, item2):
-    """List/tuple, set/tuple, and dict/tuple inputs must remain distinct."""
+    """list/tuple、set/tuple、dict/tuple 输入必须保持互不相同。"""
     assert hash_item(item1) != hash_item(item2)
 
 
 def test_cache_distinguishes_same_named_function_instances():
-    """Distinct same-named callables must never share cached results."""
+    """同名但不同的可调用对象绝不能共享缓存结果。"""
     def make_lookup(prefix):
         @cache_call_w_dedup
         def lookup(value):
@@ -127,7 +127,7 @@ def test_cache_distinguishes_same_named_function_instances():
 
 
 def test_cache_distinguishes_nan_dictionary_keys():
-    """Unequal NaN keys with identical text must not share cached results."""
+    """文本相同但互不相等的 NaN 键不能共享缓存结果。"""
     calls = 0
 
     @cache_call_w_dedup

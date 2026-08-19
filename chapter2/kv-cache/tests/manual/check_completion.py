@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify the agent correctly identifies final answers
-when no tool calls are made
+验证 Agent 在无工具调用时能正确识别最终答案的测试脚本
 """
 
 import os
@@ -13,9 +12,9 @@ add_project_root()
 from agent import KVCacheAgent, KVCacheMode
 
 def test_completion_logic():
-    """Test that the agent correctly handles responses without tool calls as final answers"""
+    """验证 Agent 把无工具调用的响应正确当作最终答案"""
     
-    # Get API key
+    # 获取 API key
     api_key = os.getenv("MOONSHOT_API_KEY")
     if not api_key:
         print("❌ Please set MOONSHOT_API_KEY environment variable")
@@ -24,7 +23,7 @@ def test_completion_logic():
     print("🧪 Testing Final Answer Detection")
     print("="*60)
     
-    # Test 1: Simple question that doesn't require tools
+    # 测试 1：不需要工具的简单问题
     print("\n1️⃣ Test: Simple question without tools")
     task1 = "What is 2 + 2? Just tell me the answer, no need to use any tools."
     
@@ -43,7 +42,7 @@ def test_completion_logic():
     if result['final_answer']:
         print(f"   Answer: {result['final_answer'][:100]}")
     
-    # Test 2: Question that requires tools
+    # 测试 2：需要工具的问题
     print("\n2️⃣ Test: Question requiring tools")
     task2 = "How many Python files are in the chapter1/context directory?"
     
@@ -65,7 +64,7 @@ def test_completion_logic():
         for tc in result2['tool_calls']:
             print(f"     • {tc.name}")
     
-    # Test 3: Multi-step task
+    # 测试 3：多步任务
     print("\n3️⃣ Test: Multi-step task")
     task3 = "Find Python files in chapter1/context, then tell me if there's a file named 'agent.py'"
     
@@ -82,7 +81,7 @@ def test_completion_logic():
     print(f"   ✓ Tool calls: {len(result3['tool_calls'])}")
     print(f"   ✓ Has final answer: {result3['success']}")
     
-    # Summary
+    # 总结
     print("\n" + "="*60)
     print("📊 Summary:")
     print(f"  • Test 1 (no tools): {result['iterations']} iterations, {len(result['tool_calls'])} tools")

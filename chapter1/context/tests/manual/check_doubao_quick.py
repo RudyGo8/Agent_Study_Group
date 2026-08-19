@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick test with Doubao as default
+以 Doubao 为默认提供商的快速测试
 """
 
 import os
@@ -11,7 +11,7 @@ from _bootstrap import add_project_root
 
 add_project_root()
 
-# Set a very simple task to test quickly
+# 用一个极简任务快速测试
 task = "What is 10 + 5? Provide FINAL ANSWER with just the number."
 
 print("="*60)
@@ -25,7 +25,7 @@ if not ark_key:
 
 from agent import ContextAwareAgent, ContextMode
 
-# Create agent with default Doubao
+# 用默认的 Doubao 创建 Agent
 agent = ContextAwareAgent(ark_key, ContextMode.FULL, provider="doubao")
 print(f"✅ Using: {agent.provider} / {agent.model}")
 print(f"\n📝 Task: {task}")

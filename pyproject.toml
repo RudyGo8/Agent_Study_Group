@@ -19,14 +19,22 @@ license = { text = "Apache-2.0" }
 # The core that nearly every experiment needs.
 # openai: 131 declarations across the repo; python-dotenv: 114; requests: 50.
 dependencies = [
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "matplotlib>=3.7.0",
+    "numpy>=1.24.0",
     # chapter 8 (self-evolution-eval, self-modifying-agent, trajectory-verifier,
     # gaia-experience) calls client.responses.create, added in 1.68. A lower
     # floor is satisfiable by an already-installed older SDK that then fails at
     # runtime rather than at install time.
-    "openai>=1.68",
+    "openai>=1.0.0",
     "pydantic>=2.9.0",
-    "python-dotenv>=1.0",
-    "requests>=2.31",
+    "pypdf2>=3.0.0",
+    "pytest>=7.4.0",
+    "python-dotenv>=1.0.0",
+    "reportlab>=4.0.0",
+    "requests>=2.31.0",
+    "tabulate>=0.9.0",
 ]
 
 # ---------------------------------------------------------------------------
@@ -334,6 +342,10 @@ ch10 = ["agentbook[tokens,web]"]              # token counting and browser resea
 
 # Everything except the heavy local-training stack, so `all` stays CPU-friendly.
 all = ["agentbook[viz,docs,media,web,browser,serve,rag,mem,mcp,providers,tokens,analysis,solvers,integrations,orchestration,dev]"]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
 
 [tool.uv]
 # These GPU stacks are deliberately separate execution environments (see the

@@ -1,6 +1,6 @@
 """
-Main entry point for System-Hint Enhanced Agent
-Supports command-line tasks and interactive mode
+System-Hint 增强 Agent 的主入口
+支持命令行任务与交互模式
 """
 
 import os
@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from agent import SystemHintAgent, SystemHintConfig, TodoStatus
 
-# Configure logging
+# 配置日志
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -21,14 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 def print_section(title: str):
-    """Print a formatted section header"""
+    """打印格式化的章节标题"""
     print("\n" + "="*80)
     print(f"  {title}")
     print("="*80)
 
 
 def print_result(result: dict):
-    """Print formatted result"""
+    """打印格式化的结果"""
     if result.get('success'):
         print("\n✅ Task completed successfully!")
         if result.get('final_answer'):
@@ -58,7 +58,7 @@ def print_result(result: dict):
             }.get(item['status'], '❓')
             print(f"  [{item['id']}] {status_emoji} {item['content']} ({item['status']})")
     
-    # Show tool call summary
+    # 展示工具调用摘要
     if result.get('tool_calls'):
         print(f"\n🔧 Tool Call Summary:")
         tool_summary = {}
@@ -82,7 +82,7 @@ def print_result(result: dict):
 
 
 def get_sample_task() -> str:
-    """Get the sample task for summarizing week1 and week2 projects"""
+    """获取用于总结 week1 和 week2 项目的示例任务"""
     return """Analyze and summarize the AI Agent projects in week1 and week2 directories. Create a comprehensive analysis file 'project_analysis_report.md' containing:
 
    - Overview of all the projects in week1 and week2 directories
@@ -92,7 +92,7 @@ def get_sample_task() -> str:
 
 def execute_single_task(task: str, config: SystemHintConfig = None, verbose: bool = False,
                         provider: str = "kimi", model: str = None):
-    """Execute a single task with the agent"""
+    """用 Agent 执行单个任务"""
     api_key = os.getenv("KIMI_API_KEY") or os.getenv("MOONSHOT_API_KEY") or os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         print("❌ Error: Please set KIMI_API_KEY environment variable")
@@ -117,7 +117,7 @@ def execute_single_task(task: str, config: SystemHintConfig = None, verbose: boo
         verbose=verbose
     )
     
-    # For project analysis tasks, navigate to parent directory
+    # 项目分析任务需要先切到上级目录
     if "week1" in task.lower() and "week2" in task.lower():
         agent.current_directory = str(Path(__file__).parent.parent)
         print(f"📁 Working directory set to: {agent.current_directory}")
@@ -128,7 +128,7 @@ def execute_single_task(task: str, config: SystemHintConfig = None, verbose: boo
 
 
 def interactive_mode():
-    """Run the agent in interactive mode"""
+    """以交互模式运行 Agent"""
     print_section("Interactive Mode - System-Hint Agent")
     
     api_key = os.getenv("KIMI_API_KEY") or os.getenv("MOONSHOT_API_KEY") or os.getenv("OPENROUTER_API_KEY")
@@ -137,7 +137,7 @@ def interactive_mode():
         print("   export KIMI_API_KEY='your-api-key-here'")
         return
     
-    # Initialize agent with full features
+    # 以完整功能初始化 Agent
     config = SystemHintConfig(
         enable_timestamps=True,
         enable_tool_counter=True,
@@ -178,14 +178,14 @@ def interactive_mode():
                 print("\n📋 Running sample task:")
                 print(task)
                 
-                # Navigate to parent directory for project analysis
+                # 项目分析需要切到上级目录
                 original_dir = agent.current_directory
                 agent.current_directory = str(Path(__file__).parent.parent)
                 
                 result = agent.execute_task(task, max_iterations=100)
                 print_result(result)
                 
-                # Restore directory
+                # 恢复目录
                 agent.current_directory = original_dir
                 
             elif user_input.lower() == 'reset':
@@ -202,7 +202,7 @@ def interactive_mode():
                 print(f"  - Current Directory: {agent.current_directory}")
                 
             else:
-                # Execute user task
+                # 执行用户任务
                 result = agent.execute_task(user_input, max_iterations=25)
                 print_result(result)
                 
@@ -214,7 +214,7 @@ def interactive_mode():
 
 
 def demo_basic_features():
-    """Demonstrate basic system hint features"""
+    """演示 system hint 的基础功能"""
     print_section("Demo: Basic System Hint Features")
     
     api_key = os.getenv("KIMI_API_KEY") or os.getenv("MOONSHOT_API_KEY") or os.getenv("OPENROUTER_API_KEY")
@@ -250,7 +250,7 @@ def demo_basic_features():
 
 
 def demo_tool_loop_prevention():
-    """Demonstrate tool call loop prevention"""
+    """演示工具调用循环防护"""
     print_section("Demo: Tool Call Loop Prevention")
     
     api_key = os.getenv("KIMI_API_KEY") or os.getenv("MOONSHOT_API_KEY") or os.getenv("OPENROUTER_API_KEY")
@@ -287,7 +287,7 @@ def demo_tool_loop_prevention():
 
 
 def demo_comparison():
-    """Compare with and without system hints"""
+    """对比启用与禁用 system hint 的效果"""
     print_section("Demo: System Hints Comparison")
     
     api_key = os.getenv("KIMI_API_KEY") or os.getenv("MOONSHOT_API_KEY") or os.getenv("OPENROUTER_API_KEY")
@@ -297,7 +297,7 @@ def demo_comparison():
     
     task = """Create a simple Python script that prints 'Hello World' and save it as 'hello.py'."""
     
-    # With system hints
+    # 启用 system hint
     print("\n📋 WITH System Hints:")
     config_with = SystemHintConfig(
         enable_timestamps=True,
@@ -319,7 +319,7 @@ def demo_comparison():
     print(f"  - Iterations: {result_with.get('iterations')}")
     print(f"  - Tool calls: {len(result_with.get('tool_calls', []))}")
     
-    # Without system hints
+    # 禁用 system hint
     print("\n📋 WITHOUT System Hints:")
     config_without = SystemHintConfig(
         enable_timestamps=False,
@@ -462,7 +462,7 @@ def preview_status_bar(config: SystemHintConfig):
 
 
 def main():
-    """Main function with command-line argument support"""
+    """主函数，支持命令行参数"""
     parser = argparse.ArgumentParser(
         description=(
             "System-Hint Enhanced AI Agent（对应书中实验 2-9 “Agent 状态栏”）\n"
@@ -565,7 +565,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Configure based on command-line flags
+    # 依据命令行开关生成配置
     config = SystemHintConfig(
         enable_timestamps=not args.no_timestamps,
         enable_tool_counter=not args.no_counter,
@@ -595,7 +595,7 @@ def main():
             print_result(result)
 
     elif args.mode == "sample":
-        # Run the sample task
+        # 运行示例任务
         task = get_sample_task()
         print("\n📋 Running sample task:")
         print("-"*60)
@@ -615,7 +615,7 @@ def main():
         elif args.demo == "comparison":
             demo_comparison()
         else:
-            # Run all demos
+            # 运行全部演示
             print("\nRunning all demonstrations...")
             demo_basic_features()
             input("\nPress Enter to continue...")

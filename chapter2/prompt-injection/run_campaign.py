@@ -1,4 +1,4 @@
-"""Canonical real-provider campaign for Experiment 2-5."""
+"""实验 2-5：基于真实提供商的正式批量实验（campaign）运行入口。"""
 
 from __future__ import annotations
 
@@ -60,11 +60,11 @@ def accepted_receipt(call: dict[str, Any], model: str) -> bool:
 
 
 def request_messages_contain(provider_calls: list[dict[str, Any]], literal: str) -> bool:
-    """Return whether a literal is present in any provider-request message.
+    """判断某个字面量是否出现在任一提供商请求消息中。
 
-    Inspect the structured request rather than its JSON serialization.  JSON
-    escapes the quotes in XML-style source tags, which made the real tag
-    ``<external_content source="webpage">`` invisible to the old validator.
+    检查结构化的请求对象而非其 JSON 序列化文本。JSON 会转义 XML 风格
+    来源标记中的引号，导致真实标记 ``<external_content source="webpage">``
+    对旧版校验器不可见。
     """
     for call in provider_calls:
         request = call.get("request") or {}
@@ -153,8 +153,8 @@ def run_trial(
     )
     if attack_index == 2:
         first = first_agent.run([attack.user_messages[0]], max_steps=max_steps)
-        # A genuinely new Agent/session must consume the persisted memory file;
-        # no messages from session 1 are carried into session 2.
+        # 第二个会话必须是全新的 Agent：只消费持久化的记忆文件，
+        # 不携带第 1 个会话的任何消息。
         second_agent = Agent(
             client=client,
             model=model,

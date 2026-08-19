@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Quick demo showing the LLM learning process in detail.
-This script runs a simplified experiment to demonstrate how LLMs learn from experience.
+快速演示：详细展示 LLM 的学习过程。
+本脚本跑一个简化实验，演示 LLM 如何从经验中学习。
 """
 
 import os
@@ -10,10 +10,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# 从 .env 文件加载环境变量
 load_dotenv()
 
-# Add parent directory to path for imports
+# 把父目录加入 sys.path 以便导入
 sys.path.append(str(Path(__file__).parent))
 
 from game_environment import TreasureHuntGame
@@ -21,7 +21,7 @@ from llm_agent import LLMAgent
 
 
 def show_game_solution():
-    """Show the optimal solution to the game."""
+    """展示游戏的最优解。"""
     print("\n" + "="*70)
     print("GAME SOLUTION (for reference)")
     print("="*70)
@@ -45,12 +45,12 @@ def show_game_solution():
 
 
 def run_llm_demo():
-    """Run a simplified LLM demo with just a few episodes."""
+    """只跑几局的简化 LLM 演示。"""
     print("\n" + "🤖"*35)
     print("LLM IN-CONTEXT LEARNING DEMO")
     print("🤖"*35)
     
-    # Check API key
+    # 检查 API key
     provider = os.getenv("LLM_PROVIDER", "moonshot").lower()
     api_key = os.getenv("DASHSCOPE_API_KEY") if provider in {"dashscope", "qwen", "bailian"} else os.getenv("MOONSHOT_API_KEY")
     if not api_key and not os.getenv("OPENROUTER_API_KEY"):
@@ -65,7 +65,7 @@ def run_llm_demo():
     print("\n✅ API key found!")
     print("🧠 Initializing Kimi K3 LLM agent...")
     
-    # Initialize agent
+    # 初始化智能体
     agent = LLMAgent(
         api_key=api_key,
         model=os.getenv("MOONSHOT_MODEL", "kimi-k3"),
@@ -77,7 +77,7 @@ def run_llm_demo():
     print("\n📚 The LLM will play 3 episodes to learn the game")
     print("👀 Watch how it reasons and learns from each experience!\n")
     
-    # Play 3 episodes
+    # 玩 3 局
     game = TreasureHuntGame()
     
     for episode in range(3):
@@ -85,11 +85,11 @@ def run_llm_demo():
         print(f"EPISODE {episode + 1} of 3")
         print("🎮"*35)
         
-        # Show what the LLM has learned so far
+        # 展示 LLM 目前学到的东西
         if agent.experiences:
             print(f"\n📊 Experience Memory: {len(agent.experiences)} interactions stored")
             
-            # Show some key learnings
+            # 展示部分关键学习成果
             successful = [e for e in agent.experiences if e.success]
             if successful:
                 print("✅ Successful patterns discovered:")
@@ -102,7 +102,7 @@ def run_llm_demo():
                 for exp in failed[-2:]:
                     print(f"   • {exp.action} → reward: {exp.reward:.1f}")
         
-        # Play episode
+        # 玩一局
         reward, steps, victory = agent.play_episode(game, verbose=True)
         
         print(f"\n📈 Episode {episode + 1} Performance:")
@@ -122,7 +122,7 @@ def run_llm_demo():
             import time
             time.sleep(2)
     
-    # Summary
+    # 小结
     print("\n" + "="*70)
     print("DEMO SUMMARY")
     print("="*70)
@@ -141,16 +141,16 @@ def run_llm_demo():
 
 
 def main():
-    """Main entry point."""
+    """程序入口。"""
     print("\n" + "🎯"*35)
     print("LEARNING FROM EXPERIENCE: LLM DEMO")
     print("Replicating insights from 'The Second Half'")
     print("🎯"*35)
     
-    # Show solution first
+    # 先展示解法
     show_game_solution()
-    
-    # Ask user if they want to continue
+
+    # 询问用户是否继续
     response = input("\n▶️ Ready to see how an LLM learns this game? (y/n): ").strip().lower()
     
     if response == 'y':

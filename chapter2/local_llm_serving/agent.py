@@ -1,6 +1,6 @@
 """
-vLLM Tool Calling Agent Implementation
-Demonstrates how to use vLLM with Qwen3 for tool calling
+vLLM 工具调用 Agent 实现
+演示如何基于 vLLM + Qwen3 实现工具调用
 """
 
 import json
@@ -12,21 +12,21 @@ from openai import OpenAI
 from tools import ToolRegistry
 from config import OPENAI_API_BASE, OPENAI_API_KEY, LOG_LEVEL
 
-# Set up logging
+# 配置日志
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
 
 class VLLMToolAgent:
-    """Agent that uses vLLM for tool calling with Qwen3 model"""
+    """基于 vLLM + Qwen3 模型实现工具调用的 Agent"""
     
     def __init__(self, api_base: str = OPENAI_API_BASE, api_key: str = OPENAI_API_KEY):
         """
-        Initialize the agent with vLLM server connection
+        初始化 Agent 并连接 vLLM 服务端
         
         Args:
-            api_base: Base URL for vLLM server
-            api_key: API key (not required for vLLM, use "EMPTY")
+            api_base: vLLM 服务端地址
+            api_key: API key（vLLM 不校验，填 "EMPTY" 即可）
         """
         self.client = OpenAI(
             api_key=api_key,
@@ -38,7 +38,7 @@ class VLLMToolAgent:
     
     def _format_system_prompt_with_tools(self) -> str:
         """
-        Format the system prompt with available tools in Qwen3 format
+        按 Qwen3 格式生成带工具定义的系统提示词
         """
         tools_json = json.dumps(self.tool_registry.get_tool_schemas(), indent=2)
         
@@ -64,12 +64,12 @@ After receiving tool results, use them to provide a comprehensive answer to the 
     
     def _parse_tool_calls(self, content: str) -> List[Dict[str, Any]]:
         """
-        Parse tool calls from model output
-        Extracts content between <tool_call> tags
+        从模型输出中解析工具调用
+        提取 <tool_call> 标签之间的内容
         """
         tool_calls = []
         
-        # Find all tool call blocks
+        # 找出全部工具调用块
         import re
         pattern = r'<tool_call>(.*?)</tool_call>'
         matches = re.findall(pattern, content, re.DOTALL)
@@ -79,7 +79,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                 tool_call = json.loads(match.strip())
                 if "name" in tool_call and "arguments" in tool_call:
                     tool_calls.append({
-                        "id": str(uuid.uuid4())[:8],  # Generate short ID
+                        "id": str(uuid.uuid4())[:8],  # 生成短 ID
                         "type": "function",
                         "function": {
                             "name": tool_call["name"],
@@ -95,11 +95,10 @@ After receiving tool results, use them to provide a comprehensive answer to the 
     
     def _execute_tool_calls(self, tool_calls: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Execute tool calls and return results.
-        Multiple tool calls in the same turn are executed in parallel (they are
-        independent by construction, since the model generated all of them
-        without seeing any result). Ensures that error messages from failed
-        tool executions are properly formatted.
+        执行工具调用并返回结果。
+        同一轮的多个工具调用并行执行（它们天然相互独立，
+        因为模型是在未看到任何结果的情况下一次生成的）。同时保证
+        失败工具的错误信息被正确格式化。
         """
         def run_one(tool_call: Dict[str, Any]) -> Dict[str, Any]:
             tool_name = tool_call["function"]["name"]
@@ -108,14 +107,14 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             
             logger.info(f"Executing tool: {tool_name} with args: {tool_args}")
             
-            # Execute the tool
+            # 执行工具
             result = self.tool_registry.execute_tool(tool_name, tool_args)
             
-            # Check if the result indicates an error
+            # 检查结果是否表示出错
             try:
                 result_dict = json.loads(result) if isinstance(result, str) else result
                 if isinstance(result_dict, dict) and not result_dict.get("success", True):
-                    # Tool execution failed - format error message clearly
+                    # 工具执行失败——把错误信息格式化清楚
                     error_msg = f"❌ Tool '{tool_name}' execution failed:\n"
                     if "error" in result_dict:
                         error_msg += f"Error: {result_dict['error']}\n"
@@ -129,10 +128,10 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                 else:
                     logger.debug(f"Tool {tool_name} returned: {result}")
             except (json.JSONDecodeError, TypeError):
-                # Result is not JSON, just pass it through
+                # 结果不是 JSON，原样透传
                 logger.debug(f"Tool {tool_name} returned: {result}")
             
-            # Format the result
+            # 格式化结果
             return {
                 "role": "tool",
                 "tool_call_id": tool_id,
@@ -143,14 +142,14 @@ After receiving tool results, use them to provide a comprehensive answer to the 
         if len(tool_calls) <= 1:
             return [run_one(tc) for tc in tool_calls]
         
-        # Independent tool calls run concurrently; executor.map preserves order
+        # 相互独立的工具调用并发执行；executor.map 保持顺序
         with ThreadPoolExecutor(max_workers=len(tool_calls)) as executor:
             return list(executor.map(run_one, tool_calls))
     
     def _execute_single_tool(self, tool_data: Dict[str, Any]) -> Tuple[str, bool]:
         """
-        Execute one parsed tool call ({"name": ..., "arguments": ...}).
-        Returns (result_text, is_error) with error messages formatted clearly.
+        执行一条已解析的工具调用（{"name": ..., "arguments": ...}）。
+        返回 (result_text, is_error)，错误信息会被清晰格式化。
         """
         tool_name = tool_data["name"]
         try:
@@ -159,11 +158,11 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             logger.error(f"Tool execution error: {e}")
             return f"❌ Tool execution exception: {str(e)}", True
         
-        # Check if the result indicates an error
+        # 检查结果是否表示出错
         try:
             result_dict = json.loads(result) if isinstance(result, str) else result
             if isinstance(result_dict, dict) and not result_dict.get("success", True):
-                # Tool execution failed - format error message clearly
+                # 工具执行失败——把错误信息格式化清楚
                 error_msg = f"❌ Tool '{tool_name}' execution failed:\n"
                 if "error" in result_dict:
                     error_msg += f"Error: {result_dict['error']}\n"
@@ -175,7 +174,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                 logger.error(f"Tool {tool_name} failed: {result_dict.get('error', 'Unknown error')}")
                 return error_msg, True
         except (json.JSONDecodeError, TypeError):
-            # Result is not JSON, just pass it through
+            # 结果不是 JSON，原样透传
             pass
         return result, False
     
@@ -183,25 +182,25 @@ After receiving tool results, use them to provide a comprehensive answer to the 
              temperature: float = 0.3, max_tokens: int = 2048, 
              stream: bool = False) -> str:
         """
-        Send a message to the model and handle tool calls in a ReAct loop
-        
+        向模型发送消息，并在 ReAct 循环中处理工具调用
+
         Args:
-            message: User message
-            use_tools: Whether to enable tool calling
-            temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
-            stream: Whether to stream the response
-            
+            message: 用户消息
+            use_tools: 是否启用工具调用
+            temperature: 采样温度
+            max_tokens: 最大生成 token 数
+            stream: 是否流式返回响应
+
         Returns:
-            Final response from the model (or generator if streaming)
+            模型的最终响应（流式模式下为生成器）
         """
         if stream:
             return self.chat_stream(message, use_tools, temperature, max_tokens)
         
-        # Add user message to history
+        # 把用户消息加入历史
         self.conversation_history.append({"role": "user", "content": message})
         
-        # Prepare messages with system prompt if using tools
+        # 使用工具时准备带工具定义的系统提示词
         messages = []
         if use_tools:
             messages.append({
@@ -214,14 +213,14 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                 "content": "You are a helpful assistant."
             })
         
-        # Add conversation history
+        # 加入对话历史
         messages.extend(self.conversation_history)
         
-        # Prepare tools for the API call
+        # 为 API 调用准备工具
         tools = self.tool_registry.get_tool_schemas() if use_tools else None
         
-        # ReAct loop - keep going until no more tool calls are needed
-        max_iterations = 10  # Prevent infinite loops
+        # ReAct 循环——持续迭代直到不再需要工具调用
+        max_iterations = 10  # 防止无限循环
         iteration = 0
         final_response = ""
         
@@ -229,7 +228,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             iteration += 1
             logger.info(f"ReAct iteration {iteration}")
             
-            # Prepare messages for this iteration
+            # 为本轮迭代准备消息
             messages = []
             if use_tools:
                 messages.append({
@@ -243,7 +242,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                 })
             messages.extend(self.conversation_history)
             
-            # Call the model
+            # 调用模型
             response = self.client.chat.completions.create(
                 model="Qwen/Qwen3-0.6B",
                 messages=messages,
@@ -256,10 +255,9 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             assistant_message = response.choices[0].message
             content = assistant_message.content or ""
             
-            # Read tool calls from the structured field. With
-            # enable_auto_tool_choice + the hermes parser, vLLM extracts the
-            # <tool_call> tags out of the text and returns them here instead of
-            # leaving them in `content` (which only holds <think> and final text).
+            # 从结构化字段读取工具调用。开启 enable_auto_tool_choice 并使用
+            # hermes 解析器时，vLLM 会把 <tool_call> 标签从文本中抽取出来
+            # 放到这里，而不是留在 `content` 里（后者只包含 <think> 和最终正文）。
             tool_calls = []
             if use_tools and assistant_message.tool_calls:
                 for tc in assistant_message.tool_calls:
@@ -282,8 +280,8 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             if tool_calls:
                 logger.info(f"Model requested {len(tool_calls)} tool call(s)")
                 
-                # Add assistant message with tool calls to history
-                # (arguments must be a JSON string per the OpenAI API spec)
+                # 把带工具调用的 assistant 消息加入历史
+                # （按 OpenAI API 规范，arguments 必须是 JSON 字符串）
                 self.conversation_history.append({
                     "role": "assistant",
                     "content": content,
@@ -301,23 +299,23 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                     ]
                 })
                 
-                # Execute tool calls
+                # 执行工具调用
                 tool_results = self._execute_tool_calls(tool_calls)
                 
-                # Add tool results to conversation
+                # 把工具结果加入对话
                 for result in tool_results:
-                    # Format tool response for Qwen3
+                    # 按 Qwen3 格式包装工具响应
                     tool_response = f'<tool_response>\n{result["content"]}\n</tool_response>'
                     self.conversation_history.append({
-                        "role": "user",  # Tool responses are treated as user messages in Qwen3
+                        "role": "user",  # Qwen3 中工具响应当作 user 消息处理
                         "content": tool_response,
                         "name": result.get("name", "tool")
                     })
                 
-                # Continue the ReAct loop
+                # 继续 ReAct 循环
                 continue
             else:
-                # No tool calls - we have a final response
+                # 没有工具调用——已得到最终响应
                 self.conversation_history.append({
                     "role": "assistant",
                     "content": content
@@ -325,7 +323,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                 final_response = content
                 break
         
-        # Check if we hit max iterations
+        # 检查是否达到最大迭代次数
         if iteration >= max_iterations:
             logger.warning("Maximum iterations reached in ReAct loop")
             final_response = "I've reached the maximum number of reasoning steps. " + final_response
@@ -333,34 +331,34 @@ After receiving tool results, use them to provide a comprehensive answer to the 
         return final_response
     
     def reset_conversation(self):
-        """Reset the conversation history"""
+        """清空对话历史"""
         self.conversation_history = []
         logger.info("Conversation history reset")
     
     def chat_stream(self, message: str, use_tools: bool = True,
                     temperature: float = 0.3, max_tokens: int = 2048):
         """
-        Stream a message to the model and handle tool calls in a ReAct loop
-        
-        Yields chunks that include:
-        - type: 'thinking', 'tool_call', 'tool_result', 'content'
-        - content: The actual content
+        流式发送消息给模型，并在 ReAct 循环中处理工具调用
+
+        逐个 yield 分片，包含：
+        - type: 'thinking'、'tool_call'、'tool_result'、'content'
+        - content: 实际内容
         """
-        # Add user message to history
+        # 把用户消息加入历史
         self.conversation_history.append({"role": "user", "content": message})
         
-        # Prepare tools for the API call
+        # 为 API 调用准备工具
         tools = self.tool_registry.get_tool_schemas() if use_tools else None
         
-        # ReAct loop - keep going until no more tool calls are needed
-        max_iterations = 10  # Prevent infinite loops
+        # ReAct 循环——持续迭代直到不再需要工具调用
+        max_iterations = 10  # 防止无限循环
         iteration = 0
         
         while iteration < max_iterations:
             iteration += 1
             logger.info(f"ReAct stream iteration {iteration}")
             
-            # Prepare messages for this iteration
+            # 为本轮迭代准备消息
             messages = []
             if use_tools:
                 messages.append({
@@ -374,7 +372,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                 })
             messages.extend(self.conversation_history)
             
-            # Stream response from model
+            # 流式获取模型响应
             stream_response = self.client.chat.completions.create(
                 model="Qwen/Qwen3-0.6B",
                 messages=messages,
@@ -389,7 +387,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
             thinking_buffer = ""
             tool_call_parts = {}
             
-            # Process the stream
+            # 处理流式响应
             for chunk in stream_response:
                 if chunk.choices and chunk.choices[0].delta:
                     delta = chunk.choices[0].delta
@@ -397,15 +395,15 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                         content_chunk = delta.content
                         collected_content.append(content_chunk)
                         
-                        # Check if this is internal thinking (between <think> tags)
+                        # 判断是否为内部思考（<think> 标签之间的内容）
                         if '<think>' in content_chunk or thinking_buffer:
                             thinking_buffer += content_chunk
                             if '</think>' in thinking_buffer:
-                                # Extract and yield thinking
+                                # 提取并输出思考内容
                                 import re
                                 thinking_match = re.search(r'<think>(.*?)</think>', thinking_buffer, re.DOTALL)
                                 if thinking_match:
-                                    # Stream thinking character by character
+                                    # 逐字符流式输出思考内容
                                     for char in thinking_match.group(1).strip():
                                         yield {"type": "thinking", "content": char}
                                 remaining = re.sub(
@@ -415,12 +413,11 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                                 if remaining:
                                     yield {"type": "content", "content": remaining}
                         else:
-                            # Regular content
+                            # 普通正文内容
                             yield {"type": "content", "content": content_chunk}
 
-                    # vLLM streams structured tool calls in fragments. Calls
-                    # are keyed by index because ids, names, and arguments may
-                    # arrive in separate chunks.
+                    # vLLM 以分片形式流式返回结构化工具调用。id、名称和
+                    # 参数可能分散在不同分片中，因此按 index 归并同一个调用。
                     for fragment in getattr(delta, "tool_calls", None) or []:
                         index = getattr(fragment, "index", None)
                         if index is None:
@@ -441,8 +438,8 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                             if getattr(function, "arguments", None):
                                 buffered["function"]["arguments"] += function.arguments
 
-            # Save complete response and structured calls to history before
-            # adding tool results, matching the non-streaming message order.
+            # 在加入工具结果之前，把完整响应和结构化调用存入历史，
+            # 与非流式路径的消息顺序保持一致。
             complete_response = ''.join(collected_content)
 
             if tool_call_parts:
@@ -500,7 +497,7 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                         "name": tool_name,
                     })
 
-                # Execute all valid tool calls from this turn in parallel.
+                # 并行执行本轮所有合法的工具调用。
                 if not pending_tool_calls:
                     outcomes = []
                 elif len(pending_tool_calls) == 1:
@@ -515,57 +512,57 @@ After receiving tool results, use them to provide a comprehensive answer to the 
                     else:
                         yield {"type": "tool_result", "content": result}
                     
-                    # Add to history
+                    # 加入历史
                     self.conversation_history.append({
                         "role": "user",
                         "content": f'<tool_response>\n{result}\n</tool_response>',
                         "name": tool_data["name"]
                     })
 
-                # Continue the ReAct loop - let the model decide what to do next
+                # 继续 ReAct 循环——让模型决定下一步
                 continue
             else:
-                # No tool calls - we have a final response
+                # 没有工具调用——已得到最终响应
                 self.conversation_history.append({
                     "role": "assistant",
                     "content": complete_response
                 })
-                # Exit the ReAct loop
+                # 退出 ReAct 循环
                 break
         
-        # Check if we hit max iterations
+        # 检查是否达到最大迭代次数
         if iteration >= max_iterations:
             yield {"type": "error", "content": "Maximum iterations reached in ReAct loop"}
     
     def get_conversation_history(self) -> List[Dict[str, Any]]:
-        """Get the current conversation history"""
+        """获取当前对话历史"""
         return self.conversation_history
     
     def add_custom_tool(self, name: str, function: callable, 
                        description: str, parameters: Dict):
         """
-        Add a custom tool to the registry
-        
+        向注册表添加自定义工具
+
         Args:
-            name: Tool name
-            function: Callable function
-            description: Tool description
-            parameters: OpenAI-style parameter schema
+            name: 工具名
+            function: 可调用函数
+            description: 工具描述
+            parameters: OpenAI 风格的参数 schema
         """
         self.tool_registry.register_tool(name, function, description, parameters)
         logger.info(f"Added custom tool: {name}")
 
 
 def demonstrate_tool_calling():
-    """Demonstrate the tool calling functionality"""
+    """演示工具调用功能"""
     print("=" * 60)
     print("vLLM Tool Calling Demo with Qwen3")
     print("=" * 60)
     
-    # Initialize agent
+    # 初始化 Agent
     agent = VLLMToolAgent()
     
-    # Test cases
+    # 测试用例
     test_queries = [
         "What's the current temperature in Paris, France?",
         "Calculate 15 * 23 + sqrt(144)",
@@ -581,11 +578,11 @@ def demonstrate_tool_calling():
         response = agent.chat(query)
         print(f"Assistant: {response}")
         
-        # Reset conversation for next test
+        # 为下一个测试重置对话
         agent.reset_conversation()
         print("-" * 40)
 
 
 if __name__ == "__main__":
-    # Run demonstration
+    # 运行演示
     demonstrate_tool_calling()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test script to demonstrate all ablation modes
-Runs a small subset of tasks with different ablation settings
+演示全部消融模式的测试脚本
+用不同消融设置跑一小部分任务
 """
 
 import subprocess
@@ -27,10 +27,10 @@ def run_experiment(
     num_tasks: int = 3
 ) -> Tuple[str, float]:
     """
-    Run a single ablation experiment
-    
-    Returns:
-        Tuple of (experiment_name, success_rate)
+    运行单个消融实验
+
+    返回:
+        (实验名, 成功率) 元组
     """
     print(f"\n{'='*60}")
     print(f"🔬 Running Experiment: {name}")
@@ -69,7 +69,7 @@ def run_experiment(
             print(f"⚠️  Warning: Process returned non-zero code: {result.returncode}")
             print(f"Error output: {result.stderr[:500]}")
         
-        # Parse output to get success rate
+        # 解析输出得到成功率
         output_lines = result.stdout.split('\n')
         success_count = sum(1 for line in output_lines if '✅' in line)
         fail_count = sum(1 for line in output_lines if '❌' in line)
@@ -91,7 +91,7 @@ def run_experiment(
 
 def run_all_experiments():
     """
-    Run all ablation experiments and compare results
+    运行全部消融实验并对比结果
     """
     print("\n" + "="*80)
     print(" "*20 + "🎯 ABLATION STUDY DEMONSTRATION 🎯")
@@ -100,15 +100,15 @@ def run_all_experiments():
     print("affect agent performance on the airline booking tasks.\n")
     
     experiments = [
-        # Baseline
+        # 基线
         {
             "name": "1. Baseline (Professional)",
             "tone_style": "default",
             "randomize_wiki": False,
             "remove_tool_descriptions": False,
         },
-        
-        # Tone variations
+
+        # 语气变化
         {
             "name": "2. Trump Style Tone",
             "tone_style": "trump",
@@ -121,24 +121,24 @@ def run_all_experiments():
             "randomize_wiki": False,
             "remove_tool_descriptions": False,
         },
-        
-        # Wiki randomization
+
+        # wiki 随机化
         {
             "name": "4. Randomized Wiki Rules",
             "tone_style": "default",
             "randomize_wiki": True,
             "remove_tool_descriptions": False,
         },
-        
-        # Tool description removal
+
+        # 移除工具描述
         {
             "name": "5. No Tool Descriptions",
             "tone_style": "default",
             "randomize_wiki": False,
             "remove_tool_descriptions": True,
         },
-        
-        # Combined (worst case)
+
+        # 全部叠加（最差情况）
         {
             "name": "6. All Ablations (Worst Case)",
             "tone_style": "casual",
@@ -158,9 +158,9 @@ def run_all_experiments():
     for exp in experiments:
         name, success_rate = run_experiment(**exp, num_tasks=3)
         results.append((name, success_rate))
-        time.sleep(2)  # Small delay between experiments
-    
-    # Display summary
+        time.sleep(2)  # 实验之间稍作间隔
+
+    # 展示汇总
     print("\n" + "="*80)
     print(" "*25 + "📈 FINAL RESULTS SUMMARY 📈")
     print("="*80)
@@ -170,7 +170,7 @@ def run_all_experiments():
     baseline_rate = results[0][1] if results else 100
     
     for name, rate in results:
-        # Calculate relative performance
+        # 计算相对表现
         if baseline_rate > 0:
             relative = (rate / baseline_rate) * 100
             print("{:<40} {:>6.1f}% ({:>5.1f}% of baseline)".format(
@@ -184,7 +184,7 @@ def run_all_experiments():
     print("-"*40)
     
     if len(results) >= 6:
-        # Analyze impact of each factor
+        # 分析各因子的影响
         baseline = results[0][1]
         trump_impact = baseline - results[1][1] if baseline > results[1][1] else 0
         casual_impact = baseline - results[2][1] if baseline > results[2][1] else 0
@@ -205,7 +205,7 @@ def run_all_experiments():
         print(f"\n4. Combined Effect:")
         print(f"   - All factors: -{combined_impact:.1f}% performance")
         
-        # Identify most critical factor
+        # 找出最关键的因子
         impacts = [
             ("Tone variations", max(trump_impact, casual_impact)),
             ("Wiki organization", wiki_impact),
@@ -227,11 +227,11 @@ def run_all_experiments():
 
 def check_environment():
     """
-    Check if the environment is properly set up
+    检查环境是否正确配置
     """
     print("🔍 Checking environment setup...")
-    
-    # Check for required files
+
+    # 检查必需文件
     required_files = [
         "run_ablation.py",
         "ablation_utils.py",
@@ -252,12 +252,12 @@ def check_environment():
         print("   cd projects/week2/prompt-engineering")
         return False
     
-    # Check for API keys
+    # 检查 API Key
     import os
     if not os.environ.get("OPENAI_API_KEY"):
         print("⚠️  Warning: OPENAI_API_KEY not set")
         print("   Please set: export OPENAI_API_KEY='your-key'")
-        # Don't fail, user might be using a different provider
+        # 不算失败，用户可能用的是其他提供商
     
     print("✅ Environment check passed!\n")
     return True
@@ -265,7 +265,7 @@ def check_environment():
 
 def main():
     """
-    Main entry point
+    主入口
     """
     if len(sys.argv) > 1 and sys.argv[1] == "--quick":
         print("Running quick test with only 2 experiments...")

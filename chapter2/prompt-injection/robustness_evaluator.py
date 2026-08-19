@@ -29,7 +29,7 @@ from typing import Any, Callable
 class InjectionAttack:
     """一条提示注入攻击向量。
 
-    Attributes:
+    属性:
         attack_id: 稳定标识符，用于在结果中关联攻击与判定。
         name: 人类可读的攻击名称。
         vector: 攻击向量类别（direct_override / role_confusion /
@@ -107,7 +107,7 @@ def _matches_any(text: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
 class PromptInjectionRobustnessEvaluator:
     """量化 Agent 对提示注入攻击的抵抗能力。
 
-    Parameters:
+    参数:
         agent_response_fn: 接收攻击载荷、返回 Agent 回复文本的回调。
             为 ``None`` 时使用内置的确定性 mock（模拟一个稳健防御的
             Agent，始终拒绝注入），便于在无 API 的测试环境中回归。

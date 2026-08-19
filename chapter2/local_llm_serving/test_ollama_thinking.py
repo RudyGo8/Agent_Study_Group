@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for Ollama thinking stream handling."""
+"""Ollama 思考流式处理的回归测试。"""
 
 import sys
 import types
@@ -36,7 +36,7 @@ def test_streaming_yields_ollama_thinking_field():
     assert thinking_event in chunks
     assert content_event in chunks
 
-    # Verify ordering: thinking must be emitted before final content
+    # 验证顺序：thinking 必须先于最终 content 输出
     assert chunks.index(thinking_event) < chunks.index(content_event), \
         f"thinking (at index {chunks.index(thinking_event)}) should come " \
         f"before content (at index {chunks.index(content_event)})"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test script for local file system tools
-Validates that read_file, find, and grep work correctly
+本地文件系统工具的测试脚本
+验证 read_file、find 和 grep 正常工作
 """
 
 import os
@@ -10,15 +10,15 @@ from agent import LocalFileTools
 
 
 def test_file_tools():
-    """Test the local file system tools"""
+    """测试本地文件系统工具"""
     
     print("🧪 Testing Local File System Tools")
     print("="*60)
     
-    # Initialize tools with project root
+    # 以项目根目录初始化工具
     tools = LocalFileTools(root_dir="../..")
     
-    # Test 1: Find Python files
+    # 测试 1：查找 Python 文件
     print("\n1️⃣ Testing 'find' command...")
     print("   Finding *.py files in chapter1/context directory...")
     result = tools.find("*.py", "chapter1/context")
@@ -30,7 +30,7 @@ def test_file_tools():
     else:
         print(f"   ✗ Error: {result['error']}")
     
-    # Test 2: Read a file
+    # 测试 2：读取文件
     print("\n2️⃣ Testing 'read_file' command...")
     test_file = "chapter1/context/README.md"
     print(f"   Reading {test_file}...")
@@ -42,7 +42,7 @@ def test_file_tools():
     else:
         print(f"   ✗ Error: {result['error']}")
     
-    # Test 3: Grep for a pattern
+    # 测试 3：用 grep 搜索模式
     print("\n3️⃣ Testing 'grep' command...")
     print("   Searching for 'agent' in chapter1 directory...")
     result = tools.grep("agent", directory="chapter1")
@@ -55,7 +55,7 @@ def test_file_tools():
     else:
         print(f"   ✗ Error: {result['error']}")
     
-    # Test 4: Security check - try to access outside root
+    # 测试 4：安全检查 —— 尝试访问根目录之外
     print("\n4️⃣ Testing security boundaries...")
     print("   Attempting to read file outside root directory...")
     result = tools.read_file("../../../../../../etc/passwd")
@@ -65,7 +65,7 @@ def test_file_tools():
     else:
         print("   ⚠️ Security check result:", result.get("error", "Unexpected result"))
     
-    # Test 5: Grep in specific file
+    # 测试 5：在指定文件中 grep
     print("\n5️⃣ Testing 'grep' in specific file...")
     print("   Searching for 'class' in chapter1/context/agent.py...")
     result = tools.grep("class", file_path="chapter1/context/agent.py")
@@ -85,14 +85,14 @@ def test_file_tools():
 
 
 def test_pattern_matching():
-    """Test various pattern matching scenarios"""
+    """测试各种模式匹配场景"""
     
     print("\n🔍 Testing Pattern Matching Capabilities")
     print("="*60)
     
     tools = LocalFileTools(root_dir="../..")
     
-    # Test different file patterns
+    # 测试不同文件模式
     patterns = [
         ("*.md", "chapter1", "Markdown files"),
         ("*.py", "chapter2", "Python files"),
@@ -108,7 +108,7 @@ def test_pattern_matching():
         else:
             print(f"  Error: {result['error']}")
     
-    # Test different grep patterns
+    # 测试不同 grep 模式
     print("\n📝 Testing Grep Patterns")
     print("-"*40)
     
@@ -133,10 +133,10 @@ def test_pattern_matching():
 
 
 if __name__ == "__main__":
-    # Run basic tests
+    # 运行基础测试
     test_file_tools()
     
-    # Run pattern matching tests
+    # 运行模式匹配测试
     test_pattern_matching()
     
     print("\n🎉 All tests completed successfully!")

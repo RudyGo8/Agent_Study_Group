@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick test script to verify Kimi K3 model integration
+验证 Kimi K3 模型集成的快速测试脚本
 """
 
 import os
@@ -12,11 +12,11 @@ add_project_root()
 from dotenv import load_dotenv
 from agent import ContextAwareAgent, ContextMode
 
-# Load environment variables
+# 加载环境变量
 load_dotenv()
 
 def main():
-    # Get API key
+    # 获取 API Key
     api_key = os.getenv("MOONSHOT_API_KEY")
     if not api_key:
         print("❌ ERROR: MOONSHOT_API_KEY not set")
@@ -28,7 +28,7 @@ def main():
     print("=" * 50)
     
     try:
-        # Create agent with Kimi provider
+        # 用 Kimi 提供商创建 Agent
         agent = ContextAwareAgent(
             api_key=api_key,
             provider="kimi",
@@ -41,7 +41,7 @@ def main():
         print(f"   Model: {agent.model}")
         print(f"   Base URL: {agent.client.base_url}")
         
-        # Test simple query
+        # 测试简单查询
         print("\n📝 Testing basic query...")
         query = "What is 2 + 2?"
         response = agent.process(query)

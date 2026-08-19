@@ -7,15 +7,15 @@
 
 ---
 
-## Code map
+## Code map（代码地图）
 
-- **Run first:** python main.py --mode interactive (after provider setup).
-- **Start here:** main.py builds the selected provider and agent loop.
-- **Core behavior:** agent.py assembles history, reasoning, tool calls and tool results.
-- **State / protocol:** AgentTrajectory and the provider adapter messages.
-- **Verifier:** the ablation runner and tests under tests/; compare behavior, not just final text.
-- **Experiment variable:** context modes (full, no history, no reasoning, no tool calls, no tool results).
-- **Skip on first pass:** provider-specific clients, plotting and credential checks.
+- **先运行：** python main.py --mode interactive（配好提供商后）。
+- **从这读起：** main.py 构建所选提供商与 Agent 循环。
+- **核心行为：** agent.py 组装历史、思考、工具调用与工具结果。
+- **状态/协议：** AgentTrajectory 与提供商适配器的消息。
+- **验证器：** 消融运行器与 tests/ 下的测试；对比行为，而不只是最终文本。
+- **实验变量：** 上下文模式（full、no_history、no_reasoning、no_tool_calls、no_tool_results）。
+- **首读可跳过：** 提供商专属客户端、绘图与凭据检查。
 
 ## English
 
@@ -341,7 +341,7 @@ A complex financial analysis task requiring:
 - **no_tool_calls** — the `tools` parameter is omitted from the request, so the model has no tool definitions to call.
 - **no_tool_results** — every tool result is replaced with a `[Tool result hidden]` placeholder.
 - **no_reasoning** — `reasoning_content` is stripped from each assistant message before it is added back to the trajectory.
-- **no_history** — `_prepare_messages_for_api()` sends only a sliding window (system prompt + current task + the most recent ReAct step) to the model, so earlier steps are forgotten and the agent tends to repeat tool calls. Full mode always sends the complete trajectory.
+- **no_history** — `_prepare_messages_for_api()` sends only the static system prompt plus the current task, so everything from earlier turns is dropped and the agent tends to repeat tool calls. Full mode always sends the complete trajectory.
 
 #### Running Tests
 
@@ -466,9 +466,8 @@ python create_sample_pdf.py
 Edit `config.py` or set environment variables:
 
 ```bash
-export MODEL_TEMPERATURE=0.5
 export MAX_ITERATIONS=15
-export LOG_LEVEL=DEBUG
+# export MODEL_NAME=some-model  # override the provider default
 ```
 
 ### Project Structure
@@ -806,7 +805,7 @@ python run_experiment_1_1.py --provider dashscope --model qwen3.7-plus --max-ite
 - **no_tool_calls** — 请求中省略 `tools` 参数，模型没有可调用的工具定义。
 - **no_tool_results** — 每个工具结果替换为 `[Tool result hidden]` 占位符。
 - **no_reasoning** — 写回轨迹前，从每条 assistant 消息中剥离 `reasoning_content`。
-- **no_history** — `_prepare_messages_for_api()` 只发送滑动窗口（系统提示 + 当前任务 + 最近一步 ReAct），早期步骤被遗忘，易重复调工具。完整模式始终发送完整轨迹。
+- **no_history** — `_prepare_messages_for_api()` 只发送静态系统提示与当前任务，此前所有轮次都不保留，易重复调工具。完整模式始终发送完整轨迹。
 
 #### 运行测试
 
@@ -931,9 +930,8 @@ python create_sample_pdf.py
 编辑 `config.py` 或设置环境变量：
 
 ```bash
-export MODEL_TEMPERATURE=0.5
 export MAX_ITERATIONS=15
-export LOG_LEVEL=DEBUG
+# export MODEL_NAME=some-model  # 覆盖提供商默认模型
 ```
 
 ### 项目结构

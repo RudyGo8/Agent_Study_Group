@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Ablation Study Runner for Tau-Bench Framework
-Demonstrates the importance of prompt engineering by testing different variations:
-1. Tone variations (Trump style, Casual style, Default style)
-2. Wiki rule randomization
-3. Tool description removal
+Tau-Bench 框架的消融实验运行器
+通过测试不同变体来演示提示工程的重要性：
+1. 语气变化（Trump 风格、休闲风格、默认风格）
+2. wiki 规则随机化
+3. 移除工具描述
 """
 
 import argparse
@@ -24,12 +24,12 @@ except ImportError:
     pass
 
 from tau_bench.types import RunConfig
-# from litellm import provider_list  # This returns enums, not strings
-# Define provider choices as strings
+# from litellm import provider_list  # 它返回的是枚举而非字符串
+# 用字符串定义提供商选项
 provider_list = ["openai", "anthropic", "azure", "bedrock", "cohere", "gemini", "groq", "mistral", "ollama", "openrouter", "replicate", "together_ai", "vertex_ai", "huggingface"]
 from tau_bench.envs.user import UserStrategy
 
-# Import custom modules for ablation
+# 导入消融实验的自定义模块
 from ablation_utils import (
     apply_tone_modification,
     load_randomized_wiki, 
@@ -59,7 +59,7 @@ def parse_args():
         ),
     )
 
-    # Original arguments
+    # 原有参数
     parser.add_argument(
         "--num-trials", type=int, default=1,
         help="每个任务重复运行的次数（默认：1）"
@@ -78,7 +78,7 @@ def parse_args():
         "--model-provider",
         type=str,
         choices=provider_list,
-        default=None,  # Will be set based on model
+        default=None,  # 会根据模型自动设置
         help="The model provider for the agent (default: openai; a model id containing '/' auto-selects openrouter)",
     )
     parser.add_argument(
@@ -91,7 +91,7 @@ def parse_args():
         "--user-model-provider",
         type=str,
         choices=provider_list,
-        default=None,  # Will be set based on model
+        default=None,  # 会根据模型自动设置
         help="The model provider for the user simulator (default: openai; a model id containing '/' auto-selects openrouter)",
     )
     parser.add_argument(
@@ -139,7 +139,7 @@ def parse_args():
     )
     parser.add_argument("--few-shot-displays-path", type=str)
     
-    # New ablation study arguments
+    # 消融实验新增参数
     parser.add_argument(
         "--tone-style",
         type=str,
@@ -199,28 +199,28 @@ def parse_args():
 
     args = parser.parse_args()
     
-    # Set verbose flag (defaults to True unless --no-verbose is used)
+    # 设置 verbose 标志（默认 True，除非使用 --no-verbose）
     args.verbose = not args.no_verbose
-    
-    # Set default provider based on model if not specified.
-    # A model id containing "/" (e.g. "openai/gpt-5") is an OpenRouter-style id and
-    # routes through openrouter (requires a valid OPENROUTER_API_KEY); a bare id
-    # (e.g. "gpt-4o-mini") routes through OpenAI direct (requires OPENAI_API_KEY).
+
+    # 未指定时根据模型设置默认提供商。
+    # 含 "/" 的模型 id（如 "openai/gpt-5"）是 OpenRouter 风格的 id，
+    # 经 openrouter 路由（需要有效的 OPENROUTER_API_KEY）；裸 id
+    # （如 "gpt-4o-mini"）走 OpenAI 直连（需要 OPENAI_API_KEY）。
     if args.model_provider is None:
         args.model_provider = "openrouter" if "/" in args.model else "openai"
 
-    # Set default user model provider based on user model if not specified
+    # 未指定时根据用户模拟器模型设置默认提供商
     if args.user_model_provider is None:
         args.user_model_provider = "openrouter" if "/" in args.user_model else "openai"
 
-    # Universal fallback: if the resolved provider is OpenAI-direct but
-    # OPENAI_API_KEY is missing while OPENROUTER_API_KEY is present, route the
-    # bare gpt-* / o1-* id through OpenRouter (prefix "openai/"). Preserves the
-    # default (OpenAI-direct) behavior whenever OPENAI_API_KEY is set.
-    # gpt-5.x (incl. gpt-5.6*) needs OpenAI org-verification on the direct API, so
-    # when an OPENROUTER_API_KEY is present we route these ids (and any bare
-    # gpt-*/o1-* when OPENAI_API_KEY is missing) through OpenRouter (prefix
-    # "openai/"). Direct-OpenAI behavior is preserved otherwise.
+    # 通用兜底：若解析出的提供商是 OpenAI 直连但缺少 OPENAI_API_KEY、
+    # 而存在 OPENROUTER_API_KEY，则把裸 gpt-* / o1-* id 经 OpenRouter 路由
+    # （加前缀 "openai/"）。只要设置了 OPENAI_API_KEY，就保持默认的
+    # （OpenAI 直连）行为不变。
+    # gpt-5.x（含 gpt-5.6*）在直连 API 上需要 OpenAI 组织验证，因此
+    # 只要存在 OPENROUTER_API_KEY，就把这些 id（以及缺 OPENAI_API_KEY 时
+    # 的任何裸 gpt-*/o1-*）经 OpenRouter 路由（加前缀 "openai/"）。
+    # 其余情况保持 OpenAI 直连行为不变。
     if os.environ.get("OPENROUTER_API_KEY"):
         no_openai = not os.environ.get("OPENAI_API_KEY")
         if args.model_provider == "openai" and (no_openai or args.model.lower().startswith("gpt-5")):
@@ -236,17 +236,17 @@ def parse_args():
 
 
 def run_with_ablation(args):
-    """Run tau-bench with ablation modifications"""
-    
-    # Import the original run module
+    """在消融修改下运行 tau-bench"""
+
+    # 导入原始 run 模块
     from tau_bench.run import run, agent_factory, display_metrics
     from tau_bench.envs import get_env
     import multiprocessing
     from concurrent.futures import ThreadPoolExecutor
     from typing import List
     from tau_bench.types import EnvRunResult
-    
-    # Create configuration
+
+    # 创建配置
     config = RunConfig(
         model_provider=args.model_provider,
         user_model_provider=args.user_model_provider,
@@ -270,7 +270,7 @@ def run_with_ablation(args):
     
     random.seed(config.seed)
     
-    # Create descriptive log filename
+    # 生成可读的日志文件名
     ablation_suffix = []
     if args.tone_style != "default":
         ablation_suffix.append(f"tone_{args.tone_style}")
@@ -322,10 +322,9 @@ def run_with_ablation(args):
                     continue
                 rows = payload.get("results", [])
             elif isinstance(payload, list):
-                # A crash can leave the append-only per-task checkpoint before
-                # final metadata is wrapped around it.  Validate every receipt
-                # directly against the frozen command instead of regenerating
-                # already accepted provider calls.
+                # 崩溃可能留下尚未包上最终元数据的逐任务追加式 checkpoint。
+                # 此时直接按冻结命令校验每张回执，而不是重新生成
+                # 已被接受的提供商调用。
                 rows = payload
             else:
                 continue
@@ -371,7 +370,7 @@ def run_with_ablation(args):
     print(f"  - Checkpoint: {ckpt_path}")
     print()
     
-    # Load environment
+    # 加载环境
     env = get_env(
         config.env,
         user_strategy=config.user_strategy,
@@ -381,27 +380,27 @@ def run_with_ablation(args):
         user_seed=config.seed,
     )
     
-    # Apply ablation modifications
+    # 应用消融修改
     modified_wiki = env.wiki
     modified_tools_info = env.tools_info
-    
-    # 1. Apply wiki randomization if requested
+
+    # 1. 按需应用 wiki 随机化
     if args.randomize_wiki:
         print("📝 Using pre-randomized wiki rules...")
         modified_wiki = load_randomized_wiki(config.env)
     
-    # 2. Apply tone modification if requested
+    # 2. 按需应用语气修改
     if args.tone_style != "default":
         print(f"🎭 Applying {args.tone_style} tone style to system prompt...")
         tone_style = ToneStyle[args.tone_style.upper()]
         modified_wiki = apply_tone_modification(modified_wiki, tone_style)
     
-    # 3. Remove tool descriptions if requested
+    # 3. 按需移除工具描述
     if args.remove_tool_descriptions:
         print("🔧 Removing tool descriptions...")
         modified_tools_info = remove_tool_descriptions(modified_tools_info)
     
-    # Create agent with modifications
+    # 用修改后的配置创建 Agent
     from ablation_agent import AblationAgent
     
     agent = AblationAgent(
@@ -414,7 +413,7 @@ def run_with_ablation(args):
         seed=config.seed,
     )
     
-    # Run tasks
+    # 运行任务
     end_index = (
         len(env.tasks) if config.end_index == -1 else min(config.end_index, len(env.tasks))
     )
@@ -449,7 +448,7 @@ def run_with_ablation(args):
                 user_seed=config.seed + i * 100000 + idx * 1000,
             )
             
-            # Apply same modifications to isolated env
+            # 对隔离环境应用同样的修改
             if args.randomize_wiki:
                 isolated_env.wiki = load_randomized_wiki(config.env)
             if args.tone_style != "default":
@@ -517,7 +516,7 @@ def run_with_ablation(args):
     
     display_metrics(results)
     
-    # Save final results with ablation metadata
+    # 保存带消融元数据的最终结果
     final_results = {
         "experiment_id": "2-4",
         "created_at": datetime.now().astimezone().isoformat(),
@@ -539,8 +538,8 @@ def run_with_ablation(args):
     return results
 
 
-# Full ablation suite: (name, {modifications}) covering the three dimensions
-# described in the book (实验 2-4): tone / information organization / tool descriptions.
+# 完整消融套件：(名称, {修改项})，覆盖书中描述的三个维度
+# （实验 2-4）：语气 / 信息组织 / 工具描述。
 ABLATION_SUITE = [
     ("baseline",      {"tone_style": "default", "randomize_wiki": False, "remove_tool_descriptions": False}),
     ("tone_trump",    {"tone_style": "trump",   "randomize_wiki": False, "remove_tool_descriptions": False}),
@@ -552,9 +551,8 @@ ABLATION_SUITE = [
 
 
 def run_full_suite(args):
-    """Run every experiment in ABLATION_SUITE in-process, then print one
-    comparison table so the final experimental result is produced by a single
-    command."""
+    """在进程内依次运行 ABLATION_SUITE 中的每个实验，然后打印一张
+    对比表，让最终实验结果由单条命令产出。"""
     from analyze_results import (
         calculate_statistics,
         print_results_table,
@@ -594,11 +592,11 @@ def run_full_suite(args):
         args.tone_style = mods["tone_style"]
         args.randomize_wiki = mods["randomize_wiki"]
         args.remove_tool_descriptions = mods["remove_tool_descriptions"]
-        # Leave ablation_name empty: run_with_ablation already derives a descriptive
-        # suffix from the active flags (e.g. "tone_trump", "no_tool_desc"). Setting it
-        # to `name` here would double the suffix in the checkpoint filename
-        # (e.g. "no_tool_desc_no_tool_desc"). The comparison table is keyed by `name`
-        # from ABLATION_SUITE below, independent of the filename.
+        # ablation_name 留空：run_with_ablation 已根据生效的开关推导出
+        # 描述性后缀（如 "tone_trump"、"no_tool_desc"）。这里若设成
+        # `name`，checkpoint 文件名里的后缀会翻倍
+        # （如 "no_tool_desc_no_tool_desc"）。下方对比表以 ABLATION_SUITE
+        # 的 `name` 为键，与文件名无关。
         args.ablation_name = ""
 
         print("\n" + "=" * 80)
@@ -613,11 +611,11 @@ def run_full_suite(args):
             "sha256": hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
         }
 
-    # Final comparison across all techniques
+    # 跨全部技术做最终对比
     print_results_table(suite_results)
     analyze_ablation_impact(suite_results)
 
-    # Persist the aggregated summary
+    # 持久化汇总结果
     output_path = args.output
     if not output_path:
         time_str = datetime.now().strftime("%m%d%H%M%S")

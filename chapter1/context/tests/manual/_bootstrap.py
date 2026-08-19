@@ -1,4 +1,4 @@
-"""Helpers for running manual smoke scripts from tests/manual."""
+"""运行 tests/manual 下手动冒烟脚本的辅助函数。"""
 
 from pathlib import Path
 import sys

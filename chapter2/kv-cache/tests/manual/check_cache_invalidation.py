@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify KV cache is properly invalidated in incorrect modes
+验证错误模式下 KV cache 会被正确失效的测试脚本
 """
 
 import os
@@ -12,14 +12,14 @@ add_project_root()
 
 from agent import KVCacheAgent, KVCacheMode
 
-# Set up logging to see details
+# 配置日志以查看细节
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def test_cache_invalidation():
-    """Test that incorrect modes properly invalidate KV cache each iteration"""
+    """验证错误模式每轮迭代都会使 KV cache 失效"""
     
-    # Get API key
+    # 获取 API key
     api_key = os.getenv("MOONSHOT_API_KEY")
     if not api_key:
         print("❌ Please set MOONSHOT_API_KEY environment variable")
@@ -28,13 +28,13 @@ def test_cache_invalidation():
     print("🔬 Testing KV Cache Invalidation")
     print("="*60)
     
-    # Simple task that requires multiple iterations
+    # 需要多轮迭代的简单任务
     task = "Find Python files in chapter1/context and tell me how many there are."
     
     print(f"Task: {task}")
     print("-"*40)
     
-    # Test 1: CORRECT mode (should use cache)
+    # 测试 1：CORRECT 模式（应命中缓存）
     print("\n1️⃣ Testing CORRECT mode (should use cache):")
     agent_correct = KVCacheAgent(
         api_key=api_key,
@@ -52,7 +52,7 @@ def test_cache_invalidation():
     print(f"  • Cached tokens: {metrics_correct.cached_tokens}")
     print(f"  • Cache hits: {metrics_correct.cache_hits}")
     
-    # Test 2: DYNAMIC_SYSTEM mode (should NOT use cache)
+    # 测试 2：DYNAMIC_SYSTEM 模式（不应命中缓存）
     print("\n2️⃣ Testing DYNAMIC_SYSTEM mode (should NOT use cache):")
     agent_dynamic = KVCacheAgent(
         api_key=api_key,
@@ -70,12 +70,12 @@ def test_cache_invalidation():
     print(f"  • Cached tokens: {metrics_dynamic.cached_tokens}")
     print(f"  • Cache hits: {metrics_dynamic.cache_hits}")
     
-    # Analysis
+    # 分析
     print("\n" + "="*60)
     print("📊 ANALYSIS:")
     print("-"*40)
     
-    # Check TTFT improvement
+    # 检查 TTFT 改善幅度
     if len(metrics_correct.ttft_per_iteration) > 1:
         correct_improvement = (metrics_correct.ttft_per_iteration[0] - metrics_correct.ttft_per_iteration[-1]) / metrics_correct.ttft_per_iteration[0] * 100
         print(f"CORRECT mode TTFT improvement: {correct_improvement:.1f}%")
@@ -84,7 +84,7 @@ def test_cache_invalidation():
         dynamic_improvement = (metrics_dynamic.ttft_per_iteration[0] - metrics_dynamic.ttft_per_iteration[-1]) / metrics_dynamic.ttft_per_iteration[0] * 100
         print(f"DYNAMIC mode TTFT improvement: {dynamic_improvement:.1f}%")
     
-    # Verify cache behavior
+    # 验证缓存行为
     print("\n✅ Verification:")
     if metrics_correct.cached_tokens > 0:
         print(f"  ✓ CORRECT mode used cache: {metrics_correct.cached_tokens} tokens")
@@ -96,23 +96,23 @@ def test_cache_invalidation():
     else:
         print(f"  ✗ DYNAMIC mode used cache: {metrics_dynamic.cached_tokens} tokens (unexpected!)")
     
-    # Check TTFT consistency
+    # 检查 TTFT 一致性
     print("\n🔍 TTFT Consistency Check:")
     if len(metrics_correct.ttft_per_iteration) > 2:
-        # CORRECT mode should show improvement after first iteration
+        # CORRECT 模式首次迭代后应有所改善
         first_ttft = metrics_correct.ttft_per_iteration[0]
         avg_rest = sum(metrics_correct.ttft_per_iteration[1:]) / len(metrics_correct.ttft_per_iteration[1:])
-        if avg_rest < first_ttft * 0.7:  # At least 30% improvement
+        if avg_rest < first_ttft * 0.7:  # 至少改善 30%
             print(f"  ✓ CORRECT mode shows cache benefit (first: {first_ttft:.2f}s, avg rest: {avg_rest:.2f}s)")
         else:
             print(f"  ⚠️ CORRECT mode improvement less than expected")
     
     if len(metrics_dynamic.ttft_per_iteration) > 2:
-        # DYNAMIC mode should NOT show significant improvement
+        # DYNAMIC 模式不应有明显改善
         all_ttfts = metrics_dynamic.ttft_per_iteration
         min_ttft = min(all_ttfts)
         max_ttft = max(all_ttfts)
-        if (max_ttft - min_ttft) / max_ttft < 0.3:  # Less than 30% variation
+        if (max_ttft - min_ttft) / max_ttft < 0.3:  # 波动小于 30%
             print(f"  ✓ DYNAMIC mode shows consistent TTFT (no cache benefit)")
         else:
             print(f"  ⚠️ DYNAMIC mode shows unexpected TTFT variation")

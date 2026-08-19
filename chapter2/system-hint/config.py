@@ -1,5 +1,5 @@
 """
-Configuration module for System-Hint Enhanced Agent
+System-Hint 增强 Agent 的配置模块
 """
 
 import os
@@ -14,35 +14,35 @@ load_dotenv()
 
 @dataclass
 class AgentConfig:
-    """Configuration for the System-Hint Agent"""
+    """System-Hint Agent 的配置"""
     
-    # API Configuration
+    # API 配置
     api_key: Optional[str] = None
     provider: str = "kimi"
     model: Optional[str] = None
     
-    # System Hint Features
+    # System hint 功能开关
     enable_timestamps: bool = True
     enable_tool_counter: bool = True
     enable_todo_list: bool = True
     enable_detailed_errors: bool = True
     enable_system_state: bool = True
     
-    # Formatting Options
+    # 格式化选项
     timestamp_format: str = "%Y-%m-%d %H:%M:%S"
     simulate_time_delay: bool = False
     
-    # Execution Options
+    # 执行选项
     max_iterations: int = 20
     verbose: bool = False
-    timeout: int = 30  # seconds for command execution
+    timeout: int = 30  # 命令执行的超时秒数
     
     @classmethod
     def from_env(cls) -> "AgentConfig":
-        """Create configuration from environment variables"""
+        """从环境变量创建配置"""
         provider = canonical_provider(os.getenv("LLM_PROVIDER", "kimi"))
         return cls(
-            # Provider credentials and aliases come from the shared registry.
+            # 提供商凭据与别名统一来自共享注册表。
             api_key=PROVIDERS.get(provider, PROVIDERS["kimi"]).api_key() or os.getenv("OPENROUTER_API_KEY"),
             provider=provider,
             model=os.getenv("LLM_MODEL"),
@@ -59,7 +59,7 @@ class AgentConfig:
         )
     
     def validate(self) -> bool:
-        """Validate the configuration"""
+        """校验配置"""
         if not self.api_key:
             raise ValueError("API key is required. Set the selected provider's key or OPENROUTER_API_KEY fallback.")
 
@@ -76,7 +76,7 @@ class AgentConfig:
         return True
 
 
-# Default configuration presets
+# 默认配置预设
 PRESETS = {
     "full": AgentConfig(
         enable_timestamps=True,
@@ -113,17 +113,17 @@ PRESETS = {
 
 def get_config(preset: Optional[str] = None) -> AgentConfig:
     """
-    Get configuration from environment or preset
+    从环境变量或预设获取配置
     
-    Args:
-        preset: Optional preset name ('full', 'minimal', 'debug', 'demo')
+    参数:
+        preset: 可选的预设名（'full'、'minimal'、'debug'、'demo'）
         
-    Returns:
-        AgentConfig instance
+    返回:
+        AgentConfig 实例
     """
     if preset and preset in PRESETS:
         config = PRESETS[preset]
-        # Override with environment API key if available
+        # 若环境变量中有 API Key 则覆盖
         config.api_key = os.getenv("KIMI_API_KEY") or os.getenv("MOONSHOT_API_KEY") or os.getenv("OPENROUTER_API_KEY")
         return config
     

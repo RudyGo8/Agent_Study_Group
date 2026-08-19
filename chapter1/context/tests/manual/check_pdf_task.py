@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify PDF parsing and currency conversion
+验证 PDF 解析与货币换算的测试脚本
 """
 
 import os
@@ -13,22 +13,22 @@ add_project_root()
 from agent import ContextAwareAgent, ContextMode
 
 def test_pdf_with_currencies():
-    """Test PDF parsing with currency conversion"""
+    """测试带货币换算的 PDF 解析"""
     
     print("\n" + "="*60)
     print("🧪 PDF PARSING & CURRENCY CONVERSION TEST")
     print("="*60)
     
-    # Check API key
+    # 检查 API Key
     api_key = os.getenv("SILICONFLOW_API_KEY")
     if not api_key:
         print("❌ No API key found. Set SILICONFLOW_API_KEY environment variable.")
         return False
-    
-    # Create agent
+
+    # 创建 Agent
     agent = ContextAwareAgent(api_key, ContextMode.FULL)
-    
-    # Test task
+
+    # 测试任务
     task = """
     Analyze the expense report at fixtures/pdfs/simple_expense_report.pdf
     
@@ -48,7 +48,7 @@ def test_pdf_with_currencies():
     print("-"*40)
     
     try:
-        # Execute task
+        # 执行任务
         result = agent.execute_task(task, max_iterations=5)
         
         print("\n" + "="*40)
@@ -58,7 +58,7 @@ def test_pdf_with_currencies():
         print(f"Iterations: {result.get('iterations', 0)}")
         print(f"Tool Calls: {len(result['trajectory'].tool_calls)}")
         
-        # Show tool calls made
+        # 展示发生的工具调用
         print("\n📊 Tool Calls Made:")
         for i, tc in enumerate(result['trajectory'].tool_calls, 1):
             print(f"{i}. {tc.tool_name}")
@@ -91,11 +91,11 @@ def test_pdf_with_currencies():
 
 
 if __name__ == "__main__":
-    # Ensure PDFs exist
+    # 确保样例 PDF 存在
     if not os.path.exists("fixtures/pdfs/simple_expense_report.pdf"):
         print("⚠️ Creating sample PDFs...")
         os.system("python create_sample_pdf.py")
-    
-    # Run test
+
+    # 运行测试
     success = test_pdf_with_currencies()
     sys.exit(0 if success else 1)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Finalize a completed Experiment 7-2 campaign without repeating API calls."""
+"""为已完成的实验 7-2 一轮运行（campaign）收尾出证，不重复调用 API。"""
 
 from __future__ import annotations
 

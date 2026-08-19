@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for the web search agent test suite."""
+"""Web Search Agent 测试套件共用的 pytest fixtures。"""
 
 import json
 import socket
@@ -17,14 +17,14 @@ PROVIDER_ENV_VARS = (
 
 @pytest.fixture(autouse=True)
 def isolate_provider_environment(monkeypatch):
-    """Keep developer credentials and provider overrides out of every test."""
+    """把开发者凭据和提供商覆盖配置排除在每个测试之外。"""
     for variable in PROVIDER_ENV_VARS:
         monkeypatch.delenv(variable, raising=False)
 
 
 @pytest.fixture(autouse=True)
 def block_external_network(monkeypatch):
-    """Fail fast if a unit test accidentally attempts a network connection."""
+    """单元测试若意外发起网络连接，立即快速失败。"""
 
     def deny_network(*args, **kwargs):
         raise AssertionError("Unit tests must not access the external network")
@@ -37,7 +37,7 @@ def block_external_network(monkeypatch):
 
 @pytest.fixture
 def make_tool_call():
-    """Build a minimal SDK-shaped tool-call object for mocked model replies."""
+    """构造一个最小的 SDK 形态工具调用对象，用于模拟模型回复。"""
 
     def factory(
         *,
@@ -59,7 +59,7 @@ def make_tool_call():
 
 @pytest.fixture
 def make_choice():
-    """Build a minimal SDK-shaped chat choice for deterministic Agent tests."""
+    """构造一个最小的 SDK 形态对话 choice 对象，用于确定性的 Agent 测试。"""
 
     def factory(
         *,

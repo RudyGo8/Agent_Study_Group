@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple demo showing how to use streaming with the chat template agents
+演示如何在 chat template Agent 中使用流式输出的简单示例
 """
 
 import sys
@@ -8,7 +8,7 @@ import time
 
 
 def print_with_typing_effect(text, delay=0.03):
-    """Print text with a typing effect"""
+    """以打字机效果打印文本"""
     for char in text:
         print(char, end="", flush=True)
         time.sleep(delay)
@@ -16,7 +16,7 @@ def print_with_typing_effect(text, delay=0.03):
 
 
 def demo_vllm_streaming():
-    """Demo streaming with vLLM backend"""
+    """演示 vLLM 后端的流式输出"""
     from agent import VLLMToolAgent
     from config import OPENAI_API_BASE, OPENAI_API_KEY
     
@@ -46,7 +46,7 @@ def demo_vllm_streaming():
             elif chunk_type == "tool_result":
                 print(f"   ✓ Result: {content}")
             elif chunk_type == "content":
-                # Stream content character by character
+                # 逐字符流式输出内容
                 print(content, end="", flush=True)
         
         print("\n" + "-"*40)
@@ -57,7 +57,7 @@ def demo_vllm_streaming():
 
 
 def demo_ollama_streaming():
-    """Demo streaming with Ollama backend"""
+    """演示 Ollama 后端的流式输出"""
     from ollama_native import OllamaNativeAgent
     import ollama
     
@@ -66,11 +66,11 @@ def demo_ollama_streaming():
     print("="*60)
     
     try:
-        # Check available models
+        # 检查可用模型
         client = ollama.Client()
         models = [m['name'] for m in client.list()['models']]
         
-        # Use qwen3:0.6b as the default model
+        # 默认使用 qwen3:0.6b
         model = "qwen3:0.6b"
         
         if model not in models:
@@ -102,7 +102,7 @@ def demo_ollama_streaming():
             elif chunk_type == "tool_result":
                 print(f"   ✓ Result: {content}")
             elif chunk_type == "content":
-                # Stream content
+                # 流式输出内容
                 print(content, end="", flush=True)
         
         print("\n" + "-"*40)
@@ -113,19 +113,19 @@ def demo_ollama_streaming():
 
 
 def demo_unified_streaming():
-    """Demo with unified ToolCallingAgent that auto-selects backend"""
+    """演示自动选择后端的统一 ToolCallingAgent"""
     from main import ToolCallingAgent
     
     print("="*60)
     print("🎯 Unified Streaming Demo (Auto-detect Backend)")
     print("="*60)
     
-    # Initialize agent (auto-detects best backend)
+    # 初始化 Agent（自动检测最合适的后端）
     print("\n⚙️  Initializing agent...")
     agent = ToolCallingAgent()
     print(f"✅ Using {agent.backend_type} backend\n")
     
-    # Example queries
+    # 示例查询
     queries = [
         "Calculate the compound interest on $1000 at 5% for 3 years",
         "What's the weather in London and what time is it there?",
@@ -137,7 +137,7 @@ def demo_unified_streaming():
         print(f"Query {i}: {query}")
         print("-"*60)
         
-        # Track what sections we've shown
+        # 记录已显示过哪些区块
         sections_shown = set()
         last_chunk_type = None
         
@@ -149,7 +149,7 @@ def demo_unified_streaming():
                 if "thinking" not in sections_shown:
                     print("\n💭 Thinking: ", end="", flush=True)
                     sections_shown.add("thinking")
-                # Stream thinking character by character in gray
+                # 以灰色逐字符流式输出思考内容
                 print(f"\033[90m{content}\033[0m", end="", flush=True)
             
             elif chunk_type == "tool_call":
@@ -157,13 +157,13 @@ def demo_unified_streaming():
                     print("\n🔧 Tool Calls:")
                     sections_shown.add("tools")
                 print(f"  → {content['name']}: {content['arguments']}")
-                # Remove response section so it shows again after tools
+                # 移除 response 区块标记，让工具执行后重新显示标题
                 sections_shown.discard("response")
             
             elif chunk_type == "tool_result":
                 result_str = str(content)
                 print(f"    ✓ {result_str}")
-                # Remove response section so it shows again after tools
+                # 移除 response 区块标记，让工具执行后重新显示标题
                 sections_shown.discard("response")
             
             elif chunk_type == "content":
@@ -178,9 +178,9 @@ def demo_unified_streaming():
             
             last_chunk_type = chunk_type
         
-        print()  # New line after response
+        print()  # 响应结束后换行
         
-        # Reset for next query
+        # 为下一个查询重置对话
         agent.reset_conversation()
 
     print("\n" + "="*60)
@@ -189,7 +189,7 @@ def demo_unified_streaming():
 
 
 def main():
-    """Main demo function"""
+    """演示主函数"""
     import argparse
     
     parser = argparse.ArgumentParser(description="Streaming Demo for Chat Template Agents")

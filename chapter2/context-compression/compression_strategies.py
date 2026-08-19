@@ -1,5 +1,5 @@
 """
-Context Compression Strategies for the experiment
+实验所用的上下文压缩策略
 """
 
 import json
@@ -14,35 +14,34 @@ from config import Config
 
 
 def _reasoning_safe_temperature(model, requested=1.0):
-    """Reasoning models (Kimi K3, GPT-5, ...) only accept temperature=1.
-    Return 1 for those; otherwise the requested value so non-reasoning
-    providers (Doubao, DeepSeek, older Moonshot) are unchanged."""
+    """思考型模型（Kimi K3、GPT-5 等）只接受 temperature=1。
+    对这类模型返回 1；否则返回请求值，保持非思考型提供商
+    （Doubao、DeepSeek、旧版 Moonshot）行为不变。"""
     m = str(model or "").lower().replace("/", "-")
     return 1 if ("kimi-k3" in m or "gpt-5" in m) else requested
 
 
 def _reasoning_safe_max_tokens(model, requested, reasoning_budget=2048):
-    """Reasoning models (Kimi K3, GPT-5, ...) spend part of the max_tokens
-    budget on reasoning_content *before* emitting the visible answer. If we
-    pass only the summary budget (e.g. 300-500), the reasoning trace can eat
-    into it and the summary comes back truncated or empty. Give reasoning
-    models extra headroom so the requested output budget is fully available
-    for the summary itself; non-reasoning models are unchanged."""
+    """思考型模型（Kimi K3、GPT-5 等）在输出可见答案*之前*就会把
+    max_tokens 预算的一部分花在 reasoning_content 上。如果只传摘要
+    预算（如 300-500），思考过程会挤占它，摘要会被截断甚至为空。
+    给思考型模型额外留出余量，保证请求的输出预算完整留给摘要本身；
+    非思考型模型行为不变。"""
     m = str(model or "").lower().replace("/", "-")
     if "kimi-k3" in m or "gpt-5" in m:
         return requested + reasoning_budget
     return requested
 
-# Configure logging
+# 配置日志
 logging.basicConfig(level=logging.INFO, format=Config.LOG_FORMAT)
 logger = logging.getLogger(__name__)
 
 
 class CompressionStrategy(Enum):
-    """Different context compression strategies"""
+    """各种上下文压缩策略"""
     NO_COMPRESSION = "no_compression"
-    NON_CONTEXT_AWARE_INDIVIDUAL = "non_context_aware_individual_summary"  # Summarize each page individually then concat
-    NON_CONTEXT_AWARE_COMBINED = "non_context_aware_combined_summary"     # Concat all pages then summarize once
+    NON_CONTEXT_AWARE_INDIVIDUAL = "non_context_aware_individual_summary"  # 逐页分别摘要后拼接
+    NON_CONTEXT_AWARE_COMBINED = "non_context_aware_combined_summary"     # 先拼接全部页面再一次性摘要
     CONTEXT_AWARE = "context_aware_summary"
     CONTEXT_AWARE_CITATIONS = "context_aware_with_citations"
     WINDOWED_CONTEXT = "windowed_context"
@@ -50,7 +49,7 @@ class CompressionStrategy(Enum):
 
 @dataclass
 class CompressedContent:
-    """Represents compressed content"""
+    """表示压缩后的内容"""
     original_length: int
     compressed_length: int
     content: str
@@ -60,16 +59,16 @@ class CompressedContent:
 
 
 class ContextCompressor:
-    """Handles different context compression strategies"""
+    """负责执行各种上下文压缩策略"""
     
     def __init__(self, strategy: CompressionStrategy, api_key: str, enable_streaming: bool = True):
         """
-        Initialize the context compressor
-        
-        Args:
-            strategy: Compression strategy to use
-            api_key: API key for LLM
-            enable_streaming: Whether to enable streaming for summarization
+        初始化上下文压缩器
+
+        参数:
+            strategy: 要使用的压缩策略
+            api_key: LLM 的 API Key
+            enable_streaming: 摘要时是否启用流式输出
         """
         self.strategy = strategy
         self.enable_streaming = enable_streaming
@@ -81,7 +80,7 @@ class ContextCompressor:
         )
         self.model = resolved_model
         
-        # Initialize tokenizer for token counting
+        # 初始化用于 token 计数的分词器
         try:
             self.encoding = tiktoken.encoding_for_model("gpt-4")
         except Exception:
@@ -90,11 +89,11 @@ class ContextCompressor:
         logger.info(f"Context compressor initialized with strategy: {strategy.value}, streaming: {enable_streaming}")
     
     def count_tokens(self, text: str) -> int:
-        """Count the number of tokens in a text string."""
+        """统计一段文本的 token 数。"""
         try:
             return len(self.encoding.encode(text))
         except Exception:
-            # Fallback to character-based estimation (1 token ≈ 4 chars)
+            # 回退到按字符估算（1 token ≈ 4 字符）
             return len(text) // 4
     
     def compress_search_results(
@@ -104,15 +103,15 @@ class ContextCompressor:
         current_context: Optional[str] = None
     ) -> CompressedContent:
         """
-        Compress search results based on the selected strategy
-        
-        Args:
-            search_results: Raw search results from web tool
-            query: The original search query
-            current_context: Current conversation context (for context-aware strategies)
-            
-        Returns:
-            Compressed content
+        按所选策略压缩搜索结果
+
+        参数:
+            search_results: 网络工具返回的原始搜索结果
+            query: 原始搜索查询
+            current_context: 当前对话上下文（供上下文感知策略使用）
+
+        返回:
+            压缩后的内容
         """
         if self.strategy == CompressionStrategy.NO_COMPRESSION:
             return self._no_compression(search_results)
@@ -125,7 +124,7 @@ class ContextCompressor:
         elif self.strategy == CompressionStrategy.CONTEXT_AWARE_CITATIONS:
             return self._context_aware_with_citations(search_results, query, current_context)
         elif self.strategy == CompressionStrategy.WINDOWED_CONTEXT:
-            # For windowed context, return full content (compression happens later)
+            # 窗口化策略返回完整内容（压缩延后进行）
             return self._no_compression(search_results)
         else:
             raise ValueError(f"Unknown compression strategy: {self.strategy}")
@@ -138,16 +137,16 @@ class ContextCompressor:
         preserve_citations: bool = True
     ) -> CompressedContent:
         """
-        Compress content for message history (used in windowed context strategy)
-        
-        Args:
-            content: Content to compress
-            tool_name: Name of the tool that generated the content
-            query: The query that triggered the tool call
-            preserve_citations: Whether to preserve citations
-            
-        Returns:
-            Compressed content for history
+        压缩用于写入消息历史的内容（窗口化策略使用）
+
+        参数:
+            content: 待压缩内容
+            tool_name: 生成该内容的工具名
+            query: 触发这次工具调用的查询
+            preserve_citations: 是否保留引用
+
+        返回:
+            用于历史的压缩内容
         """
         original_length = len(content)
         
@@ -167,12 +166,12 @@ Requirements:
 
 Provide a focused summary:"""
 
-            # Log prompt length
+            # 记录 prompt 长度
             prompt_tokens = self.count_tokens(prompt)
             logger.info(f"Simple summary request - Prompt tokens: {prompt_tokens}, Prompt length: {len(prompt)} chars")
 
             if self.enable_streaming:
-                # Stream the summary to console
+                # 把摘要流式打印到控制台
                 print(f"\n📝 Creating simple summary...\n", flush=True)
                 stream = self.client.chat.completions.create(
                     model=self.model,
@@ -188,14 +187,13 @@ Provide a focused summary:"""
                 summary_parts = []
                 for chunk in stream:
                     if chunk.choices and chunk.choices[0].delta.content:
-                        # NB: do not name this `content` — that shadows the
-                        # `content` parameter (the original tool output) and
-                        # breaks the truncation fallback below when the stream
-                        # fails part-way through.
+                        # 注意：不要把这个变量命名为 `content` —— 那会遮蔽
+                        # `content` 参数（原始工具输出），导致流中途失败时
+                        # 下面的截断兜底逻辑失效。
                         delta_text = chunk.choices[0].delta.content
                         print(delta_text, end="", flush=True)
                         summary_parts.append(delta_text)
-                print("\n")  # New lines after streaming
+                print("\n")  # 流式输出结束后补换行
                 compressed = "".join(summary_parts)
             else:
                 response = self.client.chat.completions.create(
@@ -218,7 +216,7 @@ Provide a focused summary:"""
             
         except Exception as e:
             logger.error(f"Error compressing for history: {str(e)}")
-            # Fallback to truncation
+            # 回退到截断
             truncated = content[:2000] + "\n\n[Content truncated for history...]"
             return CompressedContent(
                 original_length=original_length,
@@ -229,7 +227,7 @@ Provide a focused summary:"""
     
     def _no_compression(self, search_results: Dict[str, Any]) -> CompressedContent:
         """
-        Strategy 1: No compression - return all original content
+        策略 1：不压缩 —— 返回全部原始内容
         """
         all_content = []
         total_length = 0
@@ -259,7 +257,7 @@ Full Content:
     
     def _non_context_aware_individual_summary(self, search_results: Dict[str, Any]) -> CompressedContent:
         """
-        Strategy 2A: Non-context-aware summarization - Summarize each page individually then concatenate
+        策略 2A：非上下文感知摘要 —— 逐页分别摘要后拼接
         """
         summaries = []
         total_original = 0
@@ -272,7 +270,7 @@ Full Content:
             total_original += len(original_content)
             
             try:
-                # Summarize each page independently
+                # 独立摘要每一页
                 prompt = f"""Summarize the following webpage content in 2-3 paragraphs:
 
 Title: {result.get('title', 'N/A')}
@@ -283,12 +281,12 @@ Content:
 
 Provide a concise summary:"""
 
-                # Log prompt length
+                # 记录 prompt 长度
                 prompt_tokens = self.count_tokens(prompt)
                 logger.info(f"Non-context-aware summary - Prompt tokens: {prompt_tokens}, Prompt length: {len(prompt)} chars")
 
                 if self.enable_streaming:
-                    # Stream the summary to console
+                    # 把摘要流式打印到控制台
                     print(f"\n📝 Summarizing: {result.get('title', 'N/A')[:50]}...", end=" ", flush=True)
                     stream = self.client.chat.completions.create(
                         model=self.model,
@@ -307,7 +305,7 @@ Provide a concise summary:"""
                             content = chunk.choices[0].delta.content
                             print(content, end="", flush=True)
                             summary_parts.append(content)
-                    print()  # New line after streaming
+                    print()  # 流式输出结束后换行
                     summary = "".join(summary_parts)
                 else:
                     response = self.client.chat.completions.create(
@@ -329,7 +327,7 @@ Summary: {summary}
                 
             except Exception as e:
                 logger.error(f"Error summarizing page: {str(e)}")
-                # Fallback to snippet
+                # 回退到搜索结果自带的 snippet
                 summaries.append(f"""
 Source: {result.get('title', 'N/A')}
 URL: {result.get('url', 'N/A')}
@@ -347,19 +345,19 @@ Summary: {result.get('snippet', 'No summary available')}
     
     def _non_context_aware_combined_summary(self, search_results: Dict[str, Any]) -> CompressedContent:
         """
-        Strategy 2B: Non-context-aware summarization - Concatenate all pages then summarize once
+        策略 2B：非上下文感知摘要 —— 拼接全部页面后一次性摘要
         """
-        # Combine all content first
+        # 先合并全部内容
         all_content = []
         total_original = 0
-        max_chars_per_page = 5000  # Limit each page to prevent token overflow
+        max_chars_per_page = 5000  # 限制每页长度，避免 token 溢出
         
         for result in search_results.get('results', []):
             if result.get('content'):
                 original_content = result.get('content', '')
                 total_original += len(original_content)
                 
-                # Limit each page's content
+                # 限制每页内容的长度
                 limited_content = original_content[:max_chars_per_page]
                 
                 all_content.append(f"""
@@ -379,7 +377,7 @@ Content: {limited_content}
         combined_content = "\n\n".join(all_content)
         
         try:
-            # Create a single summary for all combined content
+            # 为合并后的全部内容生成一份摘要
             prompt = f"""Summarize the following combined webpage content comprehensively:
 
 {combined_content}
@@ -392,12 +390,12 @@ Requirements:
 
 Provide a comprehensive summary:"""
 
-            # Log prompt length
+            # 记录 prompt 长度
             prompt_tokens = self.count_tokens(prompt)
             logger.info(f"Non-context-aware combined summary - Prompt tokens: {prompt_tokens}, Prompt length: {len(prompt)} chars")
 
             if self.enable_streaming:
-                # Stream the summary to console
+                # 把摘要流式打印到控制台
                 print(f"\n📄 Creating combined summary for all {len(search_results.get('results', []))} pages...\n", flush=True)
                 stream = self.client.chat.completions.create(
                     model=self.model,
@@ -416,7 +414,7 @@ Provide a comprehensive summary:"""
                         content = chunk.choices[0].delta.content
                         print(content, end="", flush=True)
                         summary_parts.append(content)
-                print("\n")  # New lines after streaming
+                print("\n")  # 流式输出结束后补换行
                 summary = "".join(summary_parts)
             else:
                 response = self.client.chat.completions.create(
@@ -439,7 +437,7 @@ Provide a comprehensive summary:"""
             
         except Exception as e:
             logger.error(f"Error creating combined summary: {str(e)}")
-            # Fallback to concatenated snippets
+            # 回退到拼接的 snippet
             fallback = "\n\n".join([
                 f"{r.get('title', 'N/A')}: {r.get('snippet', 'No summary available')}"
                 for r in search_results.get('results', [])
@@ -458,19 +456,19 @@ Provide a comprehensive summary:"""
         current_context: Optional[str] = None
     ) -> CompressedContent:
         """
-        Strategy 3: Context-aware summarization considering the query
+        策略 3：结合查询的上下文感知摘要
         """
-        # Combine all content with per-page limits
+        # 合并全部内容，并按页限长
         all_content = []
         total_original = 0
-        max_chars_per_page = 5000  # Limit each page to prevent token overflow
+        max_chars_per_page = 5000  # 限制每页长度，避免 token 溢出
         
         for result in search_results.get('results', []):
             if result.get('content'):
                 original_content = result.get('content', '')
                 total_original += len(original_content)
                 
-                # Limit each page's content
+                # 限制每页内容的长度
                 limited_content = original_content[:max_chars_per_page]
                 
                 all_content.append(f"""
@@ -482,7 +480,7 @@ Content: {limited_content}
         combined_content = "\n\n".join(all_content)
         
         try:
-            # Create context-aware summary
+            # 生成上下文感知摘要
             prompt = f"""Given the search query: "{query}"
 {f"Current context: {current_context[:1000]}" if current_context else ""}
 
@@ -500,12 +498,12 @@ Requirements:
 
 Provide a query-focused summary:"""
 
-            # Log prompt length
+            # 记录 prompt 长度
             prompt_tokens = self.count_tokens(prompt)
             logger.info(f"Context-aware summary - Prompt tokens: {prompt_tokens}, Prompt length: {len(prompt)} chars")
 
             if self.enable_streaming:
-                # Stream the summary to console
+                # 把摘要流式打印到控制台
                 print(f"\n🎯 Creating context-aware summary for query: '{query[:50]}...'\n", flush=True)
                 stream = self.client.chat.completions.create(
                     model=self.model,
@@ -524,7 +522,7 @@ Provide a query-focused summary:"""
                         content = chunk.choices[0].delta.content
                         print(content, end="", flush=True)
                         summary_parts.append(content)
-                print("\n")  # New lines after streaming
+                print("\n")  # 流式输出结束后补换行
                 summary = "".join(summary_parts)
             else:
                 response = self.client.chat.completions.create(
@@ -547,7 +545,7 @@ Provide a query-focused summary:"""
             
         except Exception as e:
             logger.error(f"Error creating context-aware summary: {str(e)}")
-            # Fallback to simple concatenation
+            # 回退到简单拼接
             fallback = "\n\n".join([r.get('snippet', '') for r in search_results.get('results', [])])
             return CompressedContent(
                 original_length=total_original,
@@ -563,13 +561,13 @@ Provide a query-focused summary:"""
         current_context: Optional[str] = None
     ) -> CompressedContent:
         """
-        Strategy 4: Context-aware summarization with citations
+        策略 4：带引用的上下文感知摘要
         """
-        # Track sources with per-page limits
+        # 记录来源信息，并按页限长
         sources = []
         all_content = []
         total_original = 0
-        max_chars_per_page = 5000  # Limit each page to prevent token overflow
+        max_chars_per_page = 5000  # 限制每页长度，避免 token 溢出
         
         for i, result in enumerate(search_results.get('results', [])):
             if result.get('content'):
@@ -577,7 +575,7 @@ Provide a query-focused summary:"""
                 original_content = result.get('content', '')
                 total_original += len(original_content)
                 
-                # Limit each page's content
+                # 限制每页内容的长度
                 limited_content = original_content[:max_chars_per_page]
                 
                 sources.append({
@@ -594,7 +592,7 @@ Content: {limited_content}
         combined_content = "\n\n".join(all_content)
         
         try:
-            # Create context-aware summary with citations
+            # 生成带引用的上下文感知摘要
             prompt = f"""Given the search query: "{query}"
 {f"Current context: {current_context[:1000]}" if current_context else ""}
 
@@ -612,12 +610,12 @@ Requirements:
 
 Provide a query-focused summary with citations:"""
 
-            # Log prompt length
+            # 记录 prompt 长度
             prompt_tokens = self.count_tokens(prompt)
             logger.info(f"Citation-based summary - Prompt tokens: {prompt_tokens}, Prompt length: {len(prompt)} chars")
 
             if self.enable_streaming:
-                # Stream the summary to console
+                # 把摘要流式打印到控制台
                 print(f"\n📚 Creating summary with citations for: '{query[:50]}...'\n", flush=True)
                 stream = self.client.chat.completions.create(
                     model=self.model,
@@ -636,7 +634,7 @@ Provide a query-focused summary with citations:"""
                         content = chunk.choices[0].delta.content
                         print(content, end="", flush=True)
                         summary_parts.append(content)
-                print("\n")  # New lines after streaming
+                print("\n")  # 流式输出结束后补换行
                 summary = "".join(summary_parts)
             else:
                 response = self.client.chat.completions.create(
@@ -650,7 +648,7 @@ Provide a query-focused summary with citations:"""
                 )
                 summary = response.choices[0].message.content
             
-            # Append source list
+            # 追加来源列表
             source_list = "\n\nSources:\n"
             for source in sources:
                 source_list += f"{source['id']} {source['title']} - {source['url']}\n"
@@ -667,7 +665,7 @@ Provide a query-focused summary with citations:"""
             
         except Exception as e:
             logger.error(f"Error creating summary with citations: {str(e)}")
-            # Fallback
+            # 兜底
             fallback = "\n\n".join([
                 f"[{i+1}] {r.get('title', '')}: {r.get('snippet', '')}"
                 for i, r in enumerate(search_results.get('results', []))
@@ -682,13 +680,13 @@ Provide a query-focused summary with citations:"""
     
     def estimate_tokens(self, text: str) -> int:
         """
-        Estimate token count for text (rough approximation)
-        
-        Args:
-            text: Text to estimate tokens for
-            
-        Returns:
-            Estimated token count
+        估算文本的 token 数（粗略近似）
+
+        参数:
+            text: 待估算的文本
+
+        返回:
+            估算的 token 数
         """
-        # Rough approximation: 1 token ≈ 4 characters
+        # 粗略近似：1 token ≈ 4 字符
         return len(text) // 4

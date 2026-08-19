@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify provider configuration
+验证提供商配置的测试脚本
 """
 
 import os
@@ -12,13 +12,13 @@ add_project_root()
 from agent import ContextAwareAgent, ContextMode
 
 def test_providers():
-    """Test different provider configurations"""
+    """测试不同提供商的配置"""
     
     print("\n" + "="*60)
     print("🧪 PROVIDER CONFIGURATION TEST")
     print("="*60)
 
-    # Test Alibaba Cloud Model Studio / Bailian
+    # 测试阿里云百炼 / Model Studio
     dashscope_key = os.getenv("DASHSCOPE_API_KEY")
     if dashscope_key:
         print("\n✅ Alibaba Cloud Model Studio API key found")
@@ -34,7 +34,7 @@ def test_providers():
     else:
         print("\n⚠️ Alibaba Cloud Model Studio API key not found (DASHSCOPE_API_KEY)")
     
-    # Test SiliconFlow
+    # 测试 SiliconFlow
     sf_key = os.getenv("SILICONFLOW_API_KEY")
     if sf_key:
         print("\n✅ SiliconFlow API key found")
@@ -48,7 +48,7 @@ def test_providers():
     else:
         print("\n⚠️ SiliconFlow API key not found (SILICONFLOW_API_KEY)")
     
-    # Test Doubao
+    # 测试 Doubao
     ark_key = os.getenv("ARK_API_KEY")
     if ark_key:
         print("\n✅ Doubao/ARK API key found")
@@ -62,7 +62,7 @@ def test_providers():
     else:
         print("\n⚠️ Doubao/ARK API key not found (ARK_API_KEY)")
 
-    # Test DeepSeek
+    # 测试 DeepSeek
     deepseek_key = os.getenv("DEEPSEEK_API_KEY")
     if deepseek_key:
         print("\n✅ DeepSeek API key found")
@@ -76,7 +76,7 @@ def test_providers():
     else:
         print("\n⚠️ DeepSeek API key not found (DEEPSEEK_API_KEY)")
     
-    # Test custom model
+    # 测试自定义模型
     if sf_key:
         print("\n🔧 Testing custom model specification:")
         try:
@@ -91,7 +91,7 @@ def test_providers():
     print("\n" + "="*60)
     print("Test complete!")
     
-    # Show usage examples
+    # 展示用法示例
     print("\n📖 Usage Examples:")
     print("-"*40)
 
